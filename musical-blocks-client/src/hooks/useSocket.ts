@@ -1,0 +1,132 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+import { getSocket, setClockOffset } from '@/src/lib/socketClient';
+import { useGameStore } from '@/src/stores/gameStore';
+import { useToastStore } from '@/src/stores/toastStore';
+import { useTranslation } from './useTranslation';
+
+// ---------------------------------------------------------------------------
+//  useSocket — connects to server, wires all ServerEvents → Zustand store
+// ---------------------------------------------------------------------------
+export function useSocket() {
+  const store = useGameStore();
+  const { t } = useTranslation();
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
+    const socket = getSocket();
+
+    // ---- Connection events -------------------------------------------------
+    socket.on('connect', () => {
+      const wasInRoom = !!useGameStore.getState().room;
+      
+      store.setConnected(true);
+      store.setLocalPlayer(socket.id!, store.localPlayerName);
+      store.setConnectionError(null);
+
+      if (wasInRoom) {
+        // Session lost on reconnect (socket ID changed)
+        store.clearRoom();
+        store.setConnectionError(t('errSessionLost'));
+      } else {
+        // Start clock sync only if not just kicked
+        const t0 = Date.now();
+        socket.emit('ping', { clientTime: t0 });
+      }
+    });
+
+    socket.on('disconnect', () => {
+      store.setConnected(false);
+    });
+
+    socket.on('connect_error', () => {
+      store.setConnectionError('Cannot connect to server. Is it running?');
+    });
+
+    // ---- Clock sync --------------------------------------------------------
+    socket.on('pong', ({ serverTime, clientTime }) => {
+      const rtt = Date.now() - clientTime;
+      setClockOffset(serverTime - (clientTime + rtt / 2));
+    });
+
+    // ---- Room events -------------------------------------------------------
+    socket.on('room:updated', ({ room }) => {
+      useGameStore.getState().setRoom(room);
+    });
+
+    socket.on('room:kicked', ({ reason }) => {
+      store.clearRoom();
+      useToastStore.getState().addToast(reason, 'error');
+    });
+
+    socket.on('room:list', () => {
+      // Handled by LobbyScreen component via emit + callback
+    });
+
+    socket.on('room:error', ({ message }) => {
+      store.setConnectionError(message);
+    });
+
+    // ---- Game events -------------------------------------------------------
+    socket.on('game:state', (state) => {
+      useGameStore.getState().setGameState(state);
+    });
+
+    socket.on('game:round_start', ({ blocks }) => {
+      useGameStore.getState().updateBlocks(blocks);
+    });
+
+    socket.on('game:announce', ({ winnerColor }) => {
+      useGameStore.getState().setWinnerColor(winnerColor);
+    });
+
+    socket.on('game:eliminate', ({ eliminatedBlocks }) => {
+      const { gameState } = useGameStore.getState();
+      if (!gameState) return;
+      // Mark eliminated blocks as inactive
+      const updatedBlocks = gameState.blocks.map((row) =>
+        row.map((block) => {
+          const wasEliminated = eliminatedBlocks.some(
+            (e) => e.row === block.row && e.col === block.col,
+          );
+          return wasEliminated ? { ...block, isActive: false } : block;
+        }),
+      );
+      useGameStore.getState().updateBlocks(updatedBlocks);
+    });
+
+    socket.on('game:player_died', ({ playerId }) => {
+      useGameStore.getState().markPlayerDead(playerId);
+    });
+
+    socket.on('game:over', ({ winnerId }) => {
+      useGameStore.getState().setGameOver(winnerId);
+    });
+
+    // Connect
+    if (!socket.connected) socket.connect();
+
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('connect_error');
+      socket.off('pong');
+      socket.off('room:updated');
+      socket.off('room:list');
+      socket.off('room:error');
+      socket.off('game:state');
+      socket.off('game:round_start');
+      socket.off('game:announce');
+      socket.off('game:eliminate');
+      socket.off('game:player_died');
+      socket.off('game:over');
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return getSocket();
+}

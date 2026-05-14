@@ -1,0 +1,8 @@
+{
+  "name": "@musical-blocks/shared",
+  "version": "1.0.0",
+  "description": "Shared types for Musical Blocks",
+  "main": "types.js",
+  "types": "types.d.ts",
+  "private": true
+}
