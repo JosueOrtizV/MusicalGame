@@ -2,6 +2,7 @@ import {
   GamePhase,
   GameState,
   BlockColor,
+  GameSpeed,
   ROUND_DURATIONS,
 } from '@shared/types';
 import { GridManager } from './GridManager';
@@ -20,6 +21,7 @@ export interface GameLoopCallbacks {
   onEliminate:   (eliminated: Array<{ row: number; col: number }>, deadIds: string[]) => void;
   onGameOver:    (winnerId: string | null, winnerName: string | null) => void;
   onTimeTick:    (timeLeft: number) => void;
+  onStateUpdate: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -38,6 +40,11 @@ export class GameLoop {
   private danceMs = 0;    // ms remaining in DANCING phase specifically
   private announceMs = 0; // ms allocated for ANNOUNCING phase in current round
   private lastEmittedSecond = -1;
+  private speed: GameSpeed = 'NORMAL';
+  
+  private isBlindMode: boolean = false;
+  private isBlackout: boolean = false;
+  private blackoutMs: number = 0;
 
   constructor(
     private readonly grid: GridManager,
@@ -68,6 +75,18 @@ export class GameLoop {
 
   getPhase(): GamePhase {
     return this.phase;
+  }
+
+  setSpeed(speed: GameSpeed): void {
+    this.speed = speed;
+  }
+
+  setBlindMode(isBlindMode: boolean): void {
+    this.isBlindMode = isBlindMode;
+  }
+
+  getIsBlackout(): boolean {
+    return this.isBlackout;
   }
 
   // ---- Core tick -----------------------------------------------------------
@@ -105,25 +124,58 @@ export class GameLoop {
         this.round++;
         const blocks = this.grid.generate(this.round);
         this.players.resetForRound(this.grid);
-        const totalDurationS = ROUND_DURATIONS[Math.min(this.round - 1, ROUND_DURATIONS.length - 1)];
+        const durations = ROUND_DURATIONS[this.speed];
+        const totalDurationS = durations[Math.min(this.round - 1, durations.length - 1)];
         
         let announceS: number;
         let danceS: number;
 
-        if (this.round >= 10) {
-          announceS = 2;
-          danceS = Math.max(2, totalDurationS - announceS);
-        } else if (this.round >= 8) {
-          announceS = 3;
-          danceS = Math.max(2, totalDurationS - announceS);
+        if (this.speed === 'CHILL') {
+          // Chill splits (generous react times)
+          if (this.round >= 10) {
+            announceS = 4;
+          } else if (this.round >= 6) {
+            announceS = 5;
+          } else {
+            announceS = Math.max(6, Math.floor(totalDurationS * 0.4));
+          }
+          danceS = Math.max(4, totalDurationS - announceS);
+        } else if (this.speed === 'TURBO') {
+          // Turbo splits (intense and fast)
+          if (this.round >= 8) {
+            announceS = 2;
+            danceS = Math.max(2, totalDurationS - announceS);
+          } else if (this.round >= 4) {
+            announceS = 3;
+            danceS = Math.max(2, totalDurationS - announceS);
+          } else {
+            announceS = Math.max(3, Math.floor(totalDurationS * 0.3));
+            danceS = Math.max(2, totalDurationS - announceS);
+          }
         } else {
-          announceS = Math.max(4, Math.floor(totalDurationS * 0.4));
-          danceS = Math.max(3, totalDurationS - announceS);
+          // Normal splits (original progressive balance)
+          if (this.round >= 10) {
+            announceS = 2;
+            danceS = Math.max(2, totalDurationS - announceS);
+          } else if (this.round >= 8) {
+            announceS = 3;
+            danceS = Math.max(2, totalDurationS - announceS);
+          } else {
+            announceS = Math.max(4, Math.floor(totalDurationS * 0.4));
+            danceS = Math.max(3, totalDurationS - announceS);
+          }
         }
         
         this.announceMs = announceS * 1000;
         this.danceMs = danceS * 1000;
         this.phaseMs = this.danceMs;
+        
+        this.blackoutMs = 0;
+        
+        if (this.isBlackout) {
+          this.isBlackout = false;
+          this.callbacks.onStateUpdate();
+        }
         
         // We report 'danceS' as the duration to the client for the HUD timer
         this.callbacks.onRoundStart(this.round, danceS);
@@ -134,6 +186,11 @@ export class GameLoop {
         const winnerColor = this.grid.pickWinnerColor();
         const counts = this.grid.getColorDistribution();
         this.phaseMs = this.announceMs;
+        
+        if (this.isBlindMode && !this.isBlackout) {
+          this.isBlackout = true;
+          this.callbacks.onStateUpdate();
+        }
         // Store winner for ELIMINATING phase
         (this as unknown as { _pendingWinner: BlockColor })._pendingWinner = winnerColor;
         this.callbacks.onAnnounce(winnerColor, counts);
@@ -169,8 +226,8 @@ export class GameLoop {
       case 'ANNOUNCING': return this.transitionTo('ELIMINATING');
 
       case 'ELIMINATING': {
-        const alive = this.players.getAlive();
-        if (alive.length <= 1) {
+        const withLives = this.players.getWithLives();
+        if (withLives.length <= 1) {
           return this.transitionTo('GAME_OVER');
         }
         return this.transitionTo('ROUND_END');

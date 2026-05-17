@@ -33,7 +33,9 @@ export function GameHUD() {
         }
         setShowBanner(true);
       }, 0);
-      const t2 = setTimeout(() => setShowBanner(false), 2500);
+      // If the dancing phase duration is 4s or less, show the banner for only 1.2s to prioritize gameplay visibility
+      const bannerDuration = gameState.timeLeft <= 4 ? 1200 : 2500;
+      const t2 = setTimeout(() => setShowBanner(false), bannerDuration);
       return () => { clearTimeout(t1); clearTimeout(t2); };
     }
     if (gameState.phase === 'ANNOUNCING') {
@@ -46,7 +48,7 @@ export function GameHUD() {
   if (!gameState) return null;
 
   const { timeLeft, winnerColor, players } = gameState;
-  const alivePlayers = players.filter((p) => p.isAlive);
+  const playersWithLives = players.filter((p) => p.lives > 0);
   const isUrgent = timeLeft <= 3 && phase === 'ANNOUNCING';
 
   let phaseTitle = '';
@@ -59,7 +61,7 @@ export function GameHUD() {
     <div className="hud-overlay">
       {/* ---- Round banner ------------------------------------------------- */}
       {showBanner && (
-        <div className="hud-banner animate-banner">
+        <div className="hud-banner animate-banner" data-text={bannerText}>
           {bannerText}
           <span className="hud-banner-sub">{t('survive')}</span>
         </div>
@@ -99,7 +101,7 @@ export function GameHUD() {
       {/* ---- Player list -------------------------------------------------- */}
       <div className="hud-players">
         <div className="hud-players-title">
-          {t('alivePlayers', { alive: alivePlayers.length, total: players.length })}
+          {t('alivePlayers', { alive: playersWithLives.length, total: players.length })}
         </div>
         {players.map((p) => (
           <div
@@ -113,7 +115,13 @@ export function GameHUD() {
             <span className="hud-player-name">
               {p.id === localPlayerId ? '★ ' : ''}{p.name}
             </span>
-            {!p.isAlive && <span className="hud-player-skull">💀</span>}
+            {p.lives > 0 ? (
+              <span className="hud-player-lives" style={{ marginLeft: 'auto', fontSize: '11px', color: '#f43f5e', fontWeight: 'bold' }}>
+                ❤️ x{p.lives}
+              </span>
+            ) : (
+              <span className="hud-player-skull" style={{ marginLeft: 'auto' }}>💀</span>
+            )}
           </div>
         ))}
       </div>

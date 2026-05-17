@@ -36,9 +36,10 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
   const wasAlive = useRef(player.isAlive);
   const isDead = !player.isAlive;
 
-  // Trigger death particles once
+  // Handle transitions between alive and dead states
   useEffect(() => {
     if (wasAlive.current && isDead) {
+      // Just died
       spawnParticles({
         x: targetX,
         y: PLAYER_Y_OFFSET,
@@ -48,6 +49,15 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
         type: 'dust'
       });
       wasAlive.current = false;
+    } else if (!wasAlive.current && !isDead) {
+      // Revived!
+      deathTimer.current = 0;
+      if (groupRef.current) {
+        groupRef.current.scale.setScalar(1);
+        groupRef.current.position.y = PLAYER_Y_OFFSET;
+        groupRef.current.visible = true;
+      }
+      wasAlive.current = true;
     }
   }, [isDead, targetX, targetZ]);
 

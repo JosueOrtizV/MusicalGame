@@ -137,6 +137,15 @@ export const useGameStore = create<GameStore>()(
       setGameState: (state) =>
         set((s) => {
           s.gameState = state;
+          
+          // Check if local player was revived by the server
+          if (s.screen === 'dead') {
+            const me = state.players.find(p => p.id === s.localPlayerId);
+            if (me && me.isAlive) {
+              s.screen = 'game';
+            }
+          }
+
           // Auto-navigate screens based on phase
           if (state.phase === 'DANCING' || state.phase === 'ANNOUNCING' || state.phase === 'ELIMINATING' || state.phase === 'ROUND_END') {
             if (s.screen === 'lobby') s.screen = 'game';

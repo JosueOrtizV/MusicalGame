@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useRef } from 'react';
+import { Suspense, useRef, useMemo } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Stars, Environment, CameraShake } from '@react-three/drei';
@@ -9,7 +9,8 @@ import { BlockGrid } from './BlockGrid';
 import { PlayerMesh } from './PlayerMesh';
 import { ParticleSystem } from './ParticleSystem';
 import { useGameStore } from '@/src/stores/gameStore';
-import { CAMERA_POSITION, CAMERA_FOV } from '@/src/lib/constants';
+import { CAMERA_POSITION, CAMERA_FOV, BLOCK_SIZE } from '@/src/lib/constants';
+import { GRID_SIZE } from '@/src/shared/types';
 
 // ---------------------------------------------------------------------------
 //  Responsive Camera Handler
@@ -17,14 +18,10 @@ import { CAMERA_POSITION, CAMERA_FOV } from '@/src/lib/constants';
 function ResponsiveCamera() {
   useFrame(({ camera, size }) => {
     const isPortrait = size.width < size.height;
-
-    // Pull camera back and increase FOV for mobile portrait
     const targetPos = isPortrait ? [0, 18, 18] : CAMERA_POSITION;
     const targetFov = isPortrait ? 70 : CAMERA_FOV;
 
     if (camera instanceof THREE.PerspectiveCamera) {
-      // Direct mutation is allowed inside useFrame for performance
-      // but we update only when needed to avoid Matrix recalculations
       if (camera.fov !== targetFov) {
         camera.position.set(targetPos[0], targetPos[1], targetPos[2]);
         camera.fov = targetFov;
@@ -35,6 +32,60 @@ function ResponsiveCamera() {
   });
 
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+//  NeonGrid — single atmospheric magenta grid at Y=-2.0.
+//  Uses vertex colors for radial fade: lines near center are visible,
+//  lines toward edges fade to black, creating the "floating in void" feel.
+// ---------------------------------------------------------------------------
+const GRID_TOTAL_SIZE = GRID_SIZE * BLOCK_SIZE * 2.8; // extends well beyond arena
+const GRID_DIVISIONS = 28;
+const GRID_Y = -2.0;
+
+function NeonGrid() {
+  const geometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    const verts: number[] = [];
+    const colors: number[] = [];
+
+    const half = GRID_TOTAL_SIZE / 2;
+    const step = GRID_TOTAL_SIZE / GRID_DIVISIONS;
+    // Magenta base (r, g, b)
+    const mr = 0.6, mg = 0.0, mb = 0.9;
+
+    // Each line segment has two vertices. For radial fade, we fade each
+    // vertex independently based on its 2D distance from the world origin.
+    const addVert = (x: number, z: number) => {
+      verts.push(x, GRID_Y, z);
+      const d = Math.sqrt(x * x + z * z);
+      // Quadratic fade: center is brightest, corners approach 0
+      const fade = Math.pow(Math.max(0, 1.0 - d / (half * 1.1)), 2);
+      colors.push(mr * fade, mg * fade, mb * fade);
+    };
+
+    for (let i = 0; i <= GRID_DIVISIONS; i++) {
+      const pos = -half + i * step;
+      // Lines along Z (vary x = pos, sweep z)
+      addVert(-half, pos); addVert(half, pos);
+      // Lines along X (vary z = pos, sweep x)
+      addVert(pos, -half); addVert(pos, half);
+    }
+
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    return geo;
+  }, []);
+
+
+  const mat = useMemo(() => new THREE.LineBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.08, // globally subtle; vertex colors do the radial work
+  }), []);
+
+  return <lineSegments geometry={geometry} material={mat} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -51,16 +102,18 @@ export function GameCanvas() {
         shadows={{ type: THREE.PCFShadowMap }}
         camera={{ position: CAMERA_POSITION, fov: CAMERA_FOV }}
         style={{ width: '100%', height: '100%' }}
-        gl={{ antialias: true, powerPreference: 'high-performance' }}
-        // ✅ KEY: Isolate events to this container only. 
-        // This prevents R3F from stealing events from HUD siblings.
+        gl={{ antialias: true, powerPreference: 'high-performance', toneMappingExposure: 1.1 }}
         eventSource={containerRef as unknown as HTMLElement}
         eventPrefix="client"
       >
         <ResponsiveCamera />
         <Suspense fallback={null}>
-          {/* Lighting */}
-          <ambientLight intensity={0.6} />
+
+          {/* ---- Lighting ---- */}
+          {/* Ambient: just enough to see player models */}
+          <ambientLight intensity={0.5} />
+
+          {/* Directional: shadows for player meshes */}
           <directionalLight
             position={[10, 20, 10]}
             intensity={1.2}
@@ -72,26 +125,29 @@ export function GameCanvas() {
             shadow-camera-top={10}
             shadow-camera-bottom={-10}
           />
-          <pointLight position={[-10, 10, -10]} intensity={0.4} color="#8080ff" />
 
-          {/* Atmosphere */}
-          <Stars radius={100} depth={50} count={5000} factor={4} fade speed={1} />
+          {/* Neon accent point lights — affect player meshes, give atmosphere */}
+          <pointLight position={[-10, 6, 10]} intensity={1.8} color="#00f0ff" distance={40} decay={2} />
+          <pointLight position={[10, 6, -10]} intensity={1.5} color="#ff00ff" distance={40} decay={2} />
+
+          {/* ---- Atmosphere ---- */}
+          <Stars radius={100} depth={50} count={5000} factor={4} fade speed={0.8} />
           <fog attach="fog" args={['#0a0a1a', 50, 150]} />
 
-          {/* Grid platform */}
+          {/* ---- Neon grid floor ---- */}
+          <NeonGrid />
+
+          {/* ---- Game elements ---- */}
           {gameState && (
             <>
-              {/* No base platform — blocks float in the abyss */}
-
-
-              {/* Blocks */}
               <BlockGrid
                 blocks={gameState.blocks}
                 winnerColor={gameState.winnerColor}
                 phase={gameState.phase}
+                round={gameState.round}
+                isBlackout={gameState.isBlackout}
               />
 
-              {/* Players */}
               {gameState.players.map((player) => (
                 <PlayerMesh
                   key={player.id}
@@ -102,7 +158,7 @@ export function GameCanvas() {
             </>
           )}
 
-          {/* Environment for reflections */}
+          {/* Environment for material PBR reflections (player meshes) */}
           <Environment preset="night" />
 
           {/* Global Particle System */}
@@ -120,11 +176,12 @@ export function GameCanvas() {
           />
 
           {/* Post-Processing */}
-          <EffectComposer disableNormalPass>
-            <Bloom luminanceThreshold={1.1} mipmapBlur intensity={1.5} />
-            {/* @ts-expect-error Types in postprocessing might conflict with React 19 */}
-            <Vignette eskil={false} offset={0.1} darkness={1.2} />
+          <EffectComposer>
+            {/* Bloom: threshold 0.95 — only overbright colors glow (winner blocks, particles) */}
+            <Bloom luminanceThreshold={0.95} luminanceSmoothing={0.4} mipmapBlur intensity={1.6} radius={0.55} />
+            <Vignette eskil={false} offset={0.15} darkness={1.2} />
           </EffectComposer>
+
         </Suspense>
       </Canvas>
     </div>

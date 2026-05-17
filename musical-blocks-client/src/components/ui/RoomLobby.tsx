@@ -1,6 +1,4 @@
-'use client';
-
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useGameStore, selectIsHost } from '@/src/stores/gameStore';
 import { getSocket } from '@/src/lib/socketClient';
 import { useTranslation } from '@/src/hooks/useTranslation';
@@ -14,9 +12,11 @@ export function RoomLobby() {
   const localPlayerId = useGameStore((s) => s.localPlayerId);
   const isHost = useGameStore(selectIsHost);
   const store = useGameStore();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const prevPlayersRef = useRef(room?.players ?? []);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'difficulty' | 'speed' | 'lives' | 'modifiers'>('difficulty');
 
   useEffect(() => {
     if (!room) return;
@@ -56,9 +56,34 @@ export function RoomLobby() {
     navigator.clipboard.writeText(room.id);
   };
 
+  const getDifficultyName = (colors: number) => {
+    if (colors === 4) return lang === 'es' ? 'Fácil' : 'Easy';
+    if (colors === 6) return lang === 'es' ? 'Normal' : 'Normal';
+    if (colors === 8) return lang === 'es' ? 'Difícil' : 'Hard';
+    return lang === 'es' ? 'Extremo' : 'Extreme';
+  };
+
+  const getDifficultyColorClass = (colors: number) => {
+    if (colors === 4) return 'easy';
+    if (colors === 6) return 'normal';
+    if (colors === 8) return 'hard';
+    return 'extreme';
+  };
+
   return (
     <div className="room-lobby-bg">
       <div className="room-lobby-card">
+        {/* Host Settings Trigger Button */}
+        {isHost && (
+          <button
+            className="lobby-settings-btn"
+            onClick={() => setIsSettingsOpen(true)}
+            title={t('roomSettingsTitle')}
+          >
+            🕹️
+          </button>
+        )}
+
         {/* Header */}
         <div className="room-header">
           <h2 className="room-title">
@@ -73,6 +98,76 @@ export function RoomLobby() {
           <p className="room-hint">
             {isPrivate ? t('shareCodeHint') : t('waitingPlayersHint')}
           </p>
+
+          {/* Real-time Game Difficulty Status Badge */}
+          <div className="lobby-difficulty-status">
+            <span
+              className="difficulty-indicator-dot"
+              style={{
+                backgroundColor: (room.settings?.maxColors === 4) ? '#22c55e' :
+                                 (room.settings?.maxColors === 6) ? '#3b82f6' :
+                                 (room.settings?.maxColors === 8) ? '#eab308' :
+                                 '#ef4444',
+                color: (room.settings?.maxColors === 4) ? '#22c55e' :
+                       (room.settings?.maxColors === 6) ? '#3b82f6' :
+                       (room.settings?.maxColors === 8) ? '#eab308' :
+                       '#ef4444'
+              }}
+            />
+            <span className="difficulty-indicator-text">
+              
+              <strong
+                style={{
+                  color: (room.settings?.maxColors === 4) ? '#22c55e' :
+                         (room.settings?.maxColors === 6) ? '#3b82f6' :
+                         (room.settings?.maxColors === 8) ? '#eab308' :
+                         '#ef4444',
+                  textShadow: (room.settings?.maxColors === 4) ? '0 0 10px rgba(34, 197, 94, 0.3)' :
+                              (room.settings?.maxColors === 6) ? '0 0 10px rgba(59, 130, 246, 0.3)' :
+                              (room.settings?.maxColors === 8) ? '0 0 10px rgba(234, 179, 8, 0.3)' :
+                              '0 0 10px rgba(239, 68, 68, 0.3)'
+                }}
+              >
+                {getDifficultyName(room.settings?.maxColors ?? 6)} ({room.settings?.maxColors ?? 6} {lang === 'es' ? 'Colores' : 'Colors'})
+              </strong>
+              <span style={{ margin: '0 8px', color: 'var(--c-muted)', opacity: 0.5 }}>•</span>
+              <strong
+                style={{
+                  color: (room.settings?.gameSpeed === 'CHILL') ? '#38bdf8' :
+                         (room.settings?.gameSpeed === 'TURBO') ? '#eab308' :
+                         '#3b82f6',
+                  textShadow: (room.settings?.gameSpeed === 'CHILL') ? '0 0 10px rgba(56, 189, 248, 0.3)' :
+                              (room.settings?.gameSpeed === 'TURBO') ? '0 0 10px rgba(234, 179, 8, 0.3)' :
+                              '0 0 10px rgba(59, 130, 246, 0.3)'
+                }}
+              >
+                {(room.settings?.gameSpeed === 'CHILL') ? '❄️ ' + t('speedChill') :
+                 (room.settings?.gameSpeed === 'TURBO') ? '⚡ ' + t('speedTurbo') :
+                 '⏱️ ' + t('speedNormal')}
+              </strong>
+              {room.settings?.maxLives !== undefined && (
+                <>
+                  <span style={{ margin: '0 8px', color: 'var(--c-muted)', opacity: 0.5 }}>•</span>
+                  <strong style={{ color: '#f43f5e', textShadow: '0 0 10px rgba(244, 63, 94, 0.4)' }}>
+                    ❤️ {room.settings.maxLives} {room.settings.maxLives === 1 ? (lang === 'es' ? 'Vida' : 'Life') : (lang === 'es' ? 'Vidas' : 'Lives')}
+                  </strong>
+                </>
+              )}
+              {room.settings?.isBlindMode && (
+                <>
+                  <span style={{ margin: '0 8px', color: 'var(--c-muted)', opacity: 0.5 }}>•</span>
+                  <strong
+                    style={{
+                      color: '#d946ef',
+                      textShadow: '0 0 10px rgba(217, 70, 239, 0.4)'
+                    }}
+                  >
+                    🕶️ {t('blindModeLabel')}
+                  </strong>
+                </>
+              )}
+            </span>
+          </div>
         </div>
 
         {/* Room Content Wrapper */}
@@ -169,6 +264,279 @@ export function RoomLobby() {
           </div>
         </div>
       </div>
+
+      {/* Modern Glassmorphic Settings Modal */}
+      {isSettingsOpen && (
+        <div className="settings-modal-overlay">
+          <div className="settings-modal-card">
+            <div className="settings-modal-header">
+              <h3 className="settings-modal-title">{t('roomSettingsTitle')}</h3>
+              <button
+                className="settings-modal-close"
+                onClick={() => setIsSettingsOpen(false)}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="settings-modal-body settings-modal-body--with-sidebar">
+              {/* Sidebar Navigation */}
+              <div className="settings-sidebar">
+                <button
+                  className={`settings-tab-btn ${activeTab === 'difficulty' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('difficulty')}
+                >
+                  <span className="tab-icon">🎨</span>
+                  <span className="tab-label">{t('tabColors')}</span>
+                </button>
+                <button
+                  className={`settings-tab-btn ${activeTab === 'speed' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('speed')}
+                >
+                  <span className="tab-icon">⏱️</span>
+                  <span className="tab-label">{t('tabSpeed')}</span>
+                </button>
+                <button
+                  className={`settings-tab-btn ${activeTab === 'lives' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('lives')}
+                >
+                  <span className="tab-icon">❤️</span>
+                  <span className="tab-label">{t('tabLives')}</span>
+                </button>
+                <button
+                  className={`settings-tab-btn ${activeTab === 'modifiers' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('modifiers')}
+                >
+                  <span className="tab-icon">💀</span>
+                  <span className="tab-label">{t('tabModifiers')}</span>
+                </button>
+              </div>
+
+              {/* Main Content Area */}
+              <div className="settings-content-area">
+                {activeTab === 'difficulty' && (
+                  <div className="settings-tab-content fade-in">
+                    <h4 className="settings-modal-subtitle">{t('activeColorsLabel')}</h4>
+                    <p className="settings-modal-intro">{t('activeColorsDesc')}</p>
+                    
+                    <div className="difficulty-tiers-list">
+                      {/* Easy Tier Card */}
+                      <button
+                        className={`difficulty-tier-btn tier--easy ${(room.settings?.maxColors ?? 6) === 4 ? 'active' : ''}`}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, maxColors: 4 }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">🟢</span>
+                          <span className="tier-name">{t('easyLabel')}</span>
+                        </div>
+                        <p className="tier-desc">{t('easyDesc')}</p>
+                      </button>
+
+                      {/* Normal Tier Card */}
+                      <button
+                        className={`difficulty-tier-btn tier--normal ${(room.settings?.maxColors ?? 6) === 6 ? 'active' : ''}`}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, maxColors: 6 }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">🔵</span>
+                          <span className="tier-name">{t('normalLabel')}</span>
+                        </div>
+                        <p className="tier-desc">{t('normalDesc')}</p>
+                      </button>
+
+                      {/* Hard Tier Card */}
+                      <button
+                        className={`difficulty-tier-btn tier--hard ${(room.settings?.maxColors ?? 6) === 8 ? 'active' : ''}`}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, maxColors: 8 }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">🟡</span>
+                          <span className="tier-name">{t('hardLabel')}</span>
+                        </div>
+                        <p className="tier-desc">{t('hardDesc')}</p>
+                      </button>
+
+                      {/* Extreme Tier Card */}
+                      <button
+                        className={`difficulty-tier-btn tier--extreme ${(room.settings?.maxColors ?? 6) === 10 ? 'active' : ''}`}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, maxColors: 10 }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">🔴</span>
+                          <span className="tier-name">{t('extremeLabel')}</span>
+                        </div>
+                        <p className="tier-desc">{t('extremeDesc')}</p>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'speed' && (
+                  <div className="settings-tab-content fade-in">
+                    <h4 className="settings-modal-subtitle">{t('speedLabel')}</h4>
+                    <p className="settings-modal-intro">{t('speedDesc')}</p>
+                    
+                    <div className="difficulty-tiers-list">
+                      {/* Chill Speed */}
+                      <button
+                        className={`difficulty-tier-btn tier--chill ${(room.settings?.gameSpeed === 'CHILL') ? 'active' : ''}`}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, gameSpeed: 'CHILL' }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">❄️</span>
+                          <span className="tier-name">{t('speedChill')}</span>
+                        </div>
+                        <p className="tier-desc">{t('speedChillDesc')}</p>
+                      </button>
+
+                      {/* Normal Speed */}
+                      <button
+                        className={`difficulty-tier-btn tier--normal ${(room.settings?.gameSpeed === 'NORMAL' || !room.settings?.gameSpeed) ? 'active' : ''}`}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, gameSpeed: 'NORMAL' }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">⏱️</span>
+                          <span className="tier-name">{t('speedNormal')}</span>
+                        </div>
+                        <p className="tier-desc">{t('speedNormalDesc')}</p>
+                      </button>
+
+                      {/* Turbo Speed */}
+                      <button
+                        className={`difficulty-tier-btn tier--turbo ${(room.settings?.gameSpeed === 'TURBO') ? 'active' : ''}`}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, gameSpeed: 'TURBO' }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">⚡</span>
+                          <span className="tier-name">{t('speedTurbo')}</span>
+                        </div>
+                        <p className="tier-desc">{t('speedTurboDesc')}</p>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'lives' && (
+                  <div className="settings-tab-content fade-in">
+                    <h4 className="settings-modal-subtitle">{t('livesTitle')}</h4>
+                    <p className="settings-modal-intro">{t('livesDesc')}</p>
+                    
+                    <div className="difficulty-tiers-list">
+                      <button
+                        className={`difficulty-tier-btn tier--hard ${(room.settings?.maxLives === 1) ? 'active' : ''}`}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, maxLives: 1 }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">☠️</span>
+                          <span className="tier-name">{t('lives1')}</span>
+                        </div>
+                        <p className="tier-desc">{t('lives1Desc')}</p>
+                      </button>
+
+                      <button
+                        className={`difficulty-tier-btn tier--normal ${(room.settings?.maxLives === 3 || !room.settings?.maxLives) ? 'active' : ''}`}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, maxLives: 3 }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">❤️</span>
+                          <span className="tier-name">{t('lives3')}</span>
+                        </div>
+                        <p className="tier-desc">{t('lives3Desc')}</p>
+                      </button>
+
+                      <button
+                        className={`difficulty-tier-btn tier--easy ${(room.settings?.maxLives === 5) ? 'active' : ''}`}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, maxLives: 5 }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">💖</span>
+                          <span className="tier-name">{t('lives5')}</span>
+                        </div>
+                        <p className="tier-desc">{t('lives5Desc')}</p>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'modifiers' && (
+                  <div className="settings-tab-content">
+                    <h4 className="settings-modal-subtitle">{t('tabModifiers')}</h4>
+                    <p className="settings-modal-description">
+                      {t('modifiersDesc')}
+                    </p>
+                    
+                    <div className="difficulty-grid">
+                      <button
+                        className={`difficulty-tier-btn tier--extreme ${room.settings?.isBlindMode ? 'active' : ''}`}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, isBlindMode: !room.settings?.isBlindMode }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">🕶️</span>
+                          <span className="tier-name">{t('blindModeLabel')}</span>
+                        </div>
+                        <p className="tier-desc">{t('blindModeDesc')}</p>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="settings-modal-footer">
+              <button
+                className="settings-modal-save-btn"
+                onClick={() => setIsSettingsOpen(false)}
+              >
+                {t('closeBtn')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

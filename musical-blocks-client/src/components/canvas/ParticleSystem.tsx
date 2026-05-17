@@ -49,11 +49,13 @@ geometry.setAttribute('position', new THREE.BufferAttribute(particleData.positio
 geometry.setAttribute('color', new THREE.BufferAttribute(particleData.colors, 3));
 
 const material = new THREE.PointsMaterial({
-  size: 0.25,
+  size: 0.4,
   vertexColors: true,
   transparent: true,
-  opacity: 0.8,
+  opacity: 1.0,
   sizeAttenuation: true,
+  blending: THREE.AdditiveBlending, // Additive = glowing neon effect
+  depthWrite: false,
 });
 
 export function ParticleSystem() {
@@ -74,26 +76,27 @@ export function ParticleSystem() {
           particleData.positions[i * 3 + 1] = y + (Math.random() - 0.5);
           particleData.positions[i * 3 + 2] = z + (Math.random() - 0.5);
           
-          // Set Color
-          particleData.colors[i * 3] = c.r;
-          particleData.colors[i * 3 + 1] = c.g;
-          particleData.colors[i * 3 + 2] = c.b;
+          // Set Color — overbright for additive blending glow effect
+          const brightFactor = type === 'burst' ? 3.0 : 1.5;
+          particleData.colors[i * 3] = c.r * brightFactor;
+          particleData.colors[i * 3 + 1] = c.g * brightFactor;
+          particleData.colors[i * 3 + 2] = c.b * brightFactor;
           
           // Set Velocity & Life based on type
           if (type === 'burst') {
-            particleData.velocities[i * 3] = (Math.random() - 0.5) * 8;
-            particleData.velocities[i * 3 + 1] = Math.random() * 8 + 2;
-            particleData.velocities[i * 3 + 2] = (Math.random() - 0.5) * 8;
-            particleData.lifetimes[i] = Math.random() * 0.5 + 0.5;
+            particleData.velocities[i * 3] = (Math.random() - 0.5) * 12;
+            particleData.velocities[i * 3 + 1] = Math.random() * 12 + 3;
+            particleData.velocities[i * 3 + 2] = (Math.random() - 0.5) * 12;
+            particleData.lifetimes[i] = Math.random() * 0.6 + 0.5;
           } else if (type === 'dust') {
             particleData.velocities[i * 3] = (Math.random() - 0.5) * 4;
             particleData.velocities[i * 3 + 1] = Math.random() * 2 + 0.5;
             particleData.velocities[i * 3 + 2] = (Math.random() - 0.5) * 4;
             particleData.lifetimes[i] = Math.random() * 0.4 + 0.3;
           } else if (type === 'confetti') {
-            particleData.velocities[i * 3] = (Math.random() - 0.5) * 6;
-            particleData.velocities[i * 3 + 1] = (Math.random() - 0.5) * 2 - 2; // falling
-            particleData.velocities[i * 3 + 2] = (Math.random() - 0.5) * 6;
+            particleData.velocities[i * 3] = (Math.random() - 0.5) * 8;
+            particleData.velocities[i * 3 + 1] = (Math.random() - 0.5) * 2 - 2;
+            particleData.velocities[i * 3 + 2] = (Math.random() - 0.5) * 8;
             particleData.lifetimes[i] = Math.random() * 2.0 + 1.0;
           }
           

@@ -5,6 +5,7 @@ import {
   Room,
   RoomVisibility,
   Direction,
+  RoomSettings,
 } from '@shared/types';
 import { RoomRegistry } from '../game/RoomRegistry';
 
@@ -196,6 +197,17 @@ export function registerHandlers(
     if (playerId === sid) return;
 
     room.kickPlayer(playerId, 'You have been kicked by the host');
+  });
+
+  // ---- Host updates settings -----------------------------------------------
+  socket.on('host:update_settings', ({ settings }: { settings: RoomSettings }) => {
+    const room = registry.getRoomBySocketId(sid);
+    if (!room) return;
+
+    // Only host can do this
+    if (room.toRoom().hostId !== sid) return;
+
+    room.updateSettings(settings);
   });
 
   // ---- Player movement -----------------------------------------------------

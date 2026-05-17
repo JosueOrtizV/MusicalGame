@@ -77,7 +77,7 @@ export function WinnerScreen() {
         <div className="overlay-header">
           {isLocalWinner ? (
             <>
-              <div className="overlay-icon">👑</div>
+              <div className="overlay-icon">🏆</div>
               <h2 className="overlay-title">{t('victory')}</h2>
               <p className="overlay-sub">{t('youWon')}</p>
             </>
@@ -85,28 +85,42 @@ export function WinnerScreen() {
             <>
               <div className="overlay-icon">🏁</div>
               <h2 className="overlay-title">{t('gameOver')}</h2>
-              <p className="overlay-sub">
+              <p className="overlay-sub" style={{ fontSize: '1.1rem', marginTop: '0.8rem' }}>
                 {winner ? t('winnerIs', { name: winner.name }) : t('nobodyWon')}
               </p>
             </>
           )}
         </div>
+
         <div className="overlay-content-wrapper">
           {winner && (
-            <p className="overlay-winner-name">
-              <span style={{ color: winner.color }}>★</span>{' '}
-              {winner.name}
-            </p>
+            <div className="overlay-winner-display">
+               <div className="winner-name-badge" style={{ 
+                 display: 'inline-block',
+                 padding: '0.5rem 1.5rem',
+                 background: 'rgba(255,255,255,0.05)',
+                 borderRadius: '30px',
+                 border: `1px solid ${winner.color}44`,
+                 fontSize: '1.4rem',
+                 fontWeight: 800,
+                 margin: '1.5rem 0'
+               }}>
+                <span style={{ color: winner.color, marginRight: '0.5rem' }}>★</span>
+                {winner.name}
+               </div>
+            </div>
           )}
           
-          <p className="overlay-countdown" style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: '1rem' }}>
-            {t('autoReturnIn', { seconds: countdown.toString() }) || `Returning to lobby in ${countdown}s...`}
-          </p>
+          <div className="overlay-timer-section">
+            <p className="overlay-countdown">
+              {t('autoReturnIn', { seconds: countdown.toString() }) || `Lobby in ${countdown}s`}
+            </p>
+          </div>
 
-          <div className="overlay-actions" style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+          <div className="overlay-actions">
             <button
               id="btn-back-lobby"
-              className="lobby-btn lobby-btn--primary overlay-play-again"
+              className="lobby-btn lobby-btn--primary"
               onClick={() => {
                 if (isHost) {
                   getSocket().emit('host:back_to_lobby');
@@ -120,7 +134,7 @@ export function WinnerScreen() {
             </button>
             <button
               id="btn-leave-room"
-              className="lobby-btn lobby-btn--secondary overlay-play-again"
+              className="lobby-btn lobby-btn--secondary"
               onClick={() => {
                 store.clearRoom();
                 getSocket().emit('room:leave');

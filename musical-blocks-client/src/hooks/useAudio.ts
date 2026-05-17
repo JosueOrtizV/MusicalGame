@@ -43,6 +43,7 @@ export function useGameAudio() {
   const roomId = useGameStore((s) => s.room?.id) || 'DEFAULT';
 
   const aliveCount = players.filter(p => p.isAlive).length;
+  const gameSpeed = useGameStore((s) => s.room?.settings?.gameSpeed) || 'NORMAL';
 
   const prevPhase = useRef<string | undefined>(undefined);
   const prevTimeLeft = useRef<number>(0);
@@ -91,9 +92,16 @@ export function useGameAudio() {
             MUSIC_TRACKS.lobby.fade(0.4, 0, 500);
             setTimeout(() => MUSIC_TRACKS.lobby.stop(), 500);
 
-            // Deterministic track selection based on Room ID
-            const trackIndex = roomId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % MUSIC_TRACKS.dance.length;
-            const track = MUSIC_TRACKS.dance[trackIndex];
+            // Track selection based on Room ID and Game Speed
+            let track: Howl;
+            if (gameSpeed === 'TURBO') {
+              // Force intense tracks (index 1: Fuego_en_los_pies, index 2: The_Final_Jump)
+              const trackIndex = (roomId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 2) + 1;
+              track = MUSIC_TRACKS.dance[trackIndex];
+            } else {
+              const trackIndex = roomId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % MUSIC_TRACKS.dance.length;
+              track = MUSIC_TRACKS.dance[trackIndex];
+            }
             
             activeDanceTrack.current = track;
             track.play();
@@ -122,9 +130,11 @@ export function useGameAudio() {
         }
       }
 
-      // Handle Volume during Countdown (Last 3 seconds of ANNOUNCING)
+      // Handle Volume during Countdown (Last N seconds of ANNOUNCING)
       if (phase === 'ANNOUNCING') {
-        if (timeLeft <= 3 && timeLeft > 0) {
+        const countdownThreshold = gameSpeed === 'TURBO' ? 2 : gameSpeed === 'CHILL' ? 5 : 4;
+        
+        if (timeLeft <= countdownThreshold && timeLeft > 0) {
           // Fade music down to hear beeps, but keep it audible (0.15)
           if (activeDanceTrack.current?.playing() && activeDanceTrack.current.volume() > 0.16) {
             activeDanceTrack.current.fade(0.45, 0.30, 500);
@@ -132,7 +142,7 @@ export function useGameAudio() {
           if (timeLeft !== prevTimeLeft.current) {
             SFX.countdown.play();
           }
-        } else if (timeLeft > 3) {
+        } else if (timeLeft > countdownThreshold) {
           // Ensure music is at full volume if it was faded
           if (activeDanceTrack.current?.playing() && activeDanceTrack.current.volume() < 0.4) {
             activeDanceTrack.current.fade(activeDanceTrack.current.volume(), 0.45, 500);
@@ -152,5 +162,21 @@ export function useGameAudio() {
     prevTimeLeft.current = timeLeft;
     prevPlayerCount.current = players.length;
 
-  }, [screen, phase, timeLeft, players.length, aliveCount, roomId]);
+  }, [screen, phase, timeLeft, players.length, aliveCount, roomId, gameSpeed]);
+
+  // 3. Handle Visibility Change (Background/Foreground)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden) {
+        // Force mute when hidden to stop music on mobile background
+        Howler.mute(true);
+      } else {
+        // Restore mute state only if the user hasn't manually muted
+        Howler.mute(isMuted);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [isMuted]);
 }

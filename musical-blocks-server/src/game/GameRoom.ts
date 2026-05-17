@@ -11,6 +11,7 @@ import {
   MAX_PLAYERS,
   ClientEvents,
   ServerEvents,
+  RoomSettings,
 } from '@shared/types';
 import { GridManager } from './GridManager';
 import { PlayerManager } from './PlayerManager';
@@ -42,6 +43,8 @@ export class GameRoom {
   private winnerColor: BlockColor | null = null;
   private winnerId: string | null = null;
 
+  private settings: RoomSettings = { maxColors: 6, gameSpeed: 'NORMAL', maxLives: 3 };
+
   constructor(
     private readonly io: SocketServer<ClientEvents, ServerEvents>,
     hostSocketId: string,
@@ -55,6 +58,9 @@ export class GameRoom {
     this.players.add(hostSocketId, hostName, true);
 
     this.loop = new GameLoop(this.grid, this.players, {
+      onStateUpdate: () => {
+        this.io.to(this.id).emit('game:state', this.buildState());
+      },
       onRoundStart: (round: number, duration: number) => {
         this.round = round;
         this.currentPhase = 'DANCING';
@@ -189,6 +195,18 @@ export class GameRoom {
     this.broadcastRoomUpdate();
   }
 
+  updateSettings(settings: RoomSettings): void {
+    if (this.status !== 'waiting') return;
+    const maxColors = Math.max(2, Math.min(10, settings.maxColors));
+    const speed = ['CHILL', 'NORMAL', 'TURBO'].includes(settings.gameSpeed) ? settings.gameSpeed : 'NORMAL';
+    const maxLives = [1, 2, 3, 4, 5].includes(settings.maxLives as number) ? settings.maxLives : 3;
+    this.settings = { maxColors, gameSpeed: speed, isBlindMode: !!settings.isBlindMode, maxLives };
+    this.grid.setMaxColors(maxColors);
+    this.loop.setSpeed(speed as any);
+    this.loop.setBlindMode(!!settings.isBlindMode);
+    this.broadcastRoomUpdate();
+  }
+
   startGame(requesterId: string): { ok: boolean; error?: string } {
     if (requesterId !== this.hostId) {
       return { ok: false, error: 'Only the host can start the game.' };
@@ -200,6 +218,12 @@ export class GameRoom {
       return { ok: false, error: 'Game already in progress.' };
     }
     this.status = 'playing';
+
+    // Initialize lives for all participants
+    for (const player of this.players.getAll()) {
+      player.lives = this.settings.maxLives ?? 3;
+    }
+
     this.loop.start();
     return { ok: true };
   }
@@ -224,6 +248,7 @@ export class GameRoom {
       phase: this.currentPhase,
       round: this.round,
       timeLeft: this.timeLeft,
+      isBlackout: this.loop.getIsBlackout(),
       winnerColor: this.winnerColor,
       blocks: this.grid.getSnapshot(),
       players: this.players.getAll(),
@@ -251,6 +276,7 @@ export class GameRoom {
       maxPlayers: MAX_PLAYERS,
       hostId: this.hostId,
       gameState: this.status === 'playing' ? this.buildState() : null,
+      settings: this.settings,
     };
   }
 

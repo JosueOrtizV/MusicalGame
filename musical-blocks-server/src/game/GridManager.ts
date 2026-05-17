@@ -18,12 +18,17 @@ const ALL_COLORS = Object.keys(COLOR_HEX) as BlockColor[];
 export class GridManager {
   private grid: GameBlock[][];
   private deadBlocks = new Set<string>();
+  private maxColors = 6;
 
   constructor() {
     this.grid = this.buildEmpty();
   }
 
   // ---- Public API ----------------------------------------------------------
+
+  setMaxColors(count: number): void {
+    this.maxColors = count;
+  }
 
   /** Generate a fresh random grid for a new round */
   generate(round: number = 1): GameBlock[][] {
@@ -44,6 +49,8 @@ export class GridManager {
       }
     }
 
+    const availableColors = ALL_COLORS.slice(0, this.maxColors);
+
     this.grid = [];
     for (let row = 0; row < GRID_SIZE; row++) {
       this.grid[row] = [];
@@ -52,7 +59,7 @@ export class GridManager {
         this.grid[row][col] = {
           row,
           col,
-          color: ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)],
+          color: availableColors[Math.floor(Math.random() * availableColors.length)],
           isActive: !isDead,
           isDead,
         };

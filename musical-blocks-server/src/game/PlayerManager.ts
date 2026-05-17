@@ -26,6 +26,7 @@ export class PlayerManager {
       name,
       position: this.randomSpawnPosition(),
       isAlive: true,
+      lives: 0,
       isReady: false,
       isHost,
       color: PLAYER_COLORS[this.colorIndex % PLAYER_COLORS.length],
@@ -58,9 +59,13 @@ export class PlayerManager {
     return this.getAll().filter(p => p.isAlive);
   }
 
+  getWithLives(): Player[] {
+    return this.getAll().filter(p => p.lives > 0);
+  }
+
   getWinner(): Player | null {
-    const alive = this.getAlive();
-    return alive.length === 1 ? alive[0] : null;
+    const withLives = this.getWithLives();
+    return withLives.length === 1 ? withLives[0] : null;
   }
 
   allReady(): boolean {
@@ -135,6 +140,7 @@ export class PlayerManager {
       if (!player.isAlive) continue;
       if (!grid.isBlockActive(player.position)) {
         player.isAlive = false;
+        player.lives = Math.max(0, player.lives - 1);
         dead.push(player.id);
       }
     }
@@ -155,6 +161,13 @@ export class PlayerManager {
 
   /** Reset positions for a new round (only for alive players) */
   resetForRound(grid: GridManager): void {
+    // Revive players who still have lives left
+    for (const player of this.players.values()) {
+      if (player.lives > 0) {
+        player.isAlive = true;
+      }
+    }
+
     const alivePlayers = this.getAlive();
     const validPositions = grid.getValidSpawnPositions();
     
