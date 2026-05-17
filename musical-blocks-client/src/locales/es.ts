@@ -144,7 +144,8 @@ export const es: Translations = {
   nobodyWon: '¡Nadie sobrevivió!',
   autoReturnIn: 'Volviendo automáticamente en {{seconds}}s...',
   backToLobby: 'Volver a la Sala',
-
+  playerKicked: '¡{name} fue expulsado por el host!',
+  
   // Chat
   chatPlaceholder: 'Escribe un mensaje...',
 };

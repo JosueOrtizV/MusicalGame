@@ -56,6 +56,10 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
       }
       return `🏆 ${translation || `${name} won!`}`;
     }
+    if (text.startsWith('🚫 ') && text.endsWith(' has been kicked by the host')) {
+      const name = text.replace('🚫 ', '').replace(' has been kicked by the host', '');
+      return `🚫 ${t('playerKicked', { name }) || `${name} has been kicked by the host`}`;
+    }
     if (text === '💀 Game Over! Everyone died.') {
       return `💀 ${t('gameOver') || 'Game Over!'} ${t('nobodyWon') || 'Everyone died.'}`;
     }

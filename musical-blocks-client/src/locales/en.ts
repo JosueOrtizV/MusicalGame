@@ -142,6 +142,7 @@ export const en = {
   nobodyWon: 'Nobody survived!',
   autoReturnIn: 'Auto-returning to lobby in {{seconds}}s...',
   backToLobby: 'Back to Lobby',
+  playerKicked: '{name} has been kicked by the host',
   
   // Chat
   chatPlaceholder: 'Type a message...',

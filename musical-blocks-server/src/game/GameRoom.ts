@@ -194,6 +194,7 @@ export class GameRoom {
     const player = this.players.get(playerId);
     if (targetSocket && player) {
       console.log(`[Room] "${player.name}" was kicked from room ${this.id} (${reason})`);
+      this.broadcastSystemMessage(`🚫 ${player.name} has been kicked by the host`);
       targetSocket.emit('room:kicked', { reason });
       this.removePlayer(playerId);
     }
