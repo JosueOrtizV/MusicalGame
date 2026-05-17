@@ -107,6 +107,10 @@ export function useSocket() {
       useGameStore.getState().setGameOver(winnerId);
     });
 
+    socket.on('chat:broadcast', (message) => {
+      useGameStore.getState().addChatMessage(message);
+    });
+
     // Connect
     if (!socket.connected) socket.connect();
 
@@ -124,6 +128,7 @@ export function useSocket() {
       socket.off('game:eliminate');
       socket.off('game:player_died');
       socket.off('game:over');
+      socket.off('chat:broadcast');
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

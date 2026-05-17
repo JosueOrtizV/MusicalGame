@@ -12,6 +12,7 @@ import {
   ClientEvents,
   ServerEvents,
   RoomSettings,
+  ChatMessage,
 } from '@shared/types';
 import { GridManager } from './GridManager';
 import { PlayerManager } from './PlayerManager';
@@ -65,6 +66,7 @@ export class GameRoom {
         this.round = round;
         this.currentPhase = 'DANCING';
         this.winnerColor = null;
+        this.broadcastSystemMessage(`🔵 Round ${round} started!`);
         this.io.to(this.id).emit('game:round_start', {
           round,
           duration,
@@ -89,6 +91,7 @@ export class GameRoom {
               playerId: deadId,
               playerName: p.name,
             });
+            this.broadcastSystemMessage(`☠️ ${p.name} fell into the void!`);
           }
         }
         this.io.to(this.id).emit('game:state', this.buildState());
@@ -103,6 +106,12 @@ export class GameRoom {
         }
         
         this.io.to(this.id).emit('game:over', { winnerId, winnerName });
+        
+        if (winnerName) {
+          this.broadcastSystemMessage(`🏆 ${winnerName} won the game!`);
+        } else {
+          this.broadcastSystemMessage(`💀 Game Over! Everyone died.`);
+        }
         
         console.log(`[Game] Room ${this.id} ended. Winner: ${winnerName || 'None'} (Round ${this.round})`);
 
@@ -242,6 +251,38 @@ export class GameRoom {
 
     this.players.applyMove(sid, direction);
     this.io.to(this.id).emit('game:state', this.buildState());
+  }
+
+  handleChat(sid: string, text: string) {
+    const player = this.players.get(sid);
+    if (!player) return;
+
+    // Validate: if game is playing, only dead players can chat
+    if (this.status === 'playing' && player.isAlive) {
+      return;
+    }
+
+    const message: ChatMessage = {
+      id: Math.random().toString(36).substring(2, 10) + Date.now().toString(36),
+      senderId: player.id,
+      senderName: player.name,
+      text: text.trim().slice(0, 150), // limit length
+      timestamp: Date.now(),
+    };
+
+    this.io.to(this.id).emit('chat:broadcast', message);
+  }
+
+  broadcastSystemMessage(text: string) {
+    const message: ChatMessage = {
+      id: Math.random().toString(36).substring(2, 10) + Date.now().toString(36),
+      senderId: 'system',
+      senderName: 'System',
+      text,
+      timestamp: Date.now(),
+      isSystem: true,
+    };
+    this.io.to(this.id).emit('chat:broadcast', message);
   }
 
   // ---- State ---------------------------------------------------------------

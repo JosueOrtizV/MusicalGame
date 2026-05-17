@@ -131,6 +131,7 @@ export const en = {
 
   // End Screens
   youFell: 'You fell!',
+  playerFell: '{name} fell into the void!',
   stillDancing: '{count} players still dancing...',
   lastOneWins: 'Last one standing wins!',
   spectating: '👁 Spectating...',
@@ -141,6 +142,9 @@ export const en = {
   nobodyWon: 'Nobody survived!',
   autoReturnIn: 'Auto-returning to lobby in {{seconds}}s...',
   backToLobby: 'Back to Lobby',
+  
+  // Chat
+  chatPlaceholder: 'Type a message...',
 };
 
 export type Translations = typeof en;

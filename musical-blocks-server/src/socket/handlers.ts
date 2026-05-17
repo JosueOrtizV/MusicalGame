@@ -217,6 +217,13 @@ export function registerHandlers(
     room.handlePlayerMove(sid, direction, timestamp);
   });
 
+  // ---- Chat ----------------------------------------------------------------
+  socket.on('chat:send', ({ text }: { text: string }) => {
+    const room = registry.getRoomBySocketId(sid);
+    if (!room) return;
+    room.handleChat(sid, text);
+  });
+
   // ---- Disconnect ----------------------------------------------------------
   socket.on('disconnect', (reason: string) => {
     console.log(`[Socket] Disconnected: ${sid} (${reason})`);

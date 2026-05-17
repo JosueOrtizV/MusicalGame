@@ -138,6 +138,7 @@ export interface ServerEvents {
   'game:eliminate':    (payload: { eliminatedBlocks: Array<{ row: number; col: number }> }) => void;
   'game:player_died':  (payload: { playerId: string; playerName: string }) => void;
   'game:over':         (payload: { winnerId: string | null; winnerName: string | null }) => void;
+  'chat:broadcast':    (payload: ChatMessage) => void;
 
   // Network / ping
   'pong':              (payload: { serverTime: number; clientTime: number }) => void;
@@ -163,9 +164,21 @@ export interface ClientEvents {
 
   // In-game actions
   'player:move':       (payload: { direction: Direction; timestamp: number }) => void;
+  
+  // Chat
+  'chat:send':         (payload: { text: string }) => void;
 
   // Network / ping
   'ping':              (payload: { clientTime: number }) => void;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  timestamp: number;
+  isSystem?: boolean;
 }
 
 // ---------------------------------------------------------------------------

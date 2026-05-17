@@ -3,6 +3,7 @@ import { useGameStore, selectIsHost } from '@/src/stores/gameStore';
 import { getSocket } from '@/src/lib/socketClient';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { useToastStore } from '@/src/stores/toastStore';
+import { ChatOverlay } from '@/src/components/hud/ChatOverlay';
 
 // ---------------------------------------------------------------------------
 //  RoomLobby — waiting room after joining / creating a room
@@ -278,6 +279,9 @@ export function RoomLobby() {
           </div>
         </div>
       </div>
+
+      {/* Global Floating Chat Widget */}
+      <ChatOverlay inGame={false} />
 
       {/* Modern Glassmorphic Settings Modal */}
       {isSettingsOpen && (

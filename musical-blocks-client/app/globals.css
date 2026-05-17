@@ -1400,6 +1400,102 @@ input {
 }
 
 /* ============================================================
+   LOBBY CHAT
+   ============================================================ */
+.lobby-chat-container {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 5, 20, 0.4);
+  border-radius: var(--radius);
+  border: 1px solid rgba(0, 240, 255, 0.1);
+  box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.05);
+  height: 100%;
+  overflow: hidden;
+}
+
+.lobby-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lobby-chat-msg {
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 30, 60, 0.4);
+  border-left: 3px solid #00f0ff;
+  border-radius: 0 4px 4px 0;
+  font-size: 0.9rem;
+  color: var(--c-text);
+  word-break: break-word;
+  animation: fade-in 0.2s ease-out;
+}
+
+.lobby-chat-msg.system-msg {
+  background: rgba(0, 0, 0, 0.3);
+  border-left-color: #f43f5e;
+}
+
+.lobby-chat-msg.system-msg .msg-text {
+  color: #f43f5e;
+}
+
+.lobby-chat-msg .msg-author {
+  color: #00f0ff;
+  font-weight: 700;
+  margin-right: 0.25rem;
+}
+
+.lobby-chat-input-form {
+  display: flex;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(0, 240, 255, 0.1);
+  gap: 0.5rem;
+}
+
+.lobby-chat-input {
+  flex: 1;
+  background: rgba(0, 20, 40, 0.5);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  color: var(--c-text);
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.lobby-chat-input:focus {
+  border-color: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.lobby-chat-submit {
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  color: #00f0ff;
+  padding: 0 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1.2rem;
+}
+
+.lobby-chat-submit:hover {
+  background: rgba(0, 240, 255, 0.2);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateX(-5px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ============================================================
    GAME SCREEN
    ============================================================ */
 .game-screen {
@@ -2144,7 +2240,12 @@ input {
 
   .hud-mute-btn {
     top: auto;
-    bottom: 1.5rem;
+    bottom: 5.5rem;
+    right: 1.5rem;
+  }
+
+  .hud-dpad-spectator {
+    bottom: 5.5rem;
     right: 1.5rem;
   }
 
@@ -2152,6 +2253,37 @@ input {
     transform: scale(0.85);
     top: 0.3rem;
     right: 0.3rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .chat-btn-text-ingame {
+    display: none !important;
+  }
+
+  .chat-tab-btn-ingame {
+    padding: 10px 14px !important;
+    right: 24px !important;
+  }
+
+  .lobby-chat-container {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: calc(100% - 32px) !important;
+    max-width: 360px !important;
+    bottom: 24px !important;
+  }
+
+  .chat-overlay {
+    width: 220px !important;
+    bottom: 12px !important;
+    left: 12px !important;
+  }
+
+  .chat-overlay-msg {
+    padding: 4px 8px !important;
+    font-size: 0.75rem !important;
   }
 }
 

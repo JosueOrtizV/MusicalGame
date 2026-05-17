@@ -133,6 +133,7 @@ export const es: Translations = {
 
   // End Screens
   youFell: '¡Te caíste!',
+  playerFell: '¡{name} cayó al vacío!',
   stillDancing: '{count} jugadores siguen bailando...',
   lastOneWins: '¡El último en pie gana!',
   spectating: '👁 Espectador...',
@@ -143,5 +144,8 @@ export const es: Translations = {
   nobodyWon: '¡Nadie sobrevivió!',
   autoReturnIn: 'Volviendo automáticamente en {{seconds}}s...',
   backToLobby: 'Volver a la Sala',
+
+  // Chat
+  chatPlaceholder: 'Escribe un mensaje...',
 };
 

@@ -10,6 +10,7 @@ import {
   BlockColor,
   GameBlock,
   Direction,
+  ChatMessage,
 } from '@/src/shared/types';
 import { persist } from 'zustand/middleware';
 
@@ -28,6 +29,9 @@ interface GameStore {
 
   // ---- Game state ----------------------------------------------------------
   gameState: GameState | null;
+
+  // ---- Chat ----------------------------------------------------------------
+  chatMessages: ChatMessage[];
 
   // ---- UI state ------------------------------------------------------------
   screen: 'home' | 'lobby' | 'game' | 'dead' | 'winner';
@@ -61,6 +65,9 @@ interface GameStore {
   setVolume: (volume: number) => void;
   setLanguage: (lang: 'en' | 'es') => void;
   setDirectionPressed: (dir: Direction, pressed: boolean) => void;
+
+  addChatMessage: (msg: ChatMessage) => void;
+  clearChat: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -80,6 +87,9 @@ export const useGameStore = create<GameStore>()(
 
       // ---- Game state
       gameState: null,
+
+      // ---- Chat
+      chatMessages: [],
 
       // ---- UI
       screen: 'home',
@@ -192,6 +202,16 @@ export const useGameStore = create<GameStore>()(
       setVolume: (volume) => set((s) => { s.volume = Math.max(0, Math.min(1, volume)); }),
       setLanguage: (lang) => set((s) => { s.language = lang; }),
       setDirectionPressed: (dir, pressed) => set((s) => { s.pressedDirections[dir] = pressed; }),
+      
+      addChatMessage: (msg) => set((s) => {
+        const msgWithLocal = {
+          ...msg,
+          localTimestamp: Date.now()
+        };
+        s.chatMessages.push(msgWithLocal);
+        if (s.chatMessages.length > 100) s.chatMessages.shift();
+      }),
+      clearChat: () => set((s) => { s.chatMessages = []; }),
     })),
     {
       name: 'musical-blocks-settings',

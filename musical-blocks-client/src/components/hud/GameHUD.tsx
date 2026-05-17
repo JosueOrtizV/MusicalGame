@@ -5,6 +5,7 @@ import { useGameStore, selectPhase } from '@/src/stores/gameStore';
 import { COLOR_HEX, Direction } from '@/src/shared/types';
 import { getSocket, serverNow } from '@/src/lib/socketClient';
 import { useTranslation, DictKey } from '@/src/hooks/useTranslation';
+import { ChatOverlay } from './ChatOverlay';
 
 // ---------------------------------------------------------------------------
 //  HUD overlay — Timer, color indicator, player list, round banner
@@ -58,80 +59,85 @@ export function GameHUD() {
   if (phase === 'ROUND_END') phaseTitle = t('phaseRoundEnd');
 
   return (
-    <div className="hud-overlay">
-      {/* ---- Round banner ------------------------------------------------- */}
-      {showBanner && (
-        <div className="hud-banner animate-banner" data-text={bannerText}>
-          {bannerText}
-          <span className="hud-banner-sub">{t('survive')}</span>
+    <>
+      <div className="hud-overlay">
+        {/* ---- Round banner ------------------------------------------------- */}
+        {showBanner && (
+          <div className="hud-banner animate-banner" data-text={bannerText}>
+            {bannerText}
+            <span className="hud-banner-sub">{t('survive')}</span>
+          </div>
+        )}
+
+        {/* ---- Mute Toggle -------------------------------------------------- */}
+        <button className="hud-mute-btn" onClick={toggleMute} title="Toggle Audio">
+          {isMuted ? '🔇' : '🔊'}
+        </button>
+
+        {/* ---- ANNOUNCING overlay ------------------------------------------- */}
+        {phase === 'ANNOUNCING' && winnerColor && (
+          <div className="hud-announce">
+            <p className="hud-announce-label">{t('saveYourself')}</p>
+            <div className="hud-announce-color">
+              <div
+                className="hud-color-block"
+                style={{ backgroundColor: COLOR_HEX[winnerColor] }}
+              />
+              <p className="hud-color-name">{t(winnerColor as DictKey)}</p>
+            </div>
+          </div>
+        )}
+
+        {/* ---- Timer -------------------------------------------------------- */}
+        {(phase === 'DANCING' || phase === 'ANNOUNCING') && (
+          <div className={`hud-timer ${isUrgent ? 'hud-timer--urgent' : ''}`}>
+            {timeLeft}
+          </div>
+        )}
+
+        {/* ---- Phase label -------------------------------------------------- */}
+        <div className="hud-phase">
+          {phaseTitle}
         </div>
-      )}
 
-      {/* ---- Mute Toggle -------------------------------------------------- */}
-      <button className="hud-mute-btn" onClick={toggleMute} title="Toggle Audio">
-        {isMuted ? '🔇' : '🔊'}
-      </button>
-
-      {/* ---- ANNOUNCING overlay ------------------------------------------- */}
-      {phase === 'ANNOUNCING' && winnerColor && (
-        <div className="hud-announce">
-          <p className="hud-announce-label">{t('saveYourself')}</p>
-          <div className="hud-announce-color">
+        {/* ---- Player list -------------------------------------------------- */}
+        <div className="hud-players">
+          <div className="hud-players-title">
+            {t('alivePlayers', { alive: playersWithLives.length, total: players.length })}
+          </div>
+          {players.map((p) => (
             <div
-              className="hud-color-block"
-              style={{ backgroundColor: COLOR_HEX[winnerColor] }}
-            />
-            <p className="hud-color-name">{t(winnerColor as DictKey)}</p>
-          </div>
-        </div>
-      )}
-
-      {/* ---- Timer -------------------------------------------------------- */}
-      {(phase === 'DANCING' || phase === 'ANNOUNCING') && (
-        <div className={`hud-timer ${isUrgent ? 'hud-timer--urgent' : ''}`}>
-          {timeLeft}
-        </div>
-      )}
-
-      {/* ---- Phase label -------------------------------------------------- */}
-      <div className="hud-phase">
-        {phaseTitle}
-      </div>
-
-      {/* ---- Player list -------------------------------------------------- */}
-      <div className="hud-players">
-        <div className="hud-players-title">
-          {t('alivePlayers', { alive: playersWithLives.length, total: players.length })}
-        </div>
-        {players.map((p) => (
-          <div
-            key={p.id}
-            className={`hud-player-row ${!p.isAlive ? 'hud-player-dead' : ''} ${p.id === localPlayerId ? 'hud-player-local' : ''}`}
-          >
-            <span
-              className="hud-player-dot"
-              style={{ backgroundColor: p.color }}
-            />
-            <span className="hud-player-name">
-              {p.id === localPlayerId ? '★ ' : ''}{p.name}
-            </span>
-            {p.lives > 0 ? (
-              <span className="hud-player-lives" style={{ marginLeft: 'auto', fontSize: '11px', color: '#f43f5e', fontWeight: 'bold' }}>
-                ❤️ x{p.lives}
+              key={p.id}
+              className={`hud-player-row ${!p.isAlive ? 'hud-player-dead' : ''} ${p.id === localPlayerId ? 'hud-player-local' : ''}`}
+            >
+              <span
+                className="hud-player-dot"
+                style={{ backgroundColor: p.color }}
+              />
+              <span className="hud-player-name">
+                {p.id === localPlayerId ? '★ ' : ''}{p.name}
               </span>
-            ) : (
-              <span className="hud-player-skull" style={{ marginLeft: 'auto' }}>💀</span>
-            )}
-          </div>
-        ))}
+              {p.lives > 0 ? (
+                <span className="hud-player-lives" style={{ marginLeft: 'auto', fontSize: '11px', color: '#f43f5e', fontWeight: 'bold' }}>
+                  ❤️ x{p.lives}
+                </span>
+              ) : (
+                <span className="hud-player-skull" style={{ marginLeft: 'auto' }}>💀</span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* ---- Mobile D-pad ------------------------------------------------- */}
+        <MobileDPad />
+
+        {/* ---- Round info --------------------------------------------------- */}
+        <div className="hud-round">Round {gameState.round}</div>
       </div>
 
-      {/* ---- Mobile D-pad ------------------------------------------------- */}
-      <MobileDPad />
-
-      {/* ---- Round info --------------------------------------------------- */}
-      <div className="hud-round">Round {gameState.round}</div>
-    </div>
+      {/* ---- Chat (Outside hud-overlay wrapper to avoid pointer-events: none and capped z-index) ---- */}
+      <ChatOverlay inGame={true} />
+    </>
   );
 }
 
