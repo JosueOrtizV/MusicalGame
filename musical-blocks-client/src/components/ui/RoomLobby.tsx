@@ -17,6 +17,7 @@ export function RoomLobby() {
   const prevPlayersRef = useRef(room?.players ?? []);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'difficulty' | 'speed' | 'lives' | 'modifiers'>('difficulty');
+  const [isSdExpanded, setIsSdExpanded] = useState(false);
 
   useEffect(() => {
     if (!room) return;
@@ -163,6 +164,19 @@ export function RoomLobby() {
                     }}
                   >
                     🕶️ {t('blindModeLabel')}
+                  </strong>
+                </>
+              )}
+              {room.settings?.suddenDeathMode && room.settings.suddenDeathMode !== 'NORMAL' && (
+                <>
+                  <span style={{ margin: '0 8px', color: 'var(--c-muted)', opacity: 0.5 }}>•</span>
+                  <strong
+                    style={{
+                      color: room.settings.suddenDeathMode === 'CHAOS' ? '#f43f5e' : '#10b981',
+                      textShadow: room.settings.suddenDeathMode === 'CHAOS' ? '0 0 10px rgba(244, 63, 94, 0.4)' : '0 0 10px rgba(16, 185, 129, 0.4)'
+                    }}
+                  >
+                    {room.settings.suddenDeathMode === 'CHAOS' ? '💀 ' + t('sdChaos') : '🕊️ ' + t('sdOff')}
                   </strong>
                 </>
               )}
@@ -313,7 +327,7 @@ export function RoomLobby() {
               </div>
 
               {/* Main Content Area */}
-              <div className="settings-content-area">
+              <div className="settings-content-area" style={{ maxHeight: '380px', overflowY: 'auto', minHeight: 0, paddingRight: '8px' }}>
                 {activeTab === 'difficulty' && (
                   <div className="settings-tab-content fade-in">
                     <h4 className="settings-modal-subtitle">{t('activeColorsLabel')}</h4>
@@ -499,7 +513,7 @@ export function RoomLobby() {
                 )}
 
                 {activeTab === 'modifiers' && (
-                  <div className="settings-tab-content">
+                  <div className="settings-tab-content fade-in" style={{ paddingBottom: '24px' }}>
                     <h4 className="settings-modal-subtitle">{t('tabModifiers')}</h4>
                     <p className="settings-modal-description">
                       {t('modifiersDesc')}
@@ -519,6 +533,137 @@ export function RoomLobby() {
                           <span className="tier-name">{t('blindModeLabel')}</span>
                         </div>
                         <p className="tier-desc">{t('blindModeDesc')}</p>
+                      </button>
+                    </div>
+
+                    {/* Collapsible Sudden Death Trigger Header */}
+                    <button
+                      className="difficulty-tier-btn"
+                      style={{
+                        width: '100%',
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '14px 18px',
+                        background: 'rgba(0, 240, 255, 0.03)',
+                        border: '1px solid rgba(0, 240, 255, 0.2)',
+                        boxShadow: '0 0 10px rgba(0, 240, 255, 0.05)',
+                        marginTop: '20px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                      }}
+                      onClick={() => setIsSdExpanded(!isSdExpanded)}
+                    >
+                      <div className="tier-header" style={{ margin: 0, gap: '10px' }}>
+                        <span className="tier-icon" style={{ fontSize: '1.2rem' }}>
+                          {room.settings?.suddenDeathMode === 'CHAOS' ? '💀' : 
+                           room.settings?.suddenDeathMode === 'OFF' ? '🕊️' : '⏱️'}
+                        </span>
+                        <span className="tier-name" style={{ fontSize: '0.9rem', color: 'var(--c-accent)' }}>
+                          {t('suddenDeathLabel')}
+                        </span>
+                      </div>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {/* Status Badge */}
+                        <strong
+                          style={{
+                            fontSize: '0.78rem',
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            background: room.settings?.suddenDeathMode === 'CHAOS' ? 'rgba(244, 63, 94, 0.15)' : 
+                                        room.settings?.suddenDeathMode === 'OFF' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                            color: room.settings?.suddenDeathMode === 'CHAOS' ? '#f43f5e' : 
+                                   room.settings?.suddenDeathMode === 'OFF' ? '#10b981' : '#3b82f6',
+                            border: `1px solid ${
+                              room.settings?.suddenDeathMode === 'CHAOS' ? 'rgba(244, 63, 94, 0.3)' : 
+                              room.settings?.suddenDeathMode === 'OFF' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'
+                            }`,
+                            textShadow: `0 0 8px ${
+                              room.settings?.suddenDeathMode === 'CHAOS' ? 'rgba(244, 63, 94, 0.3)' : 
+                              room.settings?.suddenDeathMode === 'OFF' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'
+                            }`
+                          }}
+                        >
+                          {room.settings?.suddenDeathMode === 'CHAOS' ? t('sdChaos') : 
+                           room.settings?.suddenDeathMode === 'OFF' ? t('sdOff') : t('sdNormal')}
+                        </strong>
+                        
+                        {/* Collapse Arrow */}
+                        <span style={{ 
+                          fontSize: '0.9rem', 
+                          color: 'var(--c-muted)',
+                          transform: isSdExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}>
+                          ▼
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* Collapsible Content Area */}
+                    <div style={{
+                      maxHeight: isSdExpanded ? '500px' : '0px',
+                      overflow: 'hidden',
+                      opacity: isSdExpanded ? 1 : 0,
+                      transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      paddingTop: isSdExpanded ? '12px' : '0px',
+                      paddingLeft: '4px',
+                      paddingRight: '4px',
+                    }}>
+                      <p className="settings-modal-description" style={{ margin: '0 0 4px 0' }}>
+                        {t('suddenDeathDesc')}
+                      </p>
+                      
+                      <button
+                        className={`difficulty-tier-btn tier--easy ${(room.settings?.suddenDeathMode === 'OFF') ? 'active' : ''}`}
+                        style={{ width: '100%', textAlign: 'left' }}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, suddenDeathMode: 'OFF' }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">🕊️</span>
+                          <span className="tier-name">{t('sdOff')}</span>
+                        </div>
+                        <p className="tier-desc">{t('sdOffDesc')}</p>
+                      </button>
+
+                      <button
+                        className={`difficulty-tier-btn tier--normal ${(room.settings?.suddenDeathMode === 'NORMAL' || !room.settings?.suddenDeathMode) ? 'active' : ''}`}
+                        style={{ width: '100%', textAlign: 'left' }}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, suddenDeathMode: 'NORMAL' }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">⏱️</span>
+                          <span className="tier-name">{t('sdNormal')}</span>
+                        </div>
+                        <p className="tier-desc">{t('sdNormalDesc')}</p>
+                      </button>
+
+                      <button
+                        className={`difficulty-tier-btn tier--hard ${(room.settings?.suddenDeathMode === 'CHAOS') ? 'active' : ''}`}
+                        style={{ width: '100%', textAlign: 'left' }}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, suddenDeathMode: 'CHAOS' }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">💀</span>
+                          <span className="tier-name">{t('sdChaos')}</span>
+                        </div>
+                        <p className="tier-desc">{t('sdChaosDesc')}</p>
                       </button>
                     </div>
                   </div>

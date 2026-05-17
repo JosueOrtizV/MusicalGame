@@ -92,12 +92,14 @@ export interface RoomSummary {
 }
 
 export type GameSpeed = 'CHILL' | 'NORMAL' | 'TURBO';
+export type SuddenDeathMode = 'NORMAL' | 'OFF' | 'CHAOS';
 
 export interface RoomSettings {
   maxColors: number; // 4, 6, 8, 10
   gameSpeed: GameSpeed;
   isBlindMode?: boolean;
   maxLives?: number; // 1 to 5 lives
+  suddenDeathMode?: SuddenDeathMode;
 }
 
 /** Full room details — only sent to members of that room */

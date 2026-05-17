@@ -7,6 +7,7 @@ import {
   GRID_SIZE,
   COLOR_HEX,
   ROUND_DURATIONS,
+  SuddenDeathMode,
 } from '@shared/types';
 
 const ALL_COLORS = Object.keys(COLOR_HEX) as BlockColor[];
@@ -19,6 +20,7 @@ export class GridManager {
   private grid: GameBlock[][];
   private deadBlocks = new Set<string>();
   private maxColors = 6;
+  private suddenDeathMode: SuddenDeathMode = 'NORMAL';
 
   constructor() {
     this.grid = this.buildEmpty();
@@ -30,11 +32,32 @@ export class GridManager {
     this.maxColors = count;
   }
 
+  setSuddenDeathMode(mode: SuddenDeathMode): void {
+    this.suddenDeathMode = mode;
+  }
+
   /** Generate a fresh random grid for a new round */
   generate(round: number = 1): GameBlock[][] {
     if (round <= 1) {
       this.deadBlocks.clear();
-    } else if (round >= 10 && this.deadBlocks.size < 10) {
+    }
+
+    let blocksToKill = 0;
+    if (this.suddenDeathMode === 'NORMAL') {
+      if (round >= 10 && this.deadBlocks.size < 20) {
+        blocksToKill = 1;
+      }
+    } else if (this.suddenDeathMode === 'CHAOS') {
+      if (this.deadBlocks.size < 30) {
+        if (round >= 11) {
+          blocksToKill = Math.min(2, 30 - this.deadBlocks.size);
+        } else {
+          blocksToKill = 1;
+        }
+      }
+    }
+
+    for (let i = 0; i < blocksToKill; i++) {
       // Find a random alive block to kill
       const aliveCoords: string[] = [];
       for (let r = 0; r < GRID_SIZE; r++) {

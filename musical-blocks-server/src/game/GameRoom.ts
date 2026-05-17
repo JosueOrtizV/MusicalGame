@@ -43,7 +43,7 @@ export class GameRoom {
   private winnerColor: BlockColor | null = null;
   private winnerId: string | null = null;
 
-  private settings: RoomSettings = { maxColors: 6, gameSpeed: 'NORMAL', maxLives: 3 };
+  private settings: RoomSettings = { maxColors: 6, gameSpeed: 'NORMAL', maxLives: 3, suddenDeathMode: 'NORMAL' };
 
   constructor(
     private readonly io: SocketServer<ClientEvents, ServerEvents>,
@@ -200,8 +200,11 @@ export class GameRoom {
     const maxColors = Math.max(2, Math.min(10, settings.maxColors));
     const speed = ['CHILL', 'NORMAL', 'TURBO'].includes(settings.gameSpeed) ? settings.gameSpeed : 'NORMAL';
     const maxLives = [1, 2, 3, 4, 5].includes(settings.maxLives as number) ? settings.maxLives : 3;
-    this.settings = { maxColors, gameSpeed: speed, isBlindMode: !!settings.isBlindMode, maxLives };
+    const sdMode = ['NORMAL', 'OFF', 'CHAOS'].includes(settings.suddenDeathMode as string) ? settings.suddenDeathMode : 'NORMAL';
+    
+    this.settings = { maxColors, gameSpeed: speed, isBlindMode: !!settings.isBlindMode, maxLives, suddenDeathMode: sdMode };
     this.grid.setMaxColors(maxColors);
+    this.grid.setSuddenDeathMode(sdMode as any);
     this.loop.setSpeed(speed as any);
     this.loop.setBlindMode(!!settings.isBlindMode);
     this.broadcastRoomUpdate();
