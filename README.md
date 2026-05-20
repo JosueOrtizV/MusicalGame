@@ -12,13 +12,35 @@
 
 ## How to Play
 
-1. Players join a room and wait in the lobby.
-2. The game starts — a colorful 12×12 block grid appears.
-3. **Dance phase**: players move around the grid freely.
-4. **Announcement**: the server picks a winning color.
-5. **Elimination**: all blocks of other colors fall away.
-6. Players standing on eliminated blocks fall and are **out**.
-7. Each round gets shorter. Last player standing wins!
+1. **Join the Arena**: Players connect to the lobby by choosing an alias and joining either a public room or creating/joining a private custom room with a 4-letter code.
+2. **Warm Up in the Lobby**: Chat with other players, configure match parameters (if you are the host), toggle your ready status, and wait for the countdown to start!
+3. **Dance Phase**: A colorful 12×12 block grid appears. Move around using keyboard arrows/WASD or the touch D-Pad.
+4. **Winning Color Announcement**: The server selects a winning color and announces it. Under **Blind Modifiers**, the colors on the arena disappear, testing your photographic memory!
+5. **Voxel Elimination**: Non-matching blocks fall away into the void. Players standing on the wrong blocks fall and lose a life.
+6. **Spectate & Support**: Eliminated players fall to their death, but immediately enter **Spectator Mode**, allowing them to watch the remaining players in 3D and chat with other fallen dancers.
+7. **Victory**: Dancers play progressive, increasingly faster rounds until only one remains with lives intact. The last standing dancer wins the crown!
+
+---
+
+## 🌟 Key Features & Modifiers
+
+Musical Blocks is not just a standard clone—it's loaded with advanced customizable systems:
+
+*   **👑 Full Host Control & Match Settings**:
+    *   **Difficulty & Color Ranges**: Choose between **Easy (4 colors)**, **Normal (6 colors)**, **Hard (8 colors)**, and **Extreme (10 colors)**. More colors significantly reduce safe zones!
+    *   **Game Speed**: Set the tempo from **Chill** (relaxed) to **Standard** (classic progressive speed-up) or **Turbo** (insane high-speed adrenaline from Round 1).
+    *   **Lives System**: Adjust the threshold of forgiveness. Play with **1 Life (Classic Sudden Death)**, **3 Lives (Recommended)**, or **5 Lives** for long-duration practice.
+*   **👁️ Blind Modifier (Blackout Mode)**:
+    *   When activated, all colors on the arena turn black/gray during the color announcement phase. Dancers must rely on their spatial photographic memory to stand on the correct block!
+*   **🟫 Sudden Death Modifiers (Arena Shrinking)**:
+    *   **Standard**: The board starts dropping blocks permanently (1 by 1) from Round 10 onwards (max 20 blocks removed).
+    *   **Chaos Mode**: The floor begins falling right from Round 1! Starting at Round 11, blocks drop 2 by 2, shrinking the arena down to a maximum of 30 blocks removed.
+*   **💬 WebSocket Chat & Announcements**:
+    *   Lobby chat for all participants, in-game floating notifications, and a dedicated **Spectator Chat** where dead players can talk while watching the live game. System events (deaths, round transitions, victory) are announced automatically.
+*   **🌎 Multi-language Translation (EN / ES)**:
+    *   Full out-of-the-box support for both **English** and **Spanish**, automatically localized based on client settings. Includes token replacements (e.g., room IDs, player counts) and translation mapping for all colors and settings.
+*   **📱 Mobile & Touch Optimized**:
+    *   Custom built responsive layout with a virtual touch D-pad overlay. Features a **Responsive R3F Camera scaling handler** that automatically shifts camera positions and FOV between portrait and landscape screens to ensure the full grid is always visible. Prevents default scrolling and browser gestures during active gameplay.
 
 ---
 
@@ -26,9 +48,9 @@
 
 ```
 MusicalGame/
-├── musical-blocks-client/   # Next.js 16 + React Three Fiber
-├── musical-blocks-server/   # Fastify 5 + Socket.io (authoritative server)
-└── shared/                  # Shared TypeScript types
+├── musical-blocks-client/   # Next.js 16 (App Router) + React Three Fiber + Zustand + Custom CSS
+├── musical-blocks-server/   # Fastify 5 + Socket.io (Authoritative physics and lag compensation)
+└── shared/                  # Shared TypeScript types, events contracts, and game constants
 ```
 
 ---
@@ -79,35 +101,35 @@ npm run dev
 ### 🏗️ Phase 1 — Server: Core Architecture
 
 #### 1.1 Types & Contracts
-- [x] Define `BlockColor` union type (RED, BLUE, GREEN, YELLOW, PURPLE, ORANGE)
-- [x] Define `Player` interface (id, name, position `{x, z}`, isAlive, isReady, isHost, color)
-- [x] Define `GameBlock` interface (row, col, color, isActive)
+- [x] Define `BlockColor` union type (extended up to 10 active colors: RED, BLUE, GREEN, YELLOW, PURPLE, ORANGE, PINK, CYAN, LIME, WHITE)
+- [x] Define `Player` interface (id, name, position `{x, z}`, isAlive, isReady, isHost, color, hasReturnedToLobby)
+- [x] Define `GameBlock` interface (row, col, color, isActive, isDead)
 - [x] Define `GamePhase` union type (LOBBY | DANCING | ANNOUNCING | ELIMINATING | ROUND_END | GAME_OVER)
-- [x] Define `GameState` interface (phase, round, timeLeft, winnerColor, blocks[][], players[], winnerId)
-- [x] Define `Room` + `RoomSummary` interfaces (id, visibility, status, players, maxPlayers, hostId)
-- [x] Define `ServerEvents` type map (all server → client events)
-- [x] Define `ClientEvents` type map (all client → server events)
-- [x] Define shared constants: `GRID_SIZE`, `MAX_PLAYERS`, `COLOR_HEX`, `PLAYER_COLORS`, `ROUND_DURATIONS`
+- [x] Define `GameState` interface (phase, round, timeLeft, winnerColor, blocks[][], players[], winnerId, isBlackout)
+- [x] Define `Room` + `RoomSummary` interfaces (id, visibility, status, players, maxPlayers, hostId, settings)
+- [x] Define `ServerEvents` type map (all server → client events, including chat broadcasts)
+- [x] Define `ClientEvents` type map (all client → server events, including host settings and chat send events)
+- [x] Define shared constants: `GRID_SIZE`, `MAX_PLAYERS`, `COLOR_HEX`, `PLAYER_COLORS`, `ROUND_DURATIONS`, bounds/rate limit constants
 
 #### 1.2 Fastify Server Entry Point (`src/index.ts`)
 - [x] Initialize Fastify instance with logger enabled (pino-pretty)
 - [x] Register `@fastify/cors` plugin for cross-origin requests
 - [x] Attach Socket.io server to Fastify's `httpServer` via `io.attach()` in `onReady` hook
-- [x] Configure Socket.io CORS: allow `http://localhost:3000`
+- [x] Configure Socket.io CORS: allow `http://localhost:3000` (or LAN requests)
 - [x] Add health-check route `GET /health` → `{ status: 'ok', ts: timestamp }`
 - [x] Add `GET /rooms` REST route for public room list
 - [x] Start server on port `3001`
 - [ ] Export server instance for testing
 
 #### 1.3 Game Room (`src/game/GameRoom.ts`)
-- [x] Implement `GameRoom` class with `roomId`, `players`, `grid`, `loop`
+- [x] Implement `GameRoom` class with `roomId`, `players`, `grid`, `loop`, `settings`
 - [x] Method `addPlayer(socketId, name): boolean` — validates max 8 players
 - [x] Method `removePlayer(socketId): void` — handles host promotion, triggers game over if needed
 - [x] Method `buildState(): GameState` — returns current immutable snapshot
-- [x] Method `startGame(requesterId)` — host-only, validates min 2 players
+- [x] Method `startGame(requesterId)` — host-only, validates min 2 players, configures lives
 - [x] Method `handlePlayerMove()` — delegates to PlayerManager with phase guard
 - [x] Implement `GridManager` — generates 12×12 random color grid per round
-- [x] `GridManager.generate()` — assigns random `BlockColor` to each cell
+- [x] `GridManager.generate()` — assigns random `BlockColor` to each cell, applies Sudden Death falling blocks
 - [x] `GridManager.eliminate(winnerColor)` — returns array of `{row, col}` removed
 - [x] `GridManager.isBlockActive(pos)` — used by PlayerManager death detection
 - [x] Room `status` property: `'waiting' | 'playing' | 'finished'`
@@ -115,7 +137,7 @@ npm run dev
 
 #### 1.4 Round Manager (`src/game/RoundManager.ts`)
 - [x] Round logic integrated directly into `GameLoop.ts` (simpler, avoids extra dependency)
-- [x] `ROUND_DURATIONS` constant in `shared/types.ts`: `[30, 25, 20, 15, 12, 10, 8, 8]`
+- [x] `ROUND_DURATIONS` constant in `shared/types.ts` configured for CHILL, NORMAL, and TURBO
 - [x] Duration clamping at last index implemented in `GameLoop.transitionTo('DANCING')`
 - [x] `GridManager.pickWinnerColor()` — ensures only colors with ≥1 active block are selected
 - [x] `GridManager.getColorDistribution()` — sent to client on `game:announce` for UI display
@@ -134,15 +156,16 @@ npm run dev
 - [x] Track `lastMoveTime: Map<string, number>` for rate limiting
 - [x] Implement `validateMove(playerId, dir, clientTimestamp): boolean`
   - [x] Reject if player not alive
-  - [x] Reject if lag > 200ms or timestamp in future (uses `LAG_TOLERANCE_MS` constant)
+  - [x] Reject if lag > 2000ms or timestamp in future (uses `LAG_TOLERANCE_MS` constant)
   - [x] Reject if rate-limited (< 100ms since last move via `MOVE_RATE_LIMIT_MS` constant)
   - [x] Reject if new position out of grid bounds (0–11)
+  - [x] Reject if standing on a permanently eliminated Sudden Death block
 - [x] Implement `applyMove(playerId, dir): GridPosition` — applies direction
-- [x] Implement `checkDeaths(grid): string[]` — returns IDs of players on eliminated blocks
-- [x] Implement `getAlive(): Player[]` and `getAll(): Player[]`
-- [x] Implement `getWinner(): Player | null` — returns last alive player
-- [x] Implement `resetForRound()` — revives all players with spread spawn positions
-- [x] `generateSpawnPositions()` — even distribution across the 12×12 grid
+- [x] Implement `checkDeaths(grid): string[]` — returns IDs of players on eliminated blocks, decrements lives
+- [x] Implement `getAlive(): Player[]`, `getWithLives(): Player[]`, and `getAll(): Player[]`
+- [x] Implement `getWinner(): Player | null` — returns last player standing with lives > 0
+- [x] Implement `resetForRound()` — revives players with lives left and respawns them on active cells
+- [x] `randomSpawnPosition(grid)` — even distribution across the surviving blocks on the grid
 
 #### 1.7 Socket.io Handlers (`src/socket/handlers.ts`)
 - [x] Handle `connection` — log socket ID
@@ -152,7 +175,9 @@ npm run dev
 - [x] Handle `room:leave` — removes from room, schedules cleanup if empty
 - [x] Handle `player:ready` — toggles ready state, broadcasts `room:updated`
 - [x] Handle `host:start_game` — host-only start, validates min 2 players
+- [x] Handle `host:update_settings` — host-only, updates customizable speed, colors, lives, and modifiers
 - [x] Handle `player:move` — delegates to `GameRoom.handlePlayerMove()` with all validations
+- [x] Handle `chat:send` — room-wide chat broadcast, supports lobbies and spectator-only dead chat
 - [x] Handle `disconnect` — auto-leave room, host promotion, game over if needed
 - [x] Handle `ping` / emit `pong` — clock sync for lag compensation
 - [x] Handle `room:get_list` — returns public room summaries
@@ -169,7 +194,6 @@ npm run dev
 
 ---
 
-
 ### 🎮 Phase 2 — Client: Game Engine & Networking
 
 #### 2.1 Socket Client (`src/lib/socketClient.ts`)
@@ -180,8 +204,8 @@ npm run dev
 
 #### 2.2 Game Store (`src/stores/gameStore.ts`)
 - [x] Create Zustand store with full `GameState` slice (Immer enabled)
-- [x] Actions: `setGameState`, `setPhase`, `updateBlocks`, `setWinnerColor`, `markPlayerDead`
-- [x] Local player slice: `localPlayerId`, `localPlayerName`, `screen` navigation state
+- [x] Actions: `setGameState`, `setPhase`, `updateBlocks`, `setWinnerColor`, `markPlayerDead`, `addChatMessage`
+- [x] Local player slice: `localPlayerId`, `localPlayerName`, `screen` navigation state, `language` translation key
 - [x] UI state: `isConnected`, `roomListRefreshKey`, `connectionError`
 - [x] Subscribe to socket events → update store (in `useSocket.ts`)
 
@@ -194,7 +218,7 @@ npm run dev
 #### 2.4 Player Input Hook (`src/hooks/usePlayerInput.ts`)
 - [x] Listen to `keydown`: Arrow keys + WASD → map to `Direction`
 - [x] On valid key: call `socket.emit('player:move', { direction, timestamp: Date.now() })`
-- [x] Phase guard: only allow input during `DANCING` phase
+- [x] Phase guard: only allow input during `DANCING` and `ANNOUNCING` phases
 - [x] Mobile support: virtual D-pad component emitting same events
 
 #### 2.5 Block Grid (`src/components/canvas/BlockGrid.tsx`) ⚡ CRITICAL
@@ -209,27 +233,27 @@ npm run dev
 - [x] Interpolate position between server updates (lerp for smooth 60fps movement)
 - [x] Name label using `<Text>` from `@react-three/drei`
 - [x] Death animation: fall + scale down on `player.isAlive === false`
-- [x] Distinguish local player (gold name label + eye plane)
+- [x] Distinguish local player (gold name label + eye plane overlay)
 
 #### 2.7 Game Canvas (`src/components/canvas/GameCanvas.tsx`)
 - [x] `<Canvas>` with `shadows`, `camera={{ position: [0, 18, 14], fov: 50 }}`
-- [x] Lighting: `ambientLight` + `directionalLight` (shadows) + `pointLight`
+- [x] Lighting: `ambientLight` + `directionalLight` (shadows) + custom cyan/magenta neon point lights
 - [x] Atmosphere: `<Stars>` + `<fog>` + `<Environment preset="night">`
-- [x] Include `<BlockGrid>`, `<PlayerMesh>` list, and base platform
+- [x] Include `<BlockGrid>`, `<PlayerMesh>` list, and gorgeous custom NeonGrid Y=-2.0 background floor
 - [x] Dynamic import (no SSR) to avoid browser-only API errors
 
 #### 2.8 HUD Components
-- [x] `GameHUD.tsx` — Timer, winner color swatch, player list, and round banner
-- [x] Timer: red pulsing animation when < 5s
+- [x] `GameHUD.tsx` — Timer, winner color swatch, player list with lives/deaths, and round banner
+- [x] Timer: red pulsing animation when < 3s during ANNOUNCING phase
 - [x] Color indicator: large block + glow effect during ANNOUNCING
-- [x] Player list: alive/dead status + skull icons
-- [x] Round banner: "⚡ Round X — Survive!" popping animation
+- [x] Player list: alive/dead status + skull/heart icons
+- [x] Round banner: "⚡ Round X — Survive!" and "SUDDEN DEATH" popping animations
 
 #### 2.9 UI Screens
-- [x] `LobbyScreen.tsx` — Premium dark glassmorphism, Quick Join, Create/Join Private
-- [x] `RoomLobby.tsx` — Waiting room, player cards, Host Start button, code copy
-- [x] `EndScreens.tsx` — GameOver (Spectating) + WinnerScreen (Confetti CSS)
-- [x] Transitions: Framer-like CSS animations for all UI elements
+- [x] `LobbyScreen.tsx` — Premium dark glassmorphism, Quick Join, Create/Join Private, room search browser
+- [x] `RoomLobby.tsx` — Waiting room, host setting sliders/tabs, player cards, Kick buttons, Host Start button, code copy
+- [x] `EndScreens.tsx` — GameOver (Spectating banner) + WinnerScreen (Confetti celebration + return to lobby auto-timer)
+- [x] Transitions: Framer-like CSS animations and GLITCH keyframes for all UI elements
 
 ---
 
@@ -240,8 +264,8 @@ npm run dev
 - [x] Ground platform: solid base platform below grid (`#1a1a2e` Lambert material)
 - [x] Fog: `<fog>` atmospheric depth
 - [x] `<Environment preset="night">` for reflections
-- [x] Block borders: thin `LineSegments` overlay for Minecraft-style edge lines (done via procedural CanvasTexture)
-- [x] Block faces: distinct top/side colors (lighter top, darker sides) via vertex colors (done implicitly via Lambert + directional light)
+- [x] Block borders: thin grid segment overlay for Minecraft-style edge lines (NeonGrid)
+- [x] Block faces: distinct top/side colors via vertex lighting
 
 #### 3.2 Particle Effects
 - [x] Block elimination: burst of colored particles (`THREE.Points`) at eliminated positions
@@ -265,8 +289,8 @@ npm run dev
 #### 3.5 Responsive & Mobile
 - [x] Virtual D-pad overlay (grid layout, bottom-right, `position: fixed`)
 - [x] Canvas auto-resizes (R3F handles automatically)
-- [ ] HUD adapts to portrait/landscape via CSS media queries
-- [ ] Prevent default touch scroll on Canvas element
+- [x] HUD adapts to portrait/landscape via CSS media queries and flex grids
+- [x] Prevent default touch scroll on Canvas element (via body CSS `overflow: hidden` and touch propagation handlers)
 
 ---
 
@@ -288,7 +312,6 @@ npm run dev
 
 > Create the voxel player model in Blockbench and export it as `.glb` for use with `useGLTF` in R3F.
 
-#### 4.5.1 Model Creation (Blockbench)
 - [ ] Install [Blockbench](https://www.blockbench.net/) (free, desktop app)
 - [ ] Create new **Generic Model** project (`File → New → Generic Model`)
 - [ ] Set project unit size to `16px` (Minecraft-scale reference)
@@ -301,41 +324,9 @@ npm run dev
   - [ ] Paint base skin color per group face in the UV editor
   - [ ] Add simple face: 2 eyes (dark pixels) on Head front face
 - [ ] Pivot points: set each limb pivot at its connection to the body for correct rotation
-
-#### 4.5.2 Animations (Blockbench)
-- [ ] Open **Animate** tab (top menu)
-- [ ] Create animation: `idle` (looping)
-  - [ ] LeftArm: rotate X from `0°` to `10°` and back (0.0s → 0.5s → 1.0s)
-  - [ ] RightArm: opposite phase (10° → 0° → 10°)
-  - [ ] Body: subtle Y bob `+0.3` units up/down
-  - [ ] Loop: set to `true`, length: `1.0s`
-- [ ] Create animation: `walk` (looping)
-  - [ ] LeftArm + RightLeg swing forward (`-30°` to `+30°`)
-  - [ ] RightArm + LeftLeg opposite phase
-  - [ ] Body: slight Y bob
-  - [ ] Loop: `true`, length: `0.6s`
-- [ ] Create animation: `death` (one-shot)
-  - [ ] Whole model: rotate Z from `0°` to `90°` (fall sideways) over `0.4s`
-  - [ ] Scale: Y from `1` to `0` over `0.3s` starting at `0.2s`
-  - [ ] Loop: `false`
-- [ ] Create animation: `celebrate` (looping, shown on winner)
-  - [ ] Body: Y bounce `+0.5` units, fast (0.3s loop)
-  - [ ] LeftArm + RightArm: raise both up (`-120°` X rotation)
-
-#### 4.5.3 Export
-- [ ] `File → Export → Export glTF/GLB` → save as `public/models/player.glb`
-- [ ] Verify GLB includes embedded animations (open in [gltf.report](https://gltf.report/))
-- [ ] Optimize with `gltf-pipeline`: `npx gltf-pipeline -i player.glb -o player.glb --draco.compressionLevel 7`
-
-#### 4.5.4 Integration in R3F (`PlayerMesh.tsx`)
-- [ ] Replace `BoxGeometry` character with `useGLTF('/models/player.glb')`
-- [ ] Use `useAnimations(animations, ref)` from `@react-three/drei`
-- [ ] Play `walk` animation during `DANCING` phase
-- [ ] Play `idle` animation during `LOBBY` / `ANNOUNCING` phases
-- [ ] Play `death` animation when `player.isAlive === false`
-- [ ] Play `celebrate` animation when `player.id === winnerId`
-- [ ] Apply player color as `MeshLambertMaterial` override on the GLB mesh
-- [ ] `<Clone>` or `<primitive>` pattern to reuse one GLB for all players
+- [ ] Create animations: `idle`, `walk`, `death`, and `celebrate`
+- [ ] Export GLB and save as `public/models/player.glb`
+- [ ] Replace `BoxGeometry` character with `useGLTF('/models/player.glb')` inside `PlayerMesh.tsx`
 
 ---
 
@@ -346,7 +337,7 @@ npm run dev
 - [x] Sanitize player name: alphanumeric + accents, 2–16 chars, server-side
 - [x] Reject moves outside current grid bounds server-side (0–11)
 - [x] Reject moves during non-DANCING phases
-- [x] Reject moves with lag > 200ms or timestamp in the future
+- [x] Reject moves with lag > 2000ms or timestamp in the future
 - [x] Rate-limit moves: reject if < 100ms since last move per player
 - [x] Server-side phase enforcement: host:start ignored if game already running
 - [ ] Log suspicious activity to file with `pino` transport
@@ -373,16 +364,7 @@ npm run dev
 
 ### 🚀 Phase 7 — Deployment
 
-#### 7.1 Server (Railway / Render)
-- [ ] Add `Dockerfile` for server:
-  ```dockerfile
-  FROM node:20-alpine
-  WORKDIR /app
-  COPY package*.json ./
-  RUN npm ci --omit=dev
-  COPY dist/ ./dist/
-  CMD ["node", "dist/index.js"]
-  ```
+- [ ] Add `Dockerfile` for server
 - [ ] Add `npm run build` script: `"build": "tsc --project tsconfig.json"`
 - [ ] Configure `tsconfig.json` `outDir: "dist"`, `rootDir: "src"`
 - [ ] Set environment variables: `PORT`, `CLIENT_ORIGIN`, `NODE_ENV`
@@ -390,28 +372,16 @@ npm run dev
 - [ ] Verify WebSocket support is enabled on hosting platform
 - [ ] Configure health check: `GET /health` → used by platform restart policy
 - [ ] Set up PM2 or equivalent for crash recovery on VPS
-
-#### 7.2 Client (Vercel)
 - [ ] Set `NEXT_PUBLIC_SERVER_URL` env var pointing to deployed server
-- [ ] Replace hardcoded `localhost:3001` with `process.env.NEXT_PUBLIC_SERVER_URL`
-- [ ] Add `vercel.json` for custom headers if needed
-- [ ] Configure `next.config.ts` for production optimization
-- [ ] Enable Vercel Analytics
-- [ ] Test production build locally: `npm run build && npm run start`
-- [ ] Deploy to Vercel via GitHub integration
-
-#### 7.3 DNS & HTTPS
-- [ ] Ensure server URL uses `https://` and `wss://` in production
-- [ ] Configure CORS on server to allow only production client origin
-- [ ] Add SSL certificate to server (handled by Railway/Render automatically)
+- [ ] Deploy client to Vercel via GitHub integration
 
 ---
 
 ### 📦 Phase 8 — Polish & Future Features
 
-- [ ] Spectator mode: dead players can watch the game
+- [x] Spectator mode: dead players can watch the active players in 3D
 - [ ] Leaderboard: track wins per session with in-memory counter
-- [ ] Chat: simple text chat during LOBBY phase
+- [x] Chat: simple text chat during LOBBY phase and spectator-only dead chat
 - [ ] Custom skins: player name color selection in lobby
 - [ ] Power-ups: random block that gives immunity for 3 seconds
 - [ ] Replay system: record GameState snapshots for post-game review

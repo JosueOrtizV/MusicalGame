@@ -156,7 +156,7 @@ export function registerHandlers(
     if (!result.ok) {
       socket.emit('room:error', { message: result.error ?? 'Could not start game.' });
     } else {
-      console.log(`[Game] Room ${room.id} started by ${sid}`);
+      console.log(`[Game] Room ${room.id} started by ${sid}. Config: ${room.getFormattedConfig()}`);
     }
   });
 

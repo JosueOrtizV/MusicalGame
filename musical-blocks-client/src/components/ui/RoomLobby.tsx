@@ -65,12 +65,6 @@ export function RoomLobby() {
     return lang === 'es' ? 'Extremo' : 'Extreme';
   };
 
-  const getDifficultyColorClass = (colors: number) => {
-    if (colors === 4) return 'easy';
-    if (colors === 6) return 'normal';
-    if (colors === 8) return 'hard';
-    return 'extreme';
-  };
 
   return (
     <div className="room-lobby-bg">

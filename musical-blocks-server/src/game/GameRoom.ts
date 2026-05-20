@@ -368,6 +368,28 @@ export class GameRoom {
     this.broadcastRoomUpdate();
   }
 
+  getFormattedConfig(): string {
+    const colors = this.settings.maxColors ?? 6;
+    let diffName = 'Normal';
+    if (colors === 4) diffName = 'Easy';
+    else if (colors === 8) diffName = 'Hard';
+    else if (colors >= 10) diffName = 'Extreme';
+
+    const speed = this.settings.gameSpeed ?? 'NORMAL';
+    let speedStr = '⏱️ STANDARD';
+    if (speed === 'CHILL') speedStr = '❄️ CHILL';
+    else if (speed === 'TURBO') speedStr = '⚡ TURBO';
+
+    const lives = this.settings.maxLives ?? 3;
+    const livesStr = `❤️  ${lives} ${lives === 1 ? 'Life' : 'Lives'}`;
+
+    let config = `${diffName} (${colors} Colors) • ${speedStr} • ${livesStr}`;
+    if (this.settings.isBlindMode) {
+      config += ' • 👁️  BLIND';
+    }
+    return config;
+  }
+
   // ---- Private -------------------------------------------------------------
 
   private static generateCode(): string {
