@@ -8,7 +8,7 @@ import { Player } from '@/src/shared/types';
 // ---------------------------------------------------------------------------
 //  Audio Assets Definition
 // ---------------------------------------------------------------------------
-const MUSIC_TRACKS = {
+export const MUSIC_TRACKS = {
   lobby: new Howl({ src: ['/audio/music/lobby/Between_Save_Points.mp3'], loop: true, volume: 0.4 }),
   dance: [
     new Howl({ src: ['/audio/music/Apex_Ascent.mp3'], loop: true, volume: 0.45 }),

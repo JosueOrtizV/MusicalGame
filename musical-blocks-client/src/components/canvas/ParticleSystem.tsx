@@ -38,6 +38,7 @@ const MAX_PARTICLES = 1000;
 const particleData = {
   positions: new Float32Array(MAX_PARTICLES * 3),
   colors: new Float32Array(MAX_PARTICLES * 3),
+  initialColors: new Float32Array(MAX_PARTICLES * 3), // Store initial color for fading!
   velocities: new Float32Array(MAX_PARTICLES * 3),
   lifetimes: new Float32Array(MAX_PARTICLES), // 0 means inactive
   maxLifetimes: new Float32Array(MAX_PARTICLES),
@@ -72,15 +73,31 @@ export function ParticleSystem() {
       for (let i = 0; i < MAX_PARTICLES; i++) {
         if (particleData.lifetimes[i] <= 0) { // Found inactive slot
           // Set Position
-          particleData.positions[i * 3] = x + (Math.random() - 0.5);
-          particleData.positions[i * 3 + 1] = y + (Math.random() - 0.5);
-          particleData.positions[i * 3 + 2] = z + (Math.random() - 0.5);
+          if (type === 'dust') {
+            const gridSpacing = 0.1;
+            // Snap to grid for retro digital grid style
+            particleData.positions[i * 3] = Math.round(x / gridSpacing) * gridSpacing;
+            particleData.positions[i * 3 + 1] = Math.round(y / gridSpacing) * gridSpacing;
+            particleData.positions[i * 3 + 2] = Math.round(z / gridSpacing) * gridSpacing;
+          } else {
+            particleData.positions[i * 3] = x + (Math.random() - 0.5);
+            particleData.positions[i * 3 + 1] = y + (Math.random() - 0.5);
+            particleData.positions[i * 3 + 2] = z + (Math.random() - 0.5);
+          }
           
           // Set Color — overbright for additive blending glow effect
           const brightFactor = type === 'burst' ? 3.0 : 1.5;
-          particleData.colors[i * 3] = c.r * brightFactor;
-          particleData.colors[i * 3 + 1] = c.g * brightFactor;
-          particleData.colors[i * 3 + 2] = c.b * brightFactor;
+          const r = c.r * brightFactor;
+          const g = c.g * brightFactor;
+          const b = c.b * brightFactor;
+          
+          particleData.colors[i * 3] = r;
+          particleData.colors[i * 3 + 1] = g;
+          particleData.colors[i * 3 + 2] = b;
+          
+          particleData.initialColors[i * 3] = r;
+          particleData.initialColors[i * 3 + 1] = g;
+          particleData.initialColors[i * 3 + 2] = b;
           
           // Set Velocity & Life based on type
           if (type === 'burst') {
@@ -89,10 +106,11 @@ export function ParticleSystem() {
             particleData.velocities[i * 3 + 2] = (Math.random() - 0.5) * 12;
             particleData.lifetimes[i] = Math.random() * 0.6 + 0.5;
           } else if (type === 'dust') {
-            particleData.velocities[i * 3] = (Math.random() - 0.5) * 4;
-            particleData.velocities[i * 3 + 1] = Math.random() * 2 + 0.5;
-            particleData.velocities[i * 3 + 2] = (Math.random() - 0.5) * 4;
-            particleData.lifetimes[i] = Math.random() * 0.4 + 0.3;
+            // Digital grid footprint pixels: rise slowly upwards without spreading horizontally, fades in exactly 0.5s!
+            particleData.velocities[i * 3] = 0;
+            particleData.velocities[i * 3 + 1] = 0.4;
+            particleData.velocities[i * 3 + 2] = 0;
+            particleData.lifetimes[i] = 0.5;
           } else if (type === 'confetti') {
             particleData.velocities[i * 3] = (Math.random() - 0.5) * 8;
             particleData.velocities[i * 3 + 1] = (Math.random() - 0.5) * 2 - 2;
@@ -140,7 +158,7 @@ export function ParticleSystem() {
         if (typeCode === 0) { // burst
           particleData.velocities[i * 3 + 1] -= 15 * delta; 
         } else if (typeCode === 1) { // dust
-          particleData.velocities[i * 3 + 1] -= 5 * delta;
+          // No gravity: let footprint pixels rise straight up linearly
         } else if (typeCode === 2) { // confetti
           particleData.velocities[i * 3 + 1] -= 2 * delta; // slow fall
           // Fluttering effect for confetti
@@ -148,8 +166,11 @@ export function ParticleSystem() {
           particleData.velocities[i * 3 + 2] += (Math.random() - 0.5) * 10 * delta;
         }
 
-        // Fade out color (alpha simulation by blending to black or shrinking if custom shader, 
-        // but here we just leave it and let it vanish abruptly when life ends, or we could darken it).
+        // Smooth fade out by multiplying with remaining life ratio
+        const lifeRatio = Math.max(0, particleData.lifetimes[i] / particleData.maxLifetimes[i]);
+        particleData.colors[i * 3] = particleData.initialColors[i * 3] * lifeRatio;
+        particleData.colors[i * 3 + 1] = particleData.initialColors[i * 3 + 1] * lifeRatio;
+        particleData.colors[i * 3 + 2] = particleData.initialColors[i * 3 + 2] * lifeRatio;
         
         needsUpdate = true;
       }
