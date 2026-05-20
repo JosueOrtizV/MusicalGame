@@ -16,6 +16,7 @@ export function GameHUD() {
   const isMuted = useGameStore((s) => s.isMuted);
   const toggleMute = useGameStore((s) => s.toggleMute);
   const phase = useGameStore(selectPhase);
+  const settings = useGameStore((s) => s.room?.settings);
   const { t } = useTranslation();
 
   const [showBanner, setShowBanner] = useState(false);
@@ -27,7 +28,10 @@ export function GameHUD() {
     if (gameState.phase === 'DANCING') {
       // Use a minimal timeout to avoid synchronous setState warning
       const t1 = setTimeout(() => {
-        if (gameState.round >= 10) {
+        const suddenDeathMode = settings?.suddenDeathMode || 'NORMAL';
+        const isSuddenDeath = suddenDeathMode === 'CHAOS' || (suddenDeathMode === 'NORMAL' && gameState.round >= 10);
+
+        if (isSuddenDeath) {
           setBannerText(t('suddenDeath'));
         } else {
           setBannerText(t('roundNumber', { round: gameState.round }));
@@ -44,7 +48,7 @@ export function GameHUD() {
       const t = setTimeout(() => setShowBanner(false), 0);
       return () => clearTimeout(t);
     }
-  }, [gameState?.phase, gameState?.round, gameState, t]);
+  }, [gameState?.phase, gameState?.round, gameState, t, settings?.suddenDeathMode]);
 
   if (!gameState) return null;
 
