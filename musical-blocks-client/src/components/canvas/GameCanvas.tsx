@@ -8,6 +8,7 @@ import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { BlockGrid } from './BlockGrid';
 import { PlayerMesh } from './PlayerMesh';
 import { ParticleSystem } from './ParticleSystem';
+import { StageShow } from './StageShow';
 import { useGameStore } from '@/src/stores/gameStore';
 import { CAMERA_POSITION, CAMERA_FOV, BLOCK_SIZE } from '@/src/lib/constants';
 import { GRID_SIZE } from '@/src/shared/types';
@@ -110,8 +111,8 @@ export function GameCanvas() {
         <Suspense fallback={null}>
 
           {/* ---- Lighting ---- */}
-          {/* Ambient: just enough to see player models */}
-          <ambientLight intensity={0.5} />
+          {/* Ambient: just enough base illumination to keep players visible in shadow areas */}
+          <ambientLight intensity={0.35} />
 
           {/* Directional: shadows for player meshes */}
           <directionalLight
@@ -136,6 +137,9 @@ export function GameCanvas() {
 
           {/* ---- Neon grid floor ---- */}
           <NeonGrid />
+
+          {/* Dynamic Stage Lighting, Volumetric Spotlights, Neon Lasers, and Beat Flash */}
+          <StageShow />
 
           {/* ---- Game elements ---- */}
           {gameState && (

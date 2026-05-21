@@ -308,25 +308,80 @@ npm run dev
 
 ---
 
-### 🟫 Phase 4.5 — Blockbench: Player Model & Animations
+### 🟫 Phase 4.5 — Blockbench: Player Model & Animations ✅ COMPLETE
 
 > Create the voxel player model in Blockbench and export it as `.glb` for use with `useGLTF` in R3F.
 
-- [ ] Install [Blockbench](https://www.blockbench.net/) (free, desktop app)
-- [ ] Create new **Generic Model** project (`File → New → Generic Model`)
-- [ ] Set project unit size to `16px` (Minecraft-scale reference)
-- [ ] Build body parts as separate groups:
-  - [ ] `Body` — 8×12×4 px box (torso)
-  - [ ] `Head` — 8×8×8 px box (attached on top of Body)
-  - [ ] `LeftArm` + `RightArm` — 4×12×4 px boxes (sides of torso)
-  - [ ] `LeftLeg` + `RightLeg` — 4×12×4 px boxes (below torso)
-- [ ] Apply UV texture (16×32 px PNG, Minecraft skin format)
-  - [ ] Paint base skin color per group face in the UV editor
-  - [ ] Add simple face: 2 eyes (dark pixels) on Head front face
-- [ ] Pivot points: set each limb pivot at its connection to the body for correct rotation
-- [ ] Create animations: `idle`, `walk`, `death`, and `celebrate`
-- [ ] Export GLB and save as `public/models/player.glb`
-- [ ] Replace `BoxGeometry` character with `useGLTF('/models/player.glb')` inside `PlayerMesh.tsx`
+- [x] Install [Blockbench](https://www.blockbench.net/) (free, desktop app)
+- [x] Create new **Generic Model** project (`File → New → Generic Model`)
+- [x] Set project unit size to `16px` (Minecraft-scale reference)
+- [x] Build body parts as separate groups:
+  - [x] `Body` — 8×12×4 px box (torso)
+  - [x] `Head` — 8×8×8 px box (attached on top of Body)
+  - [x] `LeftArm` + `RightArm` — 4×12×4 px boxes (sides of torso)
+  - [x] `LeftLeg` + `RightLeg` — 4×12×4 px boxes (below torso)
+- [x] Apply UV texture (16×32 px PNG, Minecraft skin format)
+  - [x] Paint base skin color per group face in the UV editor
+  - [x] Add simple face: 2 eyes (dark pixels) on Head front face
+- [x] Pivot points: set each limb pivot at its connection to the body for correct rotation
+- [x] Create animations: `idle`, `walk`, `death`, and `celebrate`
+- [x] Export GLB and save as `public/models/player.glb`
+- [x] Replace `BoxGeometry` character with `useGLTF('/models/player.glb')` inside `PlayerMesh.tsx`
+
+---
+
+### 🌟 Phase 4.6 — Expansión Dinámica de Arena y Avatares Reactivos ✅ COMPLETE
+
+- [x] **Modelo Voxel 3D Premium con Texturizado PBR**: Creado modelo de avatar en formato `.glb` con mapas de emisión cyberpunk.
+- [x] **Accesorios Reactivos y Variaciones de Compañero**: Soporte en código para variantes retro de mascota flotante (`cassette`, disquete `floppy`, u orbe orbital flotante), auriculares rítmicos y Cyber-Backpack con propulsores de partículas.
+- [x] **6 Animaciones Dinámicas por Código**: Controladas mediante `useFrame` con transiciones suaves (Idle, Walk, Dance/Dance2, Jump con deformación squash/stretch, Death con caída modular y Celebrate con giros rápidos).
+- [x] **Clonación de Esqueleto Aislada**: Cada avatar en escena clona su propia instancia de esqueleto para evitar que las animaciones o desvíos temporales afecten visualmente a los demás jugadores.
+- [x] **Suavizado de Rotación y Visor LED**: Movimiento lerpeado fluido y corrección en la vista del visor frontal para alinearse siempre en la dirección del movimiento, incluso al caminar de espaldas (`S`).
+- [x] **Arena de Baile Audio-Reactiva [¡TAREA 2 COMPLETADA!]**:
+  - [x] **Pulsación de Color y Bobbing**: Bloques ganadores con respiración física y pulsos de brillo neón ajustados al beat del audio en tiempo real.
+  - [x] **Tensión del Vacío y Temblores de Último Segundo (Tremor FX)**: Los bloques marcados para caer vibran rápidamente *únicamente durante el último segundo* (`timeLeft <= 1`) del conteo, evitando el ruido visual constante.
+  - [x] **Estelas digitales**: Generación de chorros de partículas al disolverse o colapsar los bloques de la rejilla.
+  - [x] **Estabilización de Iluminación**: Desacoplamiento del brillo constante (`1.2x`) del bloque seguro durante la Muerte Súbita o Modo Ciego, desactivando el bobbing físico oscilante para una vista óptima del jugador.
+
+---
+
+### 📋 Próximas Características y Ajustes de Jugabilidad (Nuevas Tareas Pendientes)
+
+A continuación se detallan las tareas estéticas, cinemáticas, de red y de jugabilidad que quedan pendientes por integrar en el juego (la tarea 2 de la arena reactiva ya se encuentra totalmente completada):
+
+#### 🎨 Sección A: Personalización y Experiencia Visual
+
+- [ ] **1. 🎛️ Locker de Cosméticos / Selector de Accesorios (UI + 3D)**:
+  - Crear un panel lateral interactivo (Vestidor) en el lobby con un canvas R3F miniatura en tiempo real para visualizar al personaje girando.
+  - Permitir a los jugadores equipar/desequipar sus accesorios dinámicamente (mascota retro, auriculares, mochilas).
+  - Integrar variantes de Skins/Materiales para cambiar el aspecto del traje (Plástico Mate, Cromo Metálico brillante, o Neón Holográfico con shader emisivo).
+- [x] **2. 🚨 Luces de Escenario y Láseres (Ambiente y Show 3D)**:
+  - Añadir 4 focos robóticos (Spotlights) funcionales en las esquinas de la grilla que barran automáticamente el escenario con luces volumétricas de color cambiante.
+  - Generar láseres neón delgados y dinámicos que crucen en ángulos atractivos sobre las cabezas de los personajes.
+  - Implementar un sutil destello (flash) de luz ambiental general sincronizado con cada golpe fuerte del beat de la música.
+- [ ] **3. 🎬 Cámara Cinemática y Animaciones de Transición**:
+  - **Barrido Inicial**: Paneo dramático de cámara descendente desde el espacio profundo estrellado hacia la arena al iniciar la ronda.
+  - **Zoom de Tensión**: Acercamiento suave de cámara hacia el jugador local en la fase de color (`ANNOUNCING`), amplificando el rumble/shake de pantalla al caer el resto de los bloques.
+  - **Cámara Espectador Interactiva**: Permitir rotar libremente la cámara 3D al morir o seguir automáticamente al jugador con mayor puntuación/vida de forma fluida.
+- [ ] **4. 🎉 Celebración Final de Victoria**:
+  - Lanzamiento de fuegos artificiales volumétricos basados en partículas de voxel art al coronar al ganador de la partida.
+  - Cascadas densas de confeti digital neón flotando alrededor del avatar ganador en su podio.
+
+#### 🌐 Sección B: Ajustes de Red, Seguridad y Jugabilidad Autorativa
+
+- [ ] **5. 👥 Alternancia de Colisiones entre Jugadores (Player-to-Player Collision Toggle)**:
+  - Añadir una nueva opción de configuración en **Match Settings** (Opciones de Partida) controlada por el Host para habilitar o deshabilitar las colisiones físicas entre los personajes.
+  - Sincronizar esta configuración en tiempo real a través del servidor y aplicar lógica condicional en la grilla y el movimiento:
+    - *Colisión Desactivada*: Los jugadores pueden atravesarse libremente al correr.
+    - *Colisión Activada*: Los avatares se empujan y bloquean físicamente el paso en la grilla (aumentando la dificultad táctica al competir por bloques).
+- [ ] **6. 🔗 Unirse Mediante Enlace Directo (URL-Based Room Joining)**:
+  - Parsear la query `?room=CODE` al cargar el cliente. Si el código de sala es detectado y válido, omitir el lobby de selección y conectar automáticamente al jugador a la sala privada especificada.
+- [ ] **7. 🛡️ Límite de Conexiones por IP (Connection Rate Limiting)**:
+  - Control de flujo de sockets en el backend limitando la entrada a un máximo de **10 conexiones/IP/minuto** para mitigar ataques DDoS y spam de creación de salas.
+- [ ] **8. 📝 Registro de Actividad Sospechosa (Suspicious Activity Log)**:
+  - Generar logs automáticos mediante transporte rápido de `pino` en el servidor ante desviaciones de lag extremas (>2000ms) o movimientos con tasa de input inválida.
+- [ ] **9. 🔑 Firmas Criptográficas de Sesión (HMAC Session Tokens)**:
+  - Implementar firmas de tokens HMAC únicas en la inicialización del cliente para verificar que las peticiones pertenecen de forma segura a la sesión del socket original y evitar hijacking.
 
 ---
 
@@ -417,25 +472,25 @@ CLIENT                              SERVER (Authoritative)
 
 ## Performance Notes
 
-| Concern | Solution |
-|---|---|
-| 144 blocks | `InstancedMesh` — 1 draw call total |
-| Player updates | Interpolation — no jitter at 20 ticks/s |
-| React re-renders | Zustand selectors — only affected components update |
-| Particle effects | Object pooling — max 500 reused particles |
-| Audio | Web Audio API — no DOM elements |
-| Network | Delta state — only changed fields sent when possible |
+| Concern          | Solution                                             |
+| ---------------- | ---------------------------------------------------- |
+| 144 blocks       | `InstancedMesh` — 1 draw call total                  |
+| Player updates   | Interpolation — no jitter at 20 ticks/s              |
+| React re-renders | Zustand selectors — only affected components update  |
+| Particle effects | Object pooling — max 500 reused particles            |
+| Audio            | Web Audio API — no DOM elements                      |
+| Network          | Delta state — only changed fields sent when possible |
 
 ---
 
 ## Environment Variables
 
-| Variable | Location | Example |
-|---|---|---|
+| Variable                 | Location              | Example                 |
+| ------------------------ | --------------------- | ----------------------- |
 | `NEXT_PUBLIC_SERVER_URL` | `.env.local` (client) | `http://localhost:3001` |
-| `PORT` | `.env` (server) | `3001` |
-| `CLIENT_ORIGIN` | `.env` (server) | `http://localhost:3000` |
-| `NODE_ENV` | System / CI | `production` |
+| `PORT`                   | `.env` (server)       | `3001`                  |
+| `CLIENT_ORIGIN`          | `.env` (server)       | `http://localhost:3000` |
+| `NODE_ENV`               | System / CI           | `production`            |
 
 ---
 
