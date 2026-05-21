@@ -157,7 +157,7 @@ export const useGameStore = create<GameStore>()(
           }
 
           // Auto-navigate screens based on phase
-          if (state.phase === 'DANCING' || state.phase === 'ANNOUNCING' || state.phase === 'ELIMINATING' || state.phase === 'ROUND_END') {
+          if (state.phase === 'STARTING' || state.phase === 'DANCING' || state.phase === 'ANNOUNCING' || state.phase === 'ELIMINATING' || state.phase === 'ROUND_END') {
             if (s.screen === 'lobby') s.screen = 'game';
           }
           if (state.phase === 'GAME_OVER') {

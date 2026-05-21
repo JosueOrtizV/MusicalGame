@@ -60,6 +60,7 @@ export class GameRoom {
 
     this.loop = new GameLoop(this.grid, this.players, {
       onStateUpdate: () => {
+        this.currentPhase = this.loop.getPhase();
         this.io.to(this.id).emit('game:state', this.buildState());
       },
       onRoundStart: (round: number, duration: number) => {

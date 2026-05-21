@@ -191,7 +191,7 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
     }
 
     const isLobby = phase === 'LOBBY';
-    const isPlayingGame = phase === 'DANCING' || phase === 'ANNOUNCING';
+    const isPlayingGame = phase === 'STARTING' || phase === 'DANCING' || phase === 'ANNOUNCING';
 
     if (!isPlaying) {
       if (isLobby) {

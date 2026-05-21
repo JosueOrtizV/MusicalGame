@@ -122,6 +122,7 @@ export const es: Translations = {
 
 
   // Game HUD
+  phaseStarting: '🚀 ¡Prepárate!',
   phaseDancing: '🎵 ¡A bailar!',
   phaseAnnouncing: '🎯 ¡Busca tu color!',
   phaseEliminating: '💥 Eliminando...',

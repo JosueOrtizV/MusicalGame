@@ -1,9 +1,9 @@
 'use client';
 
-import { Suspense, useRef, useMemo } from 'react';
+import { Suspense, useRef, useMemo, useEffect, useLayoutEffect } from 'react';
 import * as THREE from 'three';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Stars, Environment, CameraShake } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Stars, Environment, CameraShake, OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { BlockGrid } from './BlockGrid';
 import { PlayerMesh } from './PlayerMesh';
@@ -14,23 +14,178 @@ import { CAMERA_POSITION, CAMERA_FOV, BLOCK_SIZE } from '@/src/lib/constants';
 import { GRID_SIZE } from '@/src/shared/types';
 
 // ---------------------------------------------------------------------------
-//  Responsive Camera Handler
+//  Cinematic Camera Handler
+//  Supports lobby orbiting, initial sweep, local player tension zoom,
+//  and full interactive spectator controls when dead.
 // ---------------------------------------------------------------------------
-function ResponsiveCamera() {
-  useFrame(({ camera, size }) => {
-    const isPortrait = size.width < size.height;
-    const targetPos = isPortrait ? [0, 18, 18] : CAMERA_POSITION;
-    const targetFov = isPortrait ? 70 : CAMERA_FOV;
+const SPECTATOR_MOUSE_CONFIG = {
+  LEFT: THREE.MOUSE.PAN,
+  MIDDLE: THREE.MOUSE.DOLLY,
+  RIGHT: THREE.MOUSE.ROTATE
+};
 
+function CinematicCamera({ isSpectator }: { isSpectator: boolean }) {
+  const { size, camera } = useThree();
+  
+  // Game state subscriptions
+  const phase = useGameStore((s) => s.gameState?.phase || 'LOBBY');
+
+  // Keep track of intro starting sweep animation
+  const startingStartTimeRef = useRef(0);
+  const isFirstStartingFrameRef = useRef(true);
+  const lastFrameTimeRef = useRef(0);
+  const startingElapsedRef = useRef(0);
+
+  // Store camera target lookAt using a ref to interpolate smoothly
+  const currentLookAtRef = useRef(new THREE.Vector3(0, 0, 0));
+  
+  // Track phase changes to trigger starting sweep
+  const prevPhaseRef = useRef<string | null>(null);
+
+  useLayoutEffect(() => {
+    if (phase === 'STARTING') {
+      startingStartTimeRef.current = 0;
+      isFirstStartingFrameRef.current = true;
+      lastFrameTimeRef.current = 0;
+      startingElapsedRef.current = 0;
+
+      const isPortrait = typeof window !== 'undefined' ? window.innerWidth < window.innerHeight : false;
+      const basePosVec = new THREE.Vector3(
+        isPortrait ? 0 : CAMERA_POSITION[0],
+        isPortrait ? 18 : CAMERA_POSITION[1],
+        isPortrait ? 18 : CAMERA_POSITION[2]
+      );
+      const baseRadius = Math.sqrt(basePosVec.x * basePosVec.x + basePosVec.z * basePosVec.z);
+      const radius = baseRadius * 1.8;
+      const y = basePosVec.y * 1.8;
+
+      camera.position.set(0, y, -radius);
+      currentLookAtRef.current.set(0, 0, 0);
+      camera.lookAt(currentLookAtRef.current);
+      camera.updateProjectionMatrix();
+    }
+  }, [camera, phase]);
+
+  useEffect(() => {
+    if (phase === 'STARTING') {
+      startingStartTimeRef.current = 0; // Will be initialized on first useFrame tick
+      isFirstStartingFrameRef.current = true;
+      lastFrameTimeRef.current = 0;
+      startingElapsedRef.current = 0;
+    }
+    prevPhaseRef.current = phase;
+  }, [phase]);
+
+  useFrame(({ camera }) => {
+    // Spectators are controlled manually by OrbitControls
+    if (isSpectator) {
+      return;
+    }
+
+    const time = performance.now() / 1000;
+    const isPortrait = size.width < size.height;
+    
+    // Default base camera parameters
+    const basePosVec = new THREE.Vector3(
+      isPortrait ? 0 : CAMERA_POSITION[0],
+      isPortrait ? 18 : CAMERA_POSITION[1],
+      isPortrait ? 18 : CAMERA_POSITION[2]
+    );
+    const baseFov = isPortrait ? 70 : CAMERA_FOV;
+    const baseLookAtVec = new THREE.Vector3(0, 0, 0);
+
+    const targetCameraPos = basePosVec.clone();
+    const targetLookAt = baseLookAtVec.clone();
+    const targetFov = baseFov;
+
+    if (phase === 'LOBBY' || phase === 'GAME_OVER') {
+      // Gentle floating orbiting view in Lobby to make the 3D scene feel organic
+      const orbitSpeed = 0.12;
+      const radius = isPortrait ? 22 : 17;
+      targetCameraPos.set(
+        Math.sin(time * orbitSpeed) * radius,
+        14.5 + Math.sin(time * 0.25) * 1.5,
+        Math.cos(time * orbitSpeed) * radius
+      );
+      targetLookAt.set(0, -0.5, 0);
+    } else if (phase === 'STARTING') {
+      if (lastFrameTimeRef.current === 0) {
+        lastFrameTimeRef.current = time;
+        startingElapsedRef.current = 0;
+      }
+      
+      const delta = time - lastFrameTimeRef.current;
+      lastFrameTimeRef.current = time;
+      
+      // Cap delta to prevent huge jumps during loading spikes or tab-out freezes
+      const cappedDelta = Math.min(delta, 0.05);
+      startingElapsedRef.current += cappedDelta;
+      
+      const duration = 4.0; // 4 seconds duration matching server
+      const elapsed = startingElapsedRef.current;
+      const t = Math.min(elapsed / duration, 1.0);
+      
+      const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic deceleration
+      
+      const startAngle = Math.PI * 0.5 + Math.PI; // Start 180 degrees offset (behind the arena)
+      const targetAngle = Math.PI * 0.5; // End at standard front-side angle
+      const angle = THREE.MathUtils.lerp(startAngle, targetAngle, ease);
+      
+      const baseRadius = Math.sqrt(basePosVec.x * basePosVec.x + basePosVec.z * basePosVec.z);
+      const radius = THREE.MathUtils.lerp(baseRadius * 1.8, baseRadius, ease);
+      const y = THREE.MathUtils.lerp(basePosVec.y * 1.8, basePosVec.y, ease);
+      
+      targetCameraPos.set(
+        Math.cos(angle) * radius,
+        y,
+        Math.sin(angle) * radius
+      );
+      targetLookAt.set(0, 0, 0);
+    }
+
+    // Apply linear interpolation (lerp) for buttery smooth motion
     if (camera instanceof THREE.PerspectiveCamera) {
-      if (camera.fov !== targetFov) {
-        camera.position.set(targetPos[0], targetPos[1], targetPos[2]);
+      if (phase === 'STARTING' && isFirstStartingFrameRef.current) {
+        // Instant snap on the very first frame to prevent ugly snapping slides from default mounting position
+        camera.position.copy(targetCameraPos);
         camera.fov = targetFov;
         camera.updateProjectionMatrix();
-        camera.lookAt(0, 0, 0);
+        currentLookAtRef.current.copy(targetLookAt);
+        camera.lookAt(currentLookAtRef.current);
+        isFirstStartingFrameRef.current = false;
+      } else {
+        camera.position.lerp(targetCameraPos, 0.065);
+        
+        if (Math.abs(camera.fov - targetFov) > 0.05) {
+          camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, 0.065);
+          camera.updateProjectionMatrix();
+        }
       }
     }
+
+    if (!(phase === 'STARTING' && isFirstStartingFrameRef.current)) {
+      currentLookAtRef.current.lerp(targetLookAt, 0.065);
+      camera.lookAt(currentLookAtRef.current);
+    }
   });
+
+  // SPECTATOR MODE: Active manual camera orbit controls
+  if (isSpectator) {
+    return (
+      <OrbitControls
+        makeDefault
+        enableDamping
+        dampingFactor={0.06}
+        maxPolarAngle={Math.PI / 2.1} // prevent going underneath floor
+        minDistance={6}
+        maxDistance={40}
+        enableRotate={true}
+        enablePan={true}
+        enableZoom={true}
+        mouseButtons={SPECTATOR_MOUSE_CONFIG}
+      />
+    );
+  }
 
   return null;
 }
@@ -97,17 +252,61 @@ export function GameCanvas() {
   const localPlayerId = useGameStore((s) => s.localPlayerId);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Spectator detection (dead or spectating)
+  const isSpectator = useMemo(() => {
+    if (!gameState) return false;
+    const localPlayer = gameState.players.find((p) => p.id === localPlayerId);
+    return gameState.phase !== 'LOBBY' && (!localPlayer || !localPlayer.isAlive);
+  }, [gameState, localPlayerId]);
+
+  // Initial camera position matches the starting flight coordinates to bypass default mounting snapshots
+  const initialCameraPos = useMemo(() => {
+    if (gameState?.phase === 'STARTING') {
+      let isPortrait = false;
+      if (typeof window !== 'undefined') {
+        isPortrait = window.innerWidth < window.innerHeight;
+      }
+      const basePosVec = new THREE.Vector3(
+        isPortrait ? 0 : CAMERA_POSITION[0],
+        isPortrait ? 18 : CAMERA_POSITION[1],
+        isPortrait ? 18 : CAMERA_POSITION[2]
+      );
+      const baseRadius = Math.sqrt(basePosVec.x * basePosVec.x + basePosVec.z * basePosVec.z);
+      const radius = baseRadius * 1.8;
+      const y = basePosVec.y * 1.8;
+      return [0, y, -radius] as [number, number, number];
+    }
+    return CAMERA_POSITION;
+  }, [gameState?.phase]);
+
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      if (containerRef.current?.contains(e.target as Node)) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('contextmenu', handleContextMenu, { capture: true });
+    return () => {
+      window.removeEventListener('contextmenu', handleContextMenu, { capture: true });
+    };
+  }, []);
+
   return (
-    <div ref={containerRef} className="game-canvas-container" style={{ width: '100%', height: '100%' }}>
+    <div
+      ref={containerRef}
+      className="game-canvas-container"
+      style={{ width: '100%', height: '100%' }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
-        camera={{ position: CAMERA_POSITION, fov: CAMERA_FOV }}
+        camera={{ position: initialCameraPos, fov: CAMERA_FOV }}
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, powerPreference: 'high-performance', toneMappingExposure: 1.1 }}
         eventSource={containerRef as unknown as HTMLElement}
         eventPrefix="client"
       >
-        <ResponsiveCamera />
+        <CinematicCamera isSpectator={isSpectator} />
         <Suspense fallback={null}>
 
           {/* ---- Lighting ---- */}
@@ -168,16 +367,22 @@ export function GameCanvas() {
           {/* Global Particle System */}
           <ParticleSystem />
 
-          {/* Camera Shake on elimination */}
-          <CameraShake
-            maxYaw={0.05}
-            maxPitch={0.05}
-            maxRoll={0.05}
-            yawFrequency={0.2}
-            pitchFrequency={0.2}
-            rollFrequency={0.2}
-            intensity={gameState?.phase === 'ELIMINATING' ? 1 : 0}
-          />
+          {/* Camera Shake on elimination and tension buildup — only active for alive players when intensity > 0 */}
+          {!isSpectator && gameState?.phase && (gameState.phase === 'ELIMINATING' || gameState.phase === 'ANNOUNCING') && (
+            <CameraShake
+              maxYaw={0.08}
+              maxPitch={0.08}
+              maxRoll={0.08}
+              yawFrequency={0.4}
+              pitchFrequency={0.4}
+              rollFrequency={0.4}
+              intensity={
+                gameState.phase === 'ELIMINATING'
+                  ? 1.8 // amplified shake on collapse!
+                  : 0.25 // subtle building tension rumble!
+              }
+            />
+          )}
 
           {/* Post-Processing */}
           <EffectComposer>

@@ -10,6 +10,7 @@ import { PlayerManager } from './PlayerManager';
 
 // Phase durations in milliseconds
 const PHASE_DURATIONS: Partial<Record<GamePhase, number>> = {
+  STARTING:    4_000,
   ELIMINATING: 2_000,
   ROUND_END:   2_500,
 };
@@ -59,7 +60,7 @@ export class GameLoop {
     this.round = 0;
     this.lastHrTime = process.hrtime.bigint();
     this.timer = setInterval(() => this.tick(), this.TICK_INTERVAL);
-    this.transitionTo('DANCING');
+    this.transitionTo('STARTING');
   }
 
   stop(): void {
@@ -120,10 +121,20 @@ export class GameLoop {
     this.lastEmittedSecond = -1;
 
     switch (next) {
+      case 'STARTING': {
+        this.phaseMs = PHASE_DURATIONS.STARTING!;
+        this.grid.generate(1);
+        this.players.resetForRound(this.grid);
+        this.callbacks.onStateUpdate();
+        break;
+      }
+
       case 'DANCING': {
         this.round++;
-        const blocks = this.grid.generate(this.round);
-        this.players.resetForRound(this.grid);
+        if (this.round > 1) {
+          this.grid.generate(this.round);
+          this.players.resetForRound(this.grid);
+        }
         const durations = ROUND_DURATIONS[this.speed];
         const totalDurationS = durations[Math.min(this.round - 1, durations.length - 1)];
         
@@ -222,6 +233,7 @@ export class GameLoop {
 
   private advancePhase(): void {
     switch (this.phase) {
+      case 'STARTING':   return this.transitionTo('DANCING');
       case 'DANCING':    return this.transitionTo('ANNOUNCING');
       case 'ANNOUNCING': return this.transitionTo('ELIMINATING');
 

@@ -57,6 +57,7 @@ export function GameHUD() {
   const isUrgent = timeLeft <= 3 && phase === 'ANNOUNCING';
 
   let phaseTitle = '';
+  if (phase === 'STARTING') phaseTitle = t('phaseStarting');
   if (phase === 'DANCING') phaseTitle = t('phaseDancing');
   if (phase === 'ANNOUNCING') phaseTitle = t('phaseAnnouncing');
   if (phase === 'ELIMINATING') phaseTitle = t('phaseEliminating');
@@ -136,7 +137,7 @@ export function GameHUD() {
         <MobileDPad />
 
         {/* ---- Round info --------------------------------------------------- */}
-        <div className="hud-round">Round {gameState.round}</div>
+        {gameState.round > 0 && <div className="hud-round">Round {gameState.round}</div>}
       </div>
 
       {/* ---- Chat (Outside hud-overlay wrapper to avoid pointer-events: none and capped z-index) ---- */}

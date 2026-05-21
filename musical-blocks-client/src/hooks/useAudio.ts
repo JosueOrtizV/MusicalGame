@@ -86,7 +86,7 @@ export function useGameAudio() {
 
       // Phase Transitions
       if (phase !== prevPhase.current) {
-        if (phase === 'DANCING') {
+        if (phase === 'STARTING' || phase === 'DANCING') {
           // Resume or Start Music at FULL VOLUME
           if (!activeDanceTrack.current) {
             MUSIC_TRACKS.lobby.fade(0.4, 0, 500);

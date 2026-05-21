@@ -355,7 +355,7 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
     //  1. Active Beat Sync (BPM detection and sawtooth envelope pulse)
     // -------------------------------------------------------------------------
     const isLobby = phase === 'LOBBY';
-    const isPlayingGame = phase === 'DANCING' || phase === 'ANNOUNCING';
+    const isPlayingGame = phase === 'STARTING' || phase === 'DANCING' || phase === 'ANNOUNCING';
     
     let activeBpm = 0;
     let seekTime = state.clock.elapsedTime;
@@ -563,7 +563,7 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
       }
     } else if (phase === 'LOBBY') {
       nextAnim = player.isReady ? danceAnimName : 'idle';
-    } else if (phase === 'DANCING' || phase === 'ANNOUNCING') {
+    } else if (phase === 'STARTING' || phase === 'DANCING' || phase === 'ANNOUNCING') {
       if (isMoving) {
         nextAnim = 'walk';
       } else if (idleTimer.current < 0.7) {

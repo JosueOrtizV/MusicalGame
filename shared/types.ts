@@ -24,6 +24,7 @@ export type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 
 export type GamePhase =
   | 'LOBBY'        // Waiting for players / host to start
+  | 'STARTING'     // Intro camera rotation (4 s)
   | 'DANCING'      // Players move freely on the grid
   | 'ANNOUNCING'   // Server reveals winning color (3 s)
   | 'ELIMINATING'  // Non-winning blocks fall away (2 s)

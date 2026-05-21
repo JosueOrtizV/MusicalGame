@@ -120,6 +120,7 @@ export const en = {
 
 
   // Game HUD
+  phaseStarting: '🚀 Get Ready!',
   phaseDancing: '🎵 Dance!',
   phaseAnnouncing: '🎯 Find your color!',
   phaseEliminating: '💥 Eliminating...',
