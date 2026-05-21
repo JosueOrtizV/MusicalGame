@@ -194,7 +194,7 @@ function Spotlight({ position, colorIndex, orbitIndex, showStateRef, winnerColor
     <group position={position}>
       {/* Floating Hover Drone Body (encapsulated for bobbing and tilting animations) */}
       <group ref={droneGroupRef}>
-        
+
         {/* 1. OUTER STABILIZING HOVER RING (Glows and pulses to the beat) */}
         <mesh position={[0, 0.08, 0]} rotation={[Math.PI / 2, 0, 0]} material={accentMaterial}>
           <torusGeometry args={[0.48, 0.035, 8, 32]} />
@@ -205,7 +205,7 @@ function Spotlight({ position, colorIndex, orbitIndex, showStateRef, winnerColor
           <sphereGeometry args={[0.22, 16, 16]} />
           <meshStandardMaterial color="#1a1a24" metalness={0.9} roughness={0.15} />
         </mesh>
-        
+
         {/* Upper Navigation Dome / Cap on top of chassis */}
         <mesh position={[0, 0.26, 0]}>
           <cylinderGeometry args={[0.12, 0.14, 0.06, 12]} />
@@ -484,20 +484,20 @@ export function StageShow() {
     return phase === 'LOBBY' ? '#ff00ff' : '#00ffff';
   }, [winnerColorHex, phase]);
 
-  // Spotlight mount coordinates (height Y = 8.5)
+  // Spotlight mount coordinates (height Y = 7.0, lowered slightly as requested for better volumetric closeness)
   const spotlightPositions: [number, number, number][] = useMemo(() => [
-    [-stageEdge, 8.5, -stageEdge],
-    [stageEdge, 8.5, -stageEdge],
-    [-stageEdge, 8.5, stageEdge],
-    [stageEdge, 8.5, stageEdge],
+    [-stageEdge, 5.0, -stageEdge],
+    [stageEdge, 5.0, -stageEdge],
+    [-stageEdge, 5.0, stageEdge],
+    [stageEdge, 5.0, stageEdge],
   ], [stageEdge]);
 
   // Laser emitter coordinates (placed at Y = 2.9, just above standard block levels)
   const laserPositions: [number, number, number][] = useMemo(() => [
-    [-laserEdge, 2.9, -laserEdge],
-    [laserEdge, 2.9, -laserEdge],
-    [-laserEdge, 2.9, laserEdge],
-    [laserEdge, 2.9, laserEdge],
+    [-laserEdge, 2.0, -laserEdge],
+    [laserEdge, 2.0, -laserEdge],
+    [-laserEdge, 2.0, laserEdge],
+    [laserEdge, 2.0, laserEdge],
   ], [laserEdge]);
 
   // Calculate global active BPM and seekTime in the frame loop (matching BlockGrid & PlayerMesh)
@@ -593,10 +593,10 @@ export function StageShow() {
         />
       ))}
 
-      {/* Dynamic Beat-Flash Point Light (centered at Y = 5.0) */}
+      {/* Dynamic Beat-Flash Point Light (centered at Y = 4.0) */}
       <pointLight
         ref={pointLightRef}
-        position={[0, 5.0, 0]}
+        position={[0, 4.0, 0]}
         intensity={0}
         distance={25}
         color={flashColor}
