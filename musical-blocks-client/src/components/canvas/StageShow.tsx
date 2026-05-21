@@ -80,11 +80,18 @@ interface SpotlightProps {
 
 function Spotlight({ position, colorIndex, orbitIndex, showStateRef, winnerColorHex }: SpotlightProps) {
   const casingRef = useRef<THREE.Group>(null);
+  const droneGroupRef = useRef<THREE.Group>(null);
   const spotLightRef = useRef<THREE.SpotLight>(null);
   const targetRef = useRef<THREE.Object3D>(null);
   const beamMatRef = useRef<THREE.ShaderMaterial>(null);
-  const lensMatRef = useRef<THREE.MeshBasicMaterial>(null);
-  const accentMatRef = useRef<THREE.MeshBasicMaterial>(null);
+
+  // Create stable material instances to be shared across meshes using useMemo
+  const accentMaterial = useMemo(() => new THREE.MeshBasicMaterial(), []);
+  const lensMaterial = useMemo(() => new THREE.MeshBasicMaterial(), []);
+
+  // Store materials in refs to satisfy ESLint's strict immutability checks in useFrame
+  const accentMatRef = useRef(accentMaterial);
+  const lensMatRef = useRef(lensMaterial);
 
   // Dynamic sweeping targets for lookAt stored in a mutable ref to satisfy ESLint
   const targetPosRef = useRef(new THREE.Vector3());
@@ -139,6 +146,18 @@ function Spotlight({ position, colorIndex, orbitIndex, showStateRef, winnerColor
       casingRef.current.lookAt(targetPosRef.current);
     }
 
+    // Animate the floating/bobbing of the drone body in the air
+    if (droneGroupRef.current) {
+      // Organic sinusoidal bobbing up and down
+      const bobFreq = 1.8;
+      const bobAmp = 0.16;
+      droneGroupRef.current.position.y = Math.sin(time * bobFreq + orbitIndex * 1.5) * bobAmp;
+
+      // Subtle mechanical stabilization tilts (X and Z axis)
+      droneGroupRef.current.rotation.x = Math.cos(time * 1.2 + orbitIndex) * 0.04;
+      droneGroupRef.current.rotation.z = Math.sin(time * 1.0 + orbitIndex) * 0.04;
+    }
+
     // Determine color: follow winner color if announced, else sweep palette
     let activeColor = SPOTLIGHT_COLORS[(colorIndex + Math.floor(time * 0.25)) % SPOTLIGHT_COLORS.length];
     if (winnerColorHex) {
@@ -165,7 +184,7 @@ function Spotlight({ position, colorIndex, orbitIndex, showStateRef, winnerColor
       lensMatRef.current.color.copy(threeColor).multiplyScalar(4.0 + beatPulse * 8.0);
     }
 
-    // Sync side cyberpunk stripes to the beat
+    // Sync side cyberpunk stripes, thrusters and hover rings to the beat
     if (accentMatRef.current) {
       accentMatRef.current.color.copy(threeColor).multiplyScalar(2.0 + beatPulse * 4.0);
     }
@@ -173,72 +192,149 @@ function Spotlight({ position, colorIndex, orbitIndex, showStateRef, winnerColor
 
   return (
     <group position={position}>
-      {/* Mounting Bracket Base (Premium metallic dark slate) */}
-      <mesh>
-        <boxGeometry args={[0.5, 0.15, 0.5]} />
-        <meshStandardMaterial color="#2d2d3a" metalness={0.95} roughness={0.1} />
-      </mesh>
-
-      {/* Rotating Joint Sphere */}
-      <mesh position={[0, -0.15, 0]}>
-        <sphereGeometry args={[0.22, 16, 16]} />
-        <meshStandardMaterial color="#454558" metalness={0.9} roughness={0.15} />
-      </mesh>
-
-      {/* Robotic Dual U-Yoke mounting bracket arms */}
-      <mesh position={[-0.28, -0.22, 0]}>
-        <boxGeometry args={[0.06, 0.35, 0.12]} />
-        <meshStandardMaterial color="#2d2d3a" metalness={0.9} roughness={0.1} />
-      </mesh>
-      <mesh position={[0.28, -0.22, 0]}>
-        <boxGeometry args={[0.06, 0.35, 0.12]} />
-        <meshStandardMaterial color="#2d2d3a" metalness={0.9} roughness={0.1} />
-      </mesh>
-
-      {/* Articulated Casing Head */}
-      <group ref={casingRef} position={[0, -0.22, 0]}>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.18, 0.24, 0.5, 16]} />
-          <meshStandardMaterial color="#38384a" metalness={0.95} roughness={0.12} />
+      {/* Floating Hover Drone Body (encapsulated for bobbing and tilting animations) */}
+      <group ref={droneGroupRef}>
+        
+        {/* 1. OUTER STABILIZING HOVER RING (Glows and pulses to the beat) */}
+        <mesh position={[0, 0.08, 0]} rotation={[Math.PI / 2, 0, 0]} material={accentMaterial}>
+          <torusGeometry args={[0.48, 0.035, 8, 32]} />
         </mesh>
 
-        {/* Cyber Neon Accent Stripes wrapping the rotating head casing */}
-        <mesh position={[0, 0, 0.12]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.22, 0.02, 8, 24]} />
-          <meshBasicMaterial ref={accentMatRef} />
+        {/* 2. CORE CHASSIS (Dark metallic shell housing the processors) */}
+        <mesh position={[0, 0.08, 0]}>
+          <sphereGeometry args={[0.22, 16, 16]} />
+          <meshStandardMaterial color="#1a1a24" metalness={0.9} roughness={0.15} />
         </mesh>
-        <mesh position={[0, 0, -0.12]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.21, 0.02, 8, 24]} />
-          <meshBasicMaterial ref={accentMatRef} />
-        </mesh>
-
-        {/* Projector Lens / Glowing Aperture Core (Shoots out the beam) */}
-        <mesh position={[0, 0, -0.251]} rotation={[0, 0, 0]}>
-          <circleGeometry args={[0.16, 16]} />
-          <meshBasicMaterial ref={lensMatRef} />
+        
+        {/* Upper Navigation Dome / Cap on top of chassis */}
+        <mesh position={[0, 0.26, 0]}>
+          <cylinderGeometry args={[0.12, 0.14, 0.06, 12]} />
+          <meshStandardMaterial color="#2c2c3b" metalness={0.9} roughness={0.15} />
         </mesh>
 
-        {/* Real Spotlight Light Projection */}
-        <spotLight
-          ref={spotLightRef}
-          position={[0, 0, -0.22]}
-          angle={0.4}
-          penumbra={0.65}
-          distance={26}
-          castShadow
-          shadow-mapSize={[512, 512]}
-          shadow-bias={-0.001}
-        />
-
-        {/* Volumetric Glowing Beam Mesh */}
-        {/* Oriented along Z axis: points forward relative to lookAt casing */}
-        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -6.1]}>
-          <cylinderGeometry args={[0.08, 1.8, 12, 24, 4, true]} />
-          <primitive object={volumetricMaterial} attach="material" ref={beamMatRef} />
+        {/* 3. STRUCTURAL SPOKES (Connects chassis to outer hover ring) */}
+        {/* Left-Right strut */}
+        <mesh position={[0, 0.08, 0]}>
+          <boxGeometry args={[0.92, 0.02, 0.04]} />
+          <meshStandardMaterial color="#2c2c3b" metalness={0.9} roughness={0.15} />
+        </mesh>
+        {/* Front-Back strut */}
+        <mesh position={[0, 0.08, 0]}>
+          <boxGeometry args={[0.04, 0.02, 0.92]} />
+          <meshStandardMaterial color="#2c2c3b" metalness={0.9} roughness={0.15} />
         </mesh>
 
-        {/* Casing Target Anchor */}
-        <object3D ref={targetRef} position={[0, 0, -1]} />
+        {/* 4. 4x DOWNWARD ANTI-GRAVITY PLASMA JETS / THRUSTERS */}
+        {/* Thruster 1: Left */}
+        <group position={[-0.34, 0.08, 0]}>
+          {/* Nozzle */}
+          <mesh position={[0, -0.04, 0]}>
+            <cylinderGeometry args={[0.03, 0.045, 0.07, 8]} />
+            <meshStandardMaterial color="#2c2c3b" metalness={0.9} roughness={0.1} />
+          </mesh>
+          {/* Glowing Plasma Trail (Pulsates to the beat) */}
+          <mesh position={[0, -0.13, 0]} material={accentMaterial}>
+            <cylinderGeometry args={[0.015, 0.002, 0.12, 6, 1, true]} />
+          </mesh>
+        </group>
+
+        {/* Thruster 2: Right */}
+        <group position={[0.34, 0.08, 0]}>
+          {/* Nozzle */}
+          <mesh position={[0, -0.04, 0]}>
+            <cylinderGeometry args={[0.03, 0.045, 0.07, 8]} />
+            <meshStandardMaterial color="#2c2c3b" metalness={0.9} roughness={0.1} />
+          </mesh>
+          {/* Glowing Plasma Trail */}
+          <mesh position={[0, -0.13, 0]} material={accentMaterial}>
+            <cylinderGeometry args={[0.015, 0.002, 0.12, 6, 1, true]} />
+          </mesh>
+        </group>
+
+        {/* Thruster 3: Front */}
+        <group position={[0, 0.08, 0.34]}>
+          {/* Nozzle */}
+          <mesh position={[0, -0.04, 0]}>
+            <cylinderGeometry args={[0.03, 0.045, 0.07, 8]} />
+            <meshStandardMaterial color="#2c2c3b" metalness={0.9} roughness={0.1} />
+          </mesh>
+          {/* Glowing Plasma Trail */}
+          <mesh position={[0, -0.13, 0]} material={accentMaterial}>
+            <cylinderGeometry args={[0.015, 0.002, 0.12, 6, 1, true]} />
+          </mesh>
+        </group>
+
+        {/* Thruster 4: Back */}
+        <group position={[0, 0.08, -0.34]}>
+          {/* Nozzle */}
+          <mesh position={[0, -0.04, 0]}>
+            <cylinderGeometry args={[0.03, 0.045, 0.07, 8]} />
+            <meshStandardMaterial color="#2c2c3b" metalness={0.9} roughness={0.1} />
+          </mesh>
+          {/* Glowing Plasma Trail */}
+          <mesh position={[0, -0.13, 0]} material={accentMaterial}>
+            <cylinderGeometry args={[0.015, 0.002, 0.12, 6, 1, true]} />
+          </mesh>
+        </group>
+
+        {/* 5. GIMBAL / ROTATING JOINT SPHERE */}
+        <mesh position={[0, -0.08, 0]}>
+          <sphereGeometry args={[0.14, 12, 12]} />
+          <meshStandardMaterial color="#38384a" metalness={0.9} roughness={0.15} />
+        </mesh>
+
+        {/* 6. ROBOTIC BRACKET ARMS (Suspends head underneath joint) */}
+        <mesh position={[-0.20, -0.20, 0]}>
+          <boxGeometry args={[0.04, 0.24, 0.08]} />
+          <meshStandardMaterial color="#1a1a24" metalness={0.9} roughness={0.1} />
+        </mesh>
+        <mesh position={[0.20, -0.20, 0]}>
+          <boxGeometry args={[0.04, 0.24, 0.08]} />
+          <meshStandardMaterial color="#1a1a24" metalness={0.9} roughness={0.1} />
+        </mesh>
+
+        {/* 7. ARTICULATED CASING HEAD (Pivots to track active target) */}
+        <group ref={casingRef} position={[0, -0.20, 0]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.13, 0.17, 0.38, 16]} />
+            <meshStandardMaterial color="#2c2c3b" metalness={0.95} roughness={0.12} />
+          </mesh>
+
+          {/* Cyber Neon Accent Stripes wrapping the head */}
+          <mesh position={[0, 0, 0.09]} rotation={[Math.PI / 2, 0, 0]} material={accentMaterial}>
+            <torusGeometry args={[0.155, 0.015, 8, 24]} />
+          </mesh>
+          <mesh position={[0, 0, -0.09]} rotation={[Math.PI / 2, 0, 0]} material={accentMaterial}>
+            <torusGeometry args={[0.148, 0.015, 8, 24]} />
+          </mesh>
+
+          {/* Projector Lens / Glowing Aperture Core */}
+          <mesh position={[0, 0, -0.191]} rotation={[0, 0, 0]} material={lensMaterial}>
+            <circleGeometry args={[0.11, 16]} />
+          </mesh>
+
+          {/* Real Spotlight Light Projection */}
+          <spotLight
+            ref={spotLightRef}
+            position={[0, 0, -0.16]}
+            angle={0.4}
+            penumbra={0.65}
+            distance={26}
+            castShadow
+            shadow-mapSize={[512, 512]}
+            shadow-bias={-0.001}
+          />
+
+          {/* Volumetric Glowing Beam Mesh */}
+          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -6.1]}>
+            <cylinderGeometry args={[0.08, 1.8, 12, 24, 4, true]} />
+            <primitive object={volumetricMaterial} attach="material" ref={beamMatRef} />
+          </mesh>
+
+          {/* Casing Target Anchor */}
+          <object3D ref={targetRef} position={[0, 0, -1]} />
+        </group>
+
       </group>
     </group>
   );
