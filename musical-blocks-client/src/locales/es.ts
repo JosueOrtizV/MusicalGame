@@ -52,6 +52,10 @@ export const es: Translations = {
   errNameFirst: 'Escribe tu nombre primero.',
   errCodeLength: 'El código de mesa debe ser de 4 letras.',
   errSessionLost: 'Sesión perdida. Has sido desconectado.',
+  joiningRoomDirect: '🏆 ¡Uniéndote a la Sala {code}!',
+  joiningRoomSpinner: '⏳ Uniéndose a la Sala {code}...',
+  errRoomFullOrInvalid: 'La sala {code} está llena, no existe o ya ha comenzado.',
+  copiedLink: '📋 ¡Enlace de invitación copiado al portapapeles!',
 
   // Room Lobby
   privateRoom: '🔑 Mesa #{id}',

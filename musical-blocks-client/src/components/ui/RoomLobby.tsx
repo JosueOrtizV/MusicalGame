@@ -55,7 +55,11 @@ export function RoomLobby() {
   };
 
   const copyCode = () => {
-    navigator.clipboard.writeText(room.id);
+    if (typeof window !== 'undefined') {
+      const inviteUrl = `${window.location.origin}/?room=${room.id.toUpperCase()}`;
+      navigator.clipboard.writeText(inviteUrl);
+      addToast(t('copiedLink'), 'success');
+    }
   };
 
   const getDifficultyName = (colors: number) => {

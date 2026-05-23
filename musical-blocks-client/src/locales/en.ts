@@ -50,6 +50,10 @@ export const en = {
   errNameFirst: 'Enter your name first.',
   errCodeLength: 'Room code must be 4 characters.',
   errSessionLost: 'Session lost. You have been disconnected.',
+  joiningRoomDirect: '🏆 Joining Room {code}!',
+  joiningRoomSpinner: '⏳ Auto-connecting to Room {code}...',
+  errRoomFullOrInvalid: 'Room {code} is full, invalid, or already started.',
+  copiedLink: '📋 Invite link copied to clipboard!',
 
   // Room Lobby
   privateRoom: '🔑 Room #{id}',

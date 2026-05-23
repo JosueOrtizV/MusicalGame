@@ -49,6 +49,11 @@ Musical Blocks is not just a standard clone—it's loaded with advanced customiz
     *   **Voxel Fireworks**: Volumetric voxel-style quantized bursts forming geometric star-shells in the neon sky above the arena.
     *   **Confetti Cascades**: Dense streams of color-coded particles floating continuously around the winning player.
     *   **Delayed Transparent UI & OrbitControls**: The winner card fades in after 4.5s of unobstructed 3D viewing, showing a sleek golden banner first. The full-screen overlay is highly transparent (`rgba(3, 3, 10, 0.28)`) with minimal blur (`2px`), and everyone (including the winner) unlocks interactive 360° rotation camera controls to inspect the scene.
+*   **🔗 Frictionless Direct Room Joining (URL-Based)**:
+    *   **Auto-detection & Validation**: Seamlessly parses `?room=CODE` on client mount and validates the 4-character alphanumeric code.
+    *   **One-click Auto-Join**: Auto-connects the socket and enters the room lobby directly if they have a saved nickname stored in `localStorage` (via Zustand persistence).
+    *   **Premium Onboarding**: First-time users see a glowing golden/neon badge stating *"🏆 Joining Room CODE"*, with the name entry input instantly focused for ultra-fast, single-action entry.
+    *   **Robust Fallbacks**: Automatically sanitizes the URL and displays a premium Toast if the room is invalid, full, or already started.
 
 ---
 
@@ -312,7 +317,7 @@ npm run dev
 - [x] Auto-cleanup: destroy room after 30s grace period when empty
 - [x] Client lobby screen: Browse public rooms via REST, refresh on demand
 - [x] Room code copy: click badge to copy 4-letter code to clipboard
-- [ ] URL-based room join: parse `?room=` on load, auto-join if room exists
+- [x] URL-based room join: parse `?room=` on load, auto-join if room exists
 
 ---
 
@@ -382,8 +387,8 @@ A continuación se detallan las tareas estéticas, cinemáticas, de red y de jug
   - Sincronizar esta configuración en tiempo real a través del servidor y aplicar lógica condicional en la grilla y el movimiento:
     - *Colisión Desactivada*: Los jugadores pueden atravesarse libremente al correr.
     - *Colisión Activada*: Los avatares se empujan y bloquean físicamente el paso en la grilla (aumentando la dificultad táctica al competir por bloques).
-- [ ] **6. 🔗 Unirse Mediante Enlace Directo (URL-Based Room Joining)**:
-  - Parsear la query `?room=CODE` al cargar el cliente. Si el código de sala es detectado y válido, omitir el lobby de selección y conectar automáticamente al jugador a la sala privada especificada.
+- [x] **6. 🔗 Unirse Mediante Enlace Directo (URL-Based Room Joining)**:
+  - Parsear la query `?room=CODE` al cargar el cliente. Si el código de sala es detectado y válido, omitir el lobby de selección y conectar automáticamente al jugador a la sala privada especificada. Al abandonar la sala o terminar la partida, se elimina el parámetro de la URL.
 - [ ] **7. 🛡️ Límite de Conexiones por IP (Connection Rate Limiting)**:
   - Control de flujo de sockets en el backend limitando la entrada a un máximo de **10 conexiones/IP/minuto** para mitigar ataques DDoS y spam de creación de salas.
 - [ ] **8. 📝 Registro de Actividad Sospechosa (Suspicious Activity Log)**:

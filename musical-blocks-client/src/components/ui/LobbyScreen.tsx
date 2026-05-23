@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getSocket } from '@/src/lib/socketClient';
 import { useGameStore } from '@/src/stores/gameStore';
 import { useToastStore } from '@/src/stores/toastStore';
@@ -19,7 +19,78 @@ export function LobbyScreen() {
   const [loading, setLoading] = useState<string | null>(null);
   const [publicRooms, setPublicRooms] = useState<RoomSummary[]>([]);
   const [step, setStep] = useState<'main' | 'join_private' | 'public_rooms'>('main');
+  const [pendingDirectJoinCode, setPendingDirectJoinCode] = useState<string | null>(null);
   const addToast = useToastStore((s) => s.addToast);
+
+  const clearUrlQuery = () => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('room');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
+  };
+
+  const autoJoinDirect = (playerName: string, code: string) => {
+    setLoading('direct');
+    store.setPlayerName(playerName);
+    const socket = getSocket();
+    if (!socket.connected) socket.connect();
+
+    socket.emit(
+      'room:join_private',
+      { playerName, code },
+      (room: Room | null, err?: string) => {
+        if (!room || err) {
+          clearUrlQuery();
+          setPendingDirectJoinCode(null);
+          addToast(err || t('errRoomFullOrInvalid', { code }), 'error');
+          setLoading(null);
+          return;
+        }
+        store.setRoom(room);
+        store.setLocalPlayer(socket.id!, playerName);
+        clearUrlQuery();
+        setLoading(null);
+      },
+    );
+  };
+
+  const handleDirectJoinSubmit = () => {
+    if (!validateName()) return;
+    if (pendingDirectJoinCode) {
+      autoJoinDirect(name.trim(), pendingDirectJoinCode);
+    }
+  };
+
+  const cancelDirectJoin = () => {
+    clearUrlQuery();
+    setPendingDirectJoinCode(null);
+    setPrivateCode('');
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room');
+    if (roomParam) {
+      const code = roomParam.trim().toUpperCase();
+      if (code.length === 4 && /^[A-Z0-9]{4}$/.test(code)) {
+        setPendingDirectJoinCode(code);
+        setPrivateCode(code);
+
+        const savedName = store.localPlayerName ? store.localPlayerName.trim() : '';
+        if (savedName.length >= 2 && savedName.length <= 16) {
+          autoJoinDirect(savedName, code);
+        } else {
+          setTimeout(() => {
+            const nameInput = document.getElementById('player-name') as HTMLInputElement;
+            if (nameInput) nameInput.focus();
+          }, 150);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const nameValid = name.trim().length >= 2 && name.trim().length <= 16;
 
@@ -117,7 +188,13 @@ export function LobbyScreen() {
       <div className="lobby-particles" aria-hidden />
 
       <div className="lobby-card">
-        {step === 'main' ? (
+        {loading === 'direct' ? (
+          <div className="lobby-logo" style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            <span className="logo-emoji">⏳</span>
+            <h1 className="logo-title">{t('loading')}</h1>
+            <p className="logo-sub">{t('joiningRoomSpinner', { code: pendingDirectJoinCode || '' })}</p>
+          </div>
+        ) : step === 'main' ? (
           <>
             {/* Logo */}
             <div className="lobby-logo">
@@ -128,6 +205,14 @@ export function LobbyScreen() {
 
             {/* Main Content Wrapper */}
             <div className="lobby-content-wrapper">
+              {pendingDirectJoinCode && (
+                <div className="direct-join-badge">
+                  <span className="direct-join-text">
+                    {t('joiningRoomDirect', { code: pendingDirectJoinCode })}
+                  </span>
+                </div>
+              )}
+
               {/* Name input */}
               <div className="lobby-section">
                 <label className="lobby-label" htmlFor="player-name">{t('yourName')}</label>
@@ -139,44 +224,69 @@ export function LobbyScreen() {
                   maxLength={16}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && joinPublic()}
+                  onKeyDown={(e) =>
+                    e.key === 'Enter' &&
+                    (pendingDirectJoinCode ? handleDirectJoinSubmit() : joinPublic())
+                  }
                 />
               </div>
 
-              {/* Action buttons (Direct children for grid support) */}
-              <button
-                className="lobby-btn lobby-btn--primary"
-                onClick={joinPublic}
-                disabled={!!loading}
-              >
-                {loading === 'public' ? t('joining') : t('quickJoin')}
-              </button>
+              {pendingDirectJoinCode ? (
+                <>
+                  <button
+                    className="lobby-btn lobby-btn--primary"
+                    onClick={handleDirectJoinSubmit}
+                    disabled={!!loading}
+                  >
+                    {t('join')}
+                  </button>
 
-              <button
-                className="lobby-btn lobby-btn--accent"
-                onClick={() => {
-                  if (!validateName()) return;
-                  setStep('join_private');
-                }}
-                disabled={!!loading}
-              >
-                {t('joinPrivate')}
-              </button>
+                  <button
+                    className="lobby-btn lobby-btn--secondary"
+                    onClick={cancelDirectJoin}
+                    disabled={!!loading}
+                  >
+                    {t('cancel')}
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* Action buttons (Direct children for grid support) */}
+                  <button
+                    className="lobby-btn lobby-btn--primary"
+                    onClick={joinPublic}
+                    disabled={!!loading}
+                  >
+                    {loading === 'public' ? t('joining') : t('quickJoin')}
+                  </button>
 
-              <button
-                className="lobby-btn lobby-btn--secondary"
-                onClick={createPrivate}
-                disabled={!!loading}
-              >
-                {loading === 'create' ? t('creating') : t('createPrivate')}
-              </button>
+                  <button
+                    className="lobby-btn lobby-btn--accent"
+                    onClick={() => {
+                      if (!validateName()) return;
+                      setStep('join_private');
+                    }}
+                    disabled={!!loading}
+                  >
+                    {t('joinPrivate')}
+                  </button>
 
-              <button
-                className="lobby-link"
-                onClick={fetchRooms}
-              >
-                {t('browseRooms')}
-              </button>
+                  <button
+                    className="lobby-btn lobby-btn--secondary"
+                    onClick={createPrivate}
+                    disabled={!!loading}
+                  >
+                    {loading === 'create' ? t('creating') : t('createPrivate')}
+                  </button>
+
+                  <button
+                    className="lobby-link"
+                    onClick={fetchRooms}
+                  >
+                    {t('browseRooms')}
+                  </button>
+                </>
+              )}
             </div>
           </>
         ) : step === 'join_private' ? (

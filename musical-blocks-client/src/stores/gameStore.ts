@@ -109,6 +109,17 @@ export const useGameStore = create<GameStore>()(
         set((s) => {
           s.room = room;
           
+          // Sync URL query parameter for private rooms
+          if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            if (room.visibility === 'private') {
+              url.searchParams.set('room', room.id.toUpperCase());
+            } else {
+              url.searchParams.delete('room');
+            }
+            window.history.replaceState({}, '', url.pathname + url.search);
+          }
+          
           // Only auto-navigate to lobby if:
           // 1. The local player is actually IN the room list
           // 2. Joining fresh from home screen OR room was reset after game
@@ -142,6 +153,13 @@ export const useGameStore = create<GameStore>()(
           s.room = null;
           s.gameState = null;
           s.screen = 'home';
+          
+          // Clear URL query parameter
+          if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('room');
+            window.history.replaceState({}, '', url.pathname + url.search);
+          }
         }),
 
       setGameState: (state) =>
@@ -218,7 +236,8 @@ export const useGameStore = create<GameStore>()(
       partialize: (state) => ({
         language: state.language,
         volume: state.volume,
-        isMuted: state.isMuted
+        isMuted: state.isMuted,
+        localPlayerName: state.localPlayerName
       }),
     }
   )
