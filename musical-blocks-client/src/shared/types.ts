@@ -114,6 +114,7 @@ export interface Room {
   hostId: string;       // socket.id of the host
   gameState: GameState | null; // null while in LOBBY phase
   settings: RoomSettings;
+  sessionToken?: string; // HMAC token signed by server
 }
 
 // ---------------------------------------------------------------------------
@@ -156,19 +157,18 @@ export interface ClientEvents {
   'room:leave':        () => void;
 
   // Lobby actions
-  'player:ready':      (payload: { ready: boolean }) => void;
-  'host:start_game':   () => void; // host-only: force start
-  'host:back_to_lobby': () => void; // host-only: reset game to waiting state
-  'player:return_lobby': () => void; // player returns to lobby while game is finished
-  'host:kick_player':  (payload: { playerId: string }) => void; // host-only: kick player
-  'host:update_settings': (payload: { settings: RoomSettings }) => void;
-
+  'player:ready':      (payload: { ready: boolean; token?: string }) => void;
+  'host:start_game':   (payload?: { token?: string }) => void; // host-only: force start
+  'host:back_to_lobby': (payload?: { token?: string }) => void; // host-only: reset game to waiting state
+  'player:return_lobby': (payload?: { token?: string }) => void; // player returns to lobby while game is finished
+  'host:kick_player':  (payload: { playerId: string; token?: string }) => void; // host-only: kick player
+  'host:update_settings': (payload: { settings: RoomSettings; token?: string }) => void;
 
   // In-game actions
-  'player:move':       (payload: { direction: Direction; timestamp: number }) => void;
+  'player:move':       (payload: { direction: Direction; timestamp: number; token?: string }) => void;
   
   // Chat
-  'chat:send':         (payload: { text: string }) => void;
+  'chat:send':         (payload: { text: string; token?: string }) => void;
 
   // Network / ping
   'ping':              (payload: { clientTime: number }) => void;

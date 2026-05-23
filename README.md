@@ -389,18 +389,18 @@ A continuación se detallan las tareas estéticas, cinemáticas, de red y de jug
     - *Colisión Activada*: Los avatares se empujan y bloquean físicamente el paso en la grilla (aumentando la dificultad táctica al competir por bloques).
 - [x] **6. 🔗 Unirse Mediante Enlace Directo (URL-Based Room Joining)**:
   - Parsear la query `?room=CODE` al cargar el cliente. Si el código de sala es detectado y válido, omitir el lobby de selección y conectar automáticamente al jugador a la sala privada especificada. Al abandonar la sala o terminar la partida, se elimina el parámetro de la URL.
-- [ ] **7. 🛡️ Límite de Conexiones por IP (Connection Rate Limiting)**:
+- [x] **7. 🛡️ Límite de Conexiones por IP (Connection Rate Limiting)**:
   - Control de flujo de sockets en el backend limitando la entrada a un máximo de **10 conexiones/IP/minuto** para mitigar ataques DDoS y spam de creación de salas.
-- [ ] **8. 📝 Registro de Actividad Sospechosa (Suspicious Activity Log)**:
+- [x] **8. 📝 Registro de Actividad Sospechosa (Suspicious Activity Log)**:
   - Generar logs automáticos mediante transporte rápido de `pino` en el servidor ante desviaciones de lag extremas (>2000ms) o movimientos con tasa de input inválida.
-- [ ] **9. 🔑 Firmas Criptográficas de Sesión (HMAC Session Tokens)**:
+- [x] **9. 🔑 Firmas Criptográficas de Sesión (HMAC Session Tokens)**:
   - Implementar firmas de tokens HMAC únicas en la inicialización del cliente para verificar que las peticiones pertenecen de forma segura a la sesión del socket original y evitar hijacking.
 
 ---
 
 ### 🔒 Phase 5 — Anti-Cheat & Security
 
-- [ ] Rate limit Socket.io connections: max 10 connections/IP/minute
+- [x] Rate limit Socket.io connections: max 10 connections/IP/minute
 - [x] Validate all incoming events on server — never trust client data
 - [x] Sanitize player name: alphanumeric + accents, 2–16 chars, server-side
 - [x] Reject moves outside current grid bounds server-side (0–11)
@@ -408,13 +408,14 @@ A continuación se detallan las tareas estéticas, cinemáticas, de red y de jug
 - [x] Reject moves with lag > 2000ms or timestamp in the future
 - [x] Rate-limit moves: reject if < 100ms since last move per player
 - [x] Server-side phase enforcement: host:start ignored if game already running
-- [ ] Log suspicious activity to file with `pino` transport
-- [ ] Implement basic HMAC token per session to prevent spoofed socketIds
+- [x] Log suspicious activity to console/file with fast `pino` transport
+- [x] Implement basic HMAC token per session to prevent spoofed socketIds / hijacking
 
 ---
 
 ### 🧪 Phase 6 — Testing
 
+- [x] Automated security test suite: `security_test.js` (validates Rate Limiting, HMAC spoof prevention, and suspicious speed hack/lag log generation)
 - [ ] Install test dependencies: `vitest`, `@testing-library/react`, `jsdom`
 - [ ] Unit test: `GridManager.generate()` — verify 144 blocks, 6 colors, valid distribution
 - [ ] Unit test: `GridManager.eliminate(color)` — verify correct blocks marked inactive

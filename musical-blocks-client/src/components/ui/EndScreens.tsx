@@ -84,7 +84,7 @@ export function WinnerScreen() {
   if (!isCardVisible) {
     return (
       <div className="victory-top-banner">
-        {winner ? `🏆 ¡Victoria para ${winner.name}! 🏆` : '🏁 ¡Partida Finalizada! 🏁'}
+        {winner ? t('victoryBanner', { name: winner.name }) : t('gameOverBanner')}
       </div>
     );
   }

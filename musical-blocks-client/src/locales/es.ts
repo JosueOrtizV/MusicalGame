@@ -149,6 +149,8 @@ export const es: Translations = {
   youWon: '¡Eres el último en la pista!',
   gameOver: 'FIN DEL JUEGO',
   winnerIs: '🏆 ¡Ganó {name}!',
+  victoryBanner: '🏆 ¡Victoria para {name}! 🏆',
+  gameOverBanner: '🏁 ¡Partida Finalizada! 🏁',
   nobodyWon: '¡Nadie sobrevivió!',
   autoReturnIn: 'Volviendo automáticamente en {{seconds}}s...',
   backToLobby: 'Volver a la Sala',

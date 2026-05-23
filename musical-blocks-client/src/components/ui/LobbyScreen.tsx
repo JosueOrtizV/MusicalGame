@@ -31,6 +31,7 @@ export function LobbyScreen() {
   };
 
   const autoJoinDirect = (playerName: string, code: string) => {
+    store.setConnectionError(null);
     setLoading('direct');
     store.setPlayerName(playerName);
     const socket = getSocket();
@@ -92,6 +93,12 @@ export function LobbyScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (store.connectionError) {
+      setLoading(null);
+    }
+  }, [store.connectionError]);
+
   const nameValid = name.trim().length >= 2 && name.trim().length <= 16;
 
   const validateName = () => {
@@ -126,6 +133,7 @@ export function LobbyScreen() {
   // ---- Quick join public (auto-match)
   const joinPublic = () => {
     if (!validateName()) return;
+    store.setConnectionError(null);
     setLoading('public');
     store.setPlayerName(name.trim());
     const socket = getSocket();
@@ -146,6 +154,7 @@ export function LobbyScreen() {
   // ---- Create private room
   const createPrivate = () => {
     if (!validateName()) return;
+    store.setConnectionError(null);
     setLoading('create');
     store.setPlayerName(name.trim());
     const socket = getSocket();
@@ -166,6 +175,7 @@ export function LobbyScreen() {
   const joinPrivate = () => {
     if (!validateName()) return;
     if (privateCode.trim().length !== 4) return handleError(t('errCodeLength'));
+    store.setConnectionError(null);
     setLoading('private');
     store.setPlayerName(name.trim());
     const socket = getSocket();

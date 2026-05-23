@@ -3,6 +3,7 @@
 import { io, Socket } from 'socket.io-client';
 import { ServerEvents, ClientEvents } from '@/src/shared/types';
 import { SERVER_URL } from './constants';
+import { useGameStore } from '../stores/gameStore';
 
 // ---------------------------------------------------------------------------
 //  Typed socket singleton — lazy initialized on first use
@@ -25,6 +26,34 @@ export function getSocket(): AppSocket {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
+
+    // Auto-inject HMAC Session Token into client emits for state-altering events
+    const originalEmit = _socket.emit;
+    _socket.emit = function (eventName: string, ...args: any[]) {
+      const stateAlteringEvents = [
+        'player:ready',
+        'host:start_game',
+        'host:back_to_lobby',
+        'player:return_lobby',
+        'host:kick_player',
+        'host:update_settings',
+        'player:move',
+        'chat:send'
+      ];
+      
+      if (stateAlteringEvents.includes(eventName)) {
+        const { sessionToken } = useGameStore.getState();
+        if (sessionToken) {
+          if (args.length === 0) {
+            args = [{ token: sessionToken }];
+          } else if (typeof args[0] === 'object' && args[0] !== null) {
+            args[0] = { ...args[0], token: sessionToken };
+          }
+        }
+      }
+      
+      return originalEmit.apply(_socket, [eventName, ...args] as any);
+    } as any;
   }
   return _socket;
 }

@@ -8,6 +8,8 @@ import {
   RoomSettings,
 } from '@shared/types';
 import { RoomRegistry } from '../game/RoomRegistry';
+import { generateSessionToken, verifySessionToken } from '../utils/crypto';
+import { securityLogger } from '../utils/logger';
 
 type TypedSocket = Socket<ClientEvents, ServerEvents>;
 type TypedIO     = SocketServer<ClientEvents, ServerEvents>;
@@ -33,6 +35,35 @@ export function registerHandlers(
 ): void {
   const sid = socket.id;
   console.log(`[Socket] Connected: ${sid}`);
+
+  // HMAC Session Token Verification Interceptor
+  socket.use((packet, next) => {
+    const [eventName, payload] = packet;
+    
+    // Exempt setup, discovery, and leaving events
+    if (
+      eventName === 'ping' ||
+      eventName === 'room:get_list' ||
+      eventName === 'room:create' ||
+      eventName === 'room:join_public' ||
+      eventName === 'room:join_private' ||
+      eventName === 'room:leave'
+    ) {
+      return next();
+    }
+    
+    // Verify HMAC session token
+    const token = payload?.token;
+    if (!token || !verifySessionToken(token, sid)) {
+      securityLogger.warn(
+        { event: eventName, socketId: sid, ip: socket.handshake.address },
+        'HMAC Session Token validation failed: event blocked (Hijack prevention)'
+      );
+      return next(new Error('Session validation failed. Hijacking prevented.'));
+    }
+    
+    next();
+  });
 
   // Clock sync
   socket.on('ping', ({ clientTime }: { clientTime: number }) => {
@@ -60,7 +91,10 @@ export function registerHandlers(
       leaveCurrentRoom(socket, registry);
       const room = registry.create(sid, nameResult.name, visibility);
       socket.join(room.id);
-      cb(room.toRoom());
+      const token = generateSessionToken(sid, nameResult.name);
+      const roomData = room.toRoom();
+      roomData.sessionToken = token;
+      cb(roomData);
       console.log(`[Room] Created ${room.id} (${visibility}) by "${nameResult.name}"`);
     },
   );
@@ -84,7 +118,10 @@ export function registerHandlers(
       if (!target) {
         target = registry.create(sid, nameResult.name, 'public');
         socket.join(target.id);
-        cb(target.toRoom());
+        const token = generateSessionToken(sid, nameResult.name);
+        const roomData = target.toRoom();
+        roomData.sessionToken = token;
+        cb(roomData);
         console.log(`[Room] Auto-created public room ${target.id} for "${nameResult.name}"`);
         return;
       }
@@ -96,7 +133,10 @@ export function registerHandlers(
       }
 
       socket.join(target.id);
-      cb(target.toRoom());
+      const token = generateSessionToken(sid, nameResult.name);
+      const roomData = target.toRoom();
+      roomData.sessionToken = token;
+      cb(roomData);
       console.log(`[Room] "${nameResult.name}" joined public room ${target.id}`);
     },
   );
@@ -128,7 +168,10 @@ export function registerHandlers(
       }
 
       socket.join(room.id);
-      cb(room.toRoom());
+      const token = generateSessionToken(sid, nameResult.name);
+      const roomData = room.toRoom();
+      roomData.sessionToken = token;
+      cb(roomData);
       console.log(`[Room] "${nameResult.name}" joined private room ${room.id}`);
     },
   );
@@ -139,14 +182,14 @@ export function registerHandlers(
   });
 
   // ---- Ready toggle --------------------------------------------------------
-  socket.on('player:ready', ({ ready }: { ready: boolean }) => {
+  socket.on('player:ready', ({ ready }: { ready: boolean; token?: string }) => {
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
     room.setPlayerReady(sid, ready);
   });
 
   // ---- Host starts game ----------------------------------------------------
-  socket.on('host:start_game', () => {
+  socket.on('host:start_game', ({ token }: { token?: string } = {}) => {
     const room = registry.getRoomBySocketId(sid);
     if (!room) {
       socket.emit('room:error', { message: 'You are not in a room.' });
@@ -161,7 +204,7 @@ export function registerHandlers(
   });
 
   // ---- Host goes back to lobby ---------------------------------------------
-  socket.on('host:back_to_lobby', () => {
+  socket.on('host:back_to_lobby', ({ token }: { token?: string } = {}) => {
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
     
@@ -172,7 +215,7 @@ export function registerHandlers(
   });
 
   // ---- Player returns to lobby from results --------------------------------
-  socket.on('player:return_lobby', () => {
+  socket.on('player:return_lobby', ({ token }: { token?: string } = {}) => {
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
     
@@ -187,7 +230,7 @@ export function registerHandlers(
   });
 
   // ---- Host kicks player ----------------------------------------------------
-  socket.on('host:kick_player', ({ playerId }: { playerId: string }) => {
+  socket.on('host:kick_player', ({ playerId }: { playerId: string; token?: string }) => {
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
     
@@ -200,7 +243,7 @@ export function registerHandlers(
   });
 
   // ---- Host updates settings -----------------------------------------------
-  socket.on('host:update_settings', ({ settings }: { settings: RoomSettings }) => {
+  socket.on('host:update_settings', ({ settings }: { settings: RoomSettings; token?: string }) => {
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
 
@@ -211,14 +254,14 @@ export function registerHandlers(
   });
 
   // ---- Player movement -----------------------------------------------------
-  socket.on('player:move', ({ direction, timestamp }: { direction: Direction; timestamp: number }) => {
+  socket.on('player:move', ({ direction, timestamp }: { direction: Direction; timestamp: number; token?: string }) => {
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
     room.handlePlayerMove(sid, direction, timestamp);
   });
 
   // ---- Chat ----------------------------------------------------------------
-  socket.on('chat:send', ({ text }: { text: string }) => {
+  socket.on('chat:send', ({ text }: { text: string; token?: string }) => {
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
     room.handleChat(sid, text);

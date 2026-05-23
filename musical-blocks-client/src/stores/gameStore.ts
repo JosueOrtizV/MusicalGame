@@ -26,6 +26,7 @@ interface GameStore {
   room: Room | null;
   localPlayerId: string | null;
   localPlayerName: string;
+  sessionToken: string | null;
 
   // ---- Game state ----------------------------------------------------------
   gameState: GameState | null;
@@ -84,6 +85,7 @@ export const useGameStore = create<GameStore>()(
       room: null,
       localPlayerId: null,
       localPlayerName: '',
+      sessionToken: null,
 
       // ---- Game state
       gameState: null,
@@ -108,6 +110,10 @@ export const useGameStore = create<GameStore>()(
       setRoom: (room) =>
         set((s) => {
           s.room = room;
+          
+          if (room.sessionToken) {
+            s.sessionToken = room.sessionToken;
+          }
           
           // Sync URL query parameter for private rooms
           if (typeof window !== 'undefined') {
@@ -153,6 +159,7 @@ export const useGameStore = create<GameStore>()(
           s.room = null;
           s.gameState = null;
           s.screen = 'home';
+          s.sessionToken = null;
           
           // Clear URL query parameter
           if (typeof window !== 'undefined') {

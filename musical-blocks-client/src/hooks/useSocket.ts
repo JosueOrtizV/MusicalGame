@@ -43,8 +43,10 @@ export function useSocket() {
       store.setConnected(false);
     });
 
-    socket.on('connect_error', () => {
-      store.setConnectionError('Cannot connect to server. Is it running?');
+    socket.on('connect_error', (err) => {
+      const errMsg = err.message || 'Cannot connect to server. Is it running?';
+      store.setConnectionError(errMsg);
+      useToastStore.getState().addToast(errMsg, 'error');
     });
 
     // ---- Clock sync --------------------------------------------------------

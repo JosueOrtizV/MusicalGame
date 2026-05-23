@@ -147,6 +147,8 @@ export const en = {
   youWon: 'You are the last one dancing!',
   gameOver: 'GAME OVER',
   winnerIs: '🏆 {name} won!',
+  victoryBanner: '🏆 Victory for {name}! 🏆',
+  gameOverBanner: '🏁 Match Completed! 🏁',
   nobodyWon: 'Nobody survived!',
   autoReturnIn: 'Auto-returning to lobby in {{seconds}}s...',
   backToLobby: 'Back to Lobby',

@@ -8,6 +8,7 @@ import {
   PLAYER_COLORS,
 } from '@shared/types';
 import { GridManager } from './GridManager';
+import { securityLogger } from '../utils/logger';
 
 // ---------------------------------------------------------------------------
 //  PlayerManager
@@ -98,12 +99,27 @@ export class PlayerManager {
 
     // Reject extreme lag or future timestamps (allow 2s in either direction)
     if (Math.abs(lag) > LAG_TOLERANCE_MS) {
+      securityLogger.warn({
+        event: 'SUSPICIOUS_LAG',
+        playerId: socketId,
+        playerName: player.name,
+        lagMs: lag,
+        toleranceMs: LAG_TOLERANCE_MS
+      }, 'Suspicious player lag deviation detected (potential time-sync exploitation)');
       return false;
     }
     
     // Rate-limit: player cannot move faster than once per MOVE_RATE_LIMIT_MS
     const lastMove = this.lastMoveTime.get(socketId) ?? 0;
-    if (serverNow - lastMove < MOVE_RATE_LIMIT_MS) {
+    const elapsed = serverNow - lastMove;
+    if (elapsed < MOVE_RATE_LIMIT_MS) {
+      securityLogger.warn({
+        event: 'SUSPICIOUS_INPUT_RATE',
+        playerId: socketId,
+        playerName: player.name,
+        elapsedMs: elapsed,
+        limitMs: MOVE_RATE_LIMIT_MS
+      }, 'Suspicious player move rate detected (potential speed-hack or input spam)');
       return false;
     }
 
