@@ -162,6 +162,19 @@ export function RoomLobby() {
                   </strong>
                 </>
               )}
+              {room.settings?.enableCollisions && (
+                <>
+                  <span style={{ margin: '0 8px', color: 'var(--c-muted)', opacity: 0.5 }}>•</span>
+                  <strong
+                    style={{
+                      color: '#00f0ff',
+                      textShadow: '0 0 10px rgba(0, 240, 255, 0.4)'
+                    }}
+                  >
+                    👥 {t('collisionsLabel')}
+                  </strong>
+                </>
+              )}
               {room.settings?.suddenDeathMode && room.settings.suddenDeathMode !== 'NORMAL' && (
                 <>
                   <span style={{ margin: '0 8px', color: 'var(--c-muted)', opacity: 0.5 }}>•</span>
@@ -517,7 +530,7 @@ export function RoomLobby() {
                       {t('modifiersDesc')}
                     </p>
                     
-                    <div className="difficulty-grid">
+                    <div className="difficulty-tiers-list">
                       <button
                         className={`difficulty-tier-btn tier--extreme ${room.settings?.isBlindMode ? 'active' : ''}`}
                         onClick={() => {
@@ -531,6 +544,24 @@ export function RoomLobby() {
                           <span className="tier-name">{t('blindModeLabel')}</span>
                         </div>
                         <p className="tier-desc">{t('blindModeDesc')}</p>
+                      </button>
+
+                      {/* Player Collisions Toggle Modifier */}
+                      <button
+                        className={`difficulty-tier-btn tier--normal ${room.settings?.enableCollisions ? 'active' : ''}`}
+                        onClick={() => {
+                          getSocket().emit('host:update_settings', {
+                            settings: { ...room.settings, enableCollisions: !room.settings?.enableCollisions }
+                          });
+                        }}
+                      >
+                        <div className="tier-header">
+                          <span className="tier-icon">👥</span>
+                          <span className="tier-name">{t('collisionsLabel')}</span>
+                        </div>
+                        <p className="tier-desc">
+                          {room.settings?.enableCollisions ? t('collisionsEnabledDesc') : t('collisionsDisabledDesc')}
+                        </p>
                       </button>
                     </div>
 

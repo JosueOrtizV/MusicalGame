@@ -377,7 +377,7 @@ A continuación se detallan las tareas estéticas, cinemáticas, de red y de jug
 
 #### 🌐 Sección B: Ajustes de Red, Seguridad y Jugabilidad Autorativa
 
-- [ ] **5. 👥 Alternancia de Colisiones entre Jugadores (Player-to-Player Collision Toggle)**:
+- [x] **5. 👥 Alternancia de Colisiones entre Jugadores (Player-to-Player Collision Toggle)**:
   - Añadir una nueva opción de configuración en **Match Settings** (Opciones de Partida) controlada por el Host para habilitar o deshabilitar las colisiones físicas entre los personajes.
   - Sincronizar esta configuración en tiempo real a través del servidor y aplicar lógica condicional en la grilla y el movimiento:
     - *Colisión Desactivada*: Los jugadores pueden atravesarse libremente al correr.

@@ -87,7 +87,8 @@ export class PlayerManager {
     socketId: string,
     direction: Direction,
     clientTimestamp: number,
-    grid: GridManager
+    grid: GridManager,
+    enableCollisions?: boolean
   ): boolean {
     const player = this.players.get(socketId);
     if (!player || !player.isAlive) return false;
@@ -115,6 +116,15 @@ export class PlayerManager {
     // Check if block is permanently dead (Sudden Death)
     if (grid.isBlockDead(next)) {
       return false;
+    }
+
+    // Player-to-Player physical collision blocking logic
+    if (enableCollisions) {
+      for (const p of this.players.values()) {
+        if (p.id !== socketId && p.isAlive && p.position.x === next.x && p.position.z === next.z) {
+          return false; // Destination occupied! Blocked.
+        }
+      }
     }
 
     return true;

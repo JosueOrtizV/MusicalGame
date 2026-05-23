@@ -44,7 +44,7 @@ export class GameRoom {
   private winnerColor: BlockColor | null = null;
   private winnerId: string | null = null;
 
-  private settings: RoomSettings = { maxColors: 6, gameSpeed: 'NORMAL', maxLives: 3, suddenDeathMode: 'NORMAL' };
+  private settings: RoomSettings = { maxColors: 6, gameSpeed: 'NORMAL', maxLives: 3, suddenDeathMode: 'NORMAL', enableCollisions: false };
 
   constructor(
     private readonly io: SocketServer<ClientEvents, ServerEvents>,
@@ -213,7 +213,7 @@ export class GameRoom {
     const maxLives = [1, 2, 3, 4, 5].includes(settings.maxLives as number) ? settings.maxLives : 3;
     const sdMode = ['NORMAL', 'OFF', 'CHAOS'].includes(settings.suddenDeathMode as string) ? settings.suddenDeathMode : 'NORMAL';
     
-    this.settings = { maxColors, gameSpeed: speed, isBlindMode: !!settings.isBlindMode, maxLives, suddenDeathMode: sdMode };
+    this.settings = { maxColors, gameSpeed: speed, isBlindMode: !!settings.isBlindMode, maxLives, suddenDeathMode: sdMode, enableCollisions: !!settings.enableCollisions };
     this.grid.setMaxColors(maxColors);
     this.grid.setSuddenDeathMode(sdMode as any);
     this.loop.setSpeed(speed as any);
@@ -249,7 +249,7 @@ export class GameRoom {
     if (!player || !player.isAlive) return;
     
     // Authoritative validation
-    if (!this.players.validateMove(sid, direction, timestamp, this.grid)) return;
+    if (!this.players.validateMove(sid, direction, timestamp, this.grid, this.settings.enableCollisions)) return;
 
     this.players.applyMove(sid, direction);
     this.io.to(this.id).emit('game:state', this.buildState());
