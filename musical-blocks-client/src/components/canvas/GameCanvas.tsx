@@ -7,11 +7,11 @@ import { Stars, Environment, CameraShake, OrbitControls } from '@react-three/dre
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { BlockGrid } from './BlockGrid';
 import { PlayerMesh } from './PlayerMesh';
-import { ParticleSystem } from './ParticleSystem';
+import { ParticleSystem, spawnParticles } from './ParticleSystem';
 import { StageShow } from './StageShow';
 import { useGameStore } from '@/src/stores/gameStore';
 import { CAMERA_POSITION, CAMERA_FOV, BLOCK_SIZE } from '@/src/lib/constants';
-import { GRID_SIZE } from '@/src/shared/types';
+import { GRID_SIZE, Player } from '@/src/shared/types';
 
 // ---------------------------------------------------------------------------
 //  Cinematic Camera Handler
@@ -245,6 +245,87 @@ function NeonGrid() {
 }
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+//  VictoryCelebration — spawns voxel fireworks and dense digital confetti
+// ---------------------------------------------------------------------------
+function VictoryCelebration({ winnerId, players }: { winnerId: string | null; players: Player[] }) {
+  const winner = useMemo(() => players.find((p) => p.id === winnerId), [winnerId, players]);
+  const halfGrid = (GRID_SIZE / 2 - 0.5) * BLOCK_SIZE;
+
+  // Track firework and confetti spawn intervals using refs
+  const fireworkTimerRef = useRef(0);
+  const confettiTimerRef = useRef(0);
+
+  useFrame((state, delta) => {
+    if (!winner) return;
+
+    const winnerX = winner.position.x * BLOCK_SIZE - halfGrid;
+    const winnerZ = winner.position.z * BLOCK_SIZE - halfGrid;
+
+    // 1. Spawning Voxel Fireworks in the sky above the stage
+    fireworkTimerRef.current += delta;
+    if (fireworkTimerRef.current > 1.1) {
+      fireworkTimerRef.current = 0;
+
+      // Pick a random position above the grid
+      const fx = (Math.random() - 0.5) * 13;
+      const fz = (Math.random() - 0.5) * 13;
+      const fy = 8.5 + Math.random() * 4.5;
+
+      // Select a random vibrant neon color
+      const colors = ['#ff00ff', '#00ffff', '#ffff00', '#ff0055', '#00ff55', '#af52de'];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+      // Spawn main quantized voxel art firework burst
+      spawnParticles({
+        x: fx,
+        y: fy,
+        z: fz,
+        color: randomColor,
+        count: 75,
+        type: 'voxel_burst'
+      });
+      
+      // Secondary minor burst for extra volume and depth after a 180ms delay
+      setTimeout(() => {
+        spawnParticles({
+          x: fx + (Math.random() - 0.5) * 1.5,
+          y: fy + (Math.random() - 0.5) * 1.5,
+          z: fz + (Math.random() - 0.5) * 1.5,
+          color: winner.color, // themed secondary pop
+          count: 35,
+          type: 'voxel_burst'
+        });
+      }, 180);
+    }
+
+    // 2. Continuous dense cascade of neon digital confetti around the winner
+    confettiTimerRef.current += delta;
+    if (confettiTimerRef.current > 0.08) { // spawn every 80ms
+      confettiTimerRef.current = 0;
+
+      // Confetti floats down within a radius of 2.2 units of the winner
+      const cx = winnerX + (Math.random() - 0.5) * 2.2;
+      const cz = winnerZ + (Math.random() - 0.5) * 2.2;
+      const cy = 6.8 + Math.random() * 2.5;
+
+      const colors = [winner.color, '#ffffff', '#00f0ff', '#ff00ff', '#ffff00'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+
+      spawnParticles({
+        x: cx,
+        y: cy,
+        z: cz,
+        color: color,
+        count: 6,
+        type: 'confetti'
+      });
+    }
+  });
+
+  return null;
+}
+
 //  GameCanvas — main 3D scene wrapper
 // ---------------------------------------------------------------------------
 export function GameCanvas() {
@@ -252,9 +333,10 @@ export function GameCanvas() {
   const localPlayerId = useGameStore((s) => s.localPlayerId);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Spectator detection (dead or spectating)
+  // Spectator detection (dead, spectating, or free camera during victory celebration!)
   const isSpectator = useMemo(() => {
     if (!gameState) return false;
+    if (gameState.phase === 'GAME_OVER') return true; // Unlock OrbitControls camera for everyone on victory celebration!
     const localPlayer = gameState.players.find((p) => p.id === localPlayerId);
     return gameState.phase !== 'LOBBY' && (!localPlayer || !localPlayer.isAlive);
   }, [gameState, localPlayerId]);
@@ -358,6 +440,13 @@ export function GameCanvas() {
                   isLocal={player.id === localPlayerId}
                 />
               ))}
+
+              {gameState.phase === 'GAME_OVER' && (
+                <VictoryCelebration
+                  winnerId={gameState.winnerId}
+                  players={gameState.players}
+                />
+              )}
             </>
           )}
 

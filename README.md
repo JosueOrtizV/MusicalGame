@@ -41,6 +41,14 @@ Musical Blocks is not just a standard clone—it's loaded with advanced customiz
     *   Full out-of-the-box support for both **English** and **Spanish**, automatically localized based on client settings. Includes token replacements (e.g., room IDs, player counts) and translation mapping for all colors and settings.
 *   **📱 Mobile & Touch Optimized**:
     *   Custom built responsive layout with a virtual touch D-pad overlay. Features a **Responsive R3F Camera scaling handler** that automatically shifts camera positions and FOV between portrait and landscape screens to ensure the full grid is always visible. Prevents default scrolling and browser gestures during active gameplay.
+*   **🎬 Majestic 3D Camera Intro & Ambient Lights**:
+    *   **Premium Orbital Sweep**: Cinematic descending 180° camera sweep on round start to build tension, synchronized with neon pulse lights and fast transitions.
+    *   **Capped Frame-Delta Timing**: Robust delta timing caps frame drops (e.g., during WebGL compilation or asset loading) to prevent jerky slides, ensuring a perfectly smooth 4s flight on load.
+    *   **Volumetric Spotlights & Lasers**: 4 corner robotic spotlights sweeping the stage, criss-crossing neon lasers, and beat-flashing center lighting.
+*   **🎉 Premium Final Victory Celebration**:
+    *   **Voxel Fireworks**: Volumetric voxel-style quantized bursts forming geometric star-shells in the neon sky above the arena.
+    *   **Confetti Cascades**: Dense streams of color-coded particles floating continuously around the winning player.
+    *   **Delayed Transparent UI & OrbitControls**: The winner card fades in after 4.5s of unobstructed 3D viewing, showing a sleek golden banner first. The full-screen overlay is highly transparent (`rgba(3, 3, 10, 0.28)`) with minimal blur (`2px`), and everyone (including the winner) unlocks interactive 360° rotation camera controls to inspect the scene.
 
 ---
 
@@ -359,11 +367,11 @@ A continuación se detallan las tareas estéticas, cinemáticas, de red y de jug
   - Añadir 4 focos robóticos (Spotlights) funcionales en las esquinas de la grilla que barran automáticamente el escenario con luces volumétricas de color cambiante.
   - Generar láseres neón delgados y dinámicos que crucen en ángulos atractivos sobre las cabezas de los personajes.
   - Implementar un sutil destello (flash) de luz ambiental general sincronizado con cada golpe fuerte del beat de la música.
-- [ ] **3. 🎬 Cámara Cinemática y Animaciones de Transición**:
+- [x] **3. 🎬 Cámara Cinemática y Animaciones de Transición**:
   - **Barrido Inicial**: Paneo dramático de cámara descendente desde el espacio profundo estrellado hacia la arena al iniciar la ronda.
   - **Zoom de Tensión**: Acercamiento suave de cámara hacia el jugador local en la fase de color (`ANNOUNCING`), amplificando el rumble/shake de pantalla al caer el resto de los bloques.
   - **Cámara Espectador Interactiva**: Permitir rotar libremente la cámara 3D al morir o seguir automáticamente al jugador con mayor puntuación/vida de forma fluida.
-- [ ] **4. 🎉 Celebración Final de Victoria**:
+- [x] **4. 🎉 Celebración Final de Victoria**:
   - Lanzamiento de fuegos artificiales volumétricos basados en partículas de voxel art al coronar al ganador de la partida.
   - Cascadas densas de confeti digital neón flotando alrededor del avatar ganador en su podio.
 

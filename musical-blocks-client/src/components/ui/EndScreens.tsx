@@ -42,31 +42,52 @@ export function WinnerScreen() {
   const store = useGameStore();
   const { t } = useTranslation();
   const [countdown, setCountdown] = useState(15);
+  const [isCardVisible, setIsCardVisible] = useState(false);
 
   const winner = gameState?.players.find((p) => p.id === gameState.winnerId);
   const isLocalWinner = gameState?.winnerId === localPlayerId;
   const isHost = store.room?.hostId === localPlayerId;
 
-  // Countdown timer
+  // Delay victory card appearance so the 3D winner celebration is fully visible first
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsCardVisible(true);
+    }, 4500); // 4.5s delay of pure unobstructed 3D celebration
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Countdown timer starts only when the card is visible
+  useEffect(() => {
+    if (!isCardVisible) return;
     if (countdown <= 0) return;
     const timer = setTimeout(() => {
       setCountdown((c) => c - 1);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [countdown]);
+  }, [countdown, isCardVisible]);
 
-  // Spawn confetti once on mount
+  // Spawn initial burst of confetti once card displays
   useEffect(() => {
-    spawnParticles({
-      x: 0,
-      y: 10,
-      z: 0,
-      color: winner?.color ?? '#ffffff',
-      count: 200,
-      type: 'confetti'
-    });
-  }, [winner?.color]);
+    if (isCardVisible && winner?.color) {
+      spawnParticles({
+        x: 0,
+        y: 10,
+        z: 0,
+        color: winner.color,
+        count: 200,
+        type: 'confetti'
+      });
+    }
+  }, [isCardVisible, winner?.color]);
+
+  // While the card is not yet visible, render an unobstructed view with a premium top banner
+  if (!isCardVisible) {
+    return (
+      <div className="victory-top-banner">
+        {winner ? `🏆 ¡Victoria para ${winner.name}! 🏆` : '🏁 ¡Partida Finalizada! 🏁'}
+      </div>
+    );
+  }
 
   return (
     <div className="overlay overlay--winner">
@@ -105,8 +126,8 @@ export function WinnerScreen() {
                  fontWeight: 800,
                  margin: '1.5rem 0'
                }}>
-                <span style={{ color: winner.color, marginRight: '0.5rem' }}>★</span>
-                {winner.name}
+                 <span style={{ color: winner.color, marginRight: '0.5rem' }}>★</span>
+                 {winner.name}
                </div>
             </div>
           )}

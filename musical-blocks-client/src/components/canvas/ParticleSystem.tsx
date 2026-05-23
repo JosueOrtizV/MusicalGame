@@ -7,7 +7,7 @@ import * as THREE from 'three';
 // ---------------------------------------------------------------------------
 //  Types and Event definitions
 // ---------------------------------------------------------------------------
-export type ParticleType = 'burst' | 'dust' | 'confetti';
+export type ParticleType = 'burst' | 'dust' | 'confetti' | 'voxel_burst';
 
 export interface SpawnParticlesEvent {
   x: number;
@@ -28,7 +28,7 @@ export const spawnParticles = (detail: SpawnParticlesEvent) => {
 // ---------------------------------------------------------------------------
 //  Particle System Component
 // ---------------------------------------------------------------------------
-const MAX_PARTICLES = 1000;
+const MAX_PARTICLES = 3000;
 
 // ---------------------------------------------------------------------------
 //  Particle System Core (Vanilla Singleton)
@@ -66,7 +66,7 @@ export function ParticleSystem() {
   useEffect(() => {
     const handleSpawn = (e: Event) => {
       const { x, y, z, color, count, type } = (e as CustomEvent<SpawnParticlesEvent>).detail;
-      const typeCode = type === 'burst' ? 0 : type === 'dust' ? 1 : 2;
+      const typeCode = type === 'burst' ? 0 : type === 'dust' ? 1 : type === 'confetti' ? 2 : 3;
       const c = new THREE.Color(color);
       
       let spawned = 0;
@@ -86,7 +86,7 @@ export function ParticleSystem() {
           }
           
           // Set Color — overbright for additive blending glow effect
-          const brightFactor = type === 'burst' ? 3.0 : 1.5;
+          const brightFactor = type === 'burst' || type === 'voxel_burst' ? 3.0 : 1.5;
           const r = c.r * brightFactor;
           const g = c.g * brightFactor;
           const b = c.b * brightFactor;
@@ -116,6 +116,21 @@ export function ParticleSystem() {
             particleData.velocities[i * 3 + 1] = (Math.random() - 0.5) * 2 - 2;
             particleData.velocities[i * 3 + 2] = (Math.random() - 0.5) * 8;
             particleData.lifetimes[i] = Math.random() * 2.0 + 1.0;
+          } else if (type === 'voxel_burst') {
+            const angle = Math.random() * Math.PI * 2;
+            const pitch = (Math.random() - 0.5) * Math.PI;
+            const speed = 7.0 + Math.random() * 6.0;
+            const vx = Math.cos(angle) * Math.cos(pitch);
+            const vy = Math.sin(pitch);
+            const vz = Math.sin(angle) * Math.cos(pitch);
+            
+            // Quantize directional vectors to discrete steps to align particles in distinct voxel grid lines!
+            const steps = 3.5;
+            particleData.velocities[i * 3] = Math.round(vx * steps) / steps * speed;
+            particleData.velocities[i * 3 + 1] = Math.round(vy * steps) / steps * speed + 1.2; // slight upward push
+            particleData.velocities[i * 3 + 2] = Math.round(vz * steps) / steps * speed;
+            
+            particleData.lifetimes[i] = Math.random() * 0.7 + 0.75;
           }
           
           particleData.maxLifetimes[i] = particleData.lifetimes[i];
@@ -157,6 +172,8 @@ export function ParticleSystem() {
         // Gravity
         if (typeCode === 0) { // burst
           particleData.velocities[i * 3 + 1] -= 15 * delta; 
+        } else if (typeCode === 3) { // voxel_burst (retro firework)
+          particleData.velocities[i * 3 + 1] -= 5.0 * delta; // gentle retro falling gravity
         } else if (typeCode === 1) { // dust
           // No gravity: let footprint pixels rise straight up linearly
         } else if (typeCode === 2) { // confetti
