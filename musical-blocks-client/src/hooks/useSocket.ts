@@ -79,12 +79,32 @@ export function useSocket() {
       useGameStore.getState().setGameState(state);
     });
 
-    socket.on('game:round_start', ({ blocks }) => {
-      useGameStore.getState().updateBlocks(blocks);
+    socket.on('game:round_start', ({ round, blocks }) => {
+      const { gameState } = useGameStore.getState();
+      if (gameState) {
+        useGameStore.getState().setGameState({
+          ...gameState,
+          phase: 'DANCING',
+          round,
+          winnerColor: null,
+          blocks,
+        });
+      } else {
+        useGameStore.getState().updateBlocks(blocks);
+      }
     });
 
     socket.on('game:announce', ({ winnerColor }) => {
-      useGameStore.getState().setWinnerColor(winnerColor);
+      const { gameState } = useGameStore.getState();
+      if (gameState) {
+        useGameStore.getState().setGameState({
+          ...gameState,
+          phase: 'ANNOUNCING',
+          winnerColor,
+        });
+      } else {
+        useGameStore.getState().setWinnerColor(winnerColor);
+      }
     });
 
     socket.on('game:eliminate', ({ eliminatedBlocks }) => {

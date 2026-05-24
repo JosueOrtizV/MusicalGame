@@ -106,7 +106,8 @@ export function useGameAudio() {
             activeDanceTrack.current = track;
             track.play();
             track.volume(0.45);
-          } else {
+          } else if (!activeDanceTrack.current.playing()) {
+            // Reanudar la música ÚNICAMENTE si estaba pausada de la ronda anterior, evitando duplicarla
             activeDanceTrack.current.play();
             activeDanceTrack.current.fade(activeDanceTrack.current.volume(), 0.45, 500);
           }
@@ -132,7 +133,7 @@ export function useGameAudio() {
 
       // Handle Volume during Countdown (Last N seconds of ANNOUNCING)
       if (phase === 'ANNOUNCING') {
-        const countdownThreshold = gameSpeed === 'TURBO' ? 2 : gameSpeed === 'CHILL' ? 5 : 4;
+        const countdownThreshold = 3;
         
         if (timeLeft <= countdownThreshold && timeLeft > 0) {
           // Fade music down to hear beeps, but keep it audible (0.15)

@@ -52,6 +52,22 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
   const gameSpeed = settings?.gameSpeed || 'NORMAL';
   const roomId = useGameStore((s) => s.room?.id) || 'DEFAULT';
 
+  // React refs to prevent stale closures in React Three Fiber's asychronous useFrame loop
+  const blocksRef = useRef(blocks);
+  const winnerColorRef = useRef(winnerColor);
+  const phaseRef = useRef(phase);
+  const roundRef = useRef(round);
+  const isBlackoutRef = useRef(isBlackout);
+  const settingsRef = useRef(settings);
+
+  // Sync refs synchronously on every render
+  blocksRef.current = blocks;
+  winnerColorRef.current = winnerColor;
+  phaseRef.current = phase;
+  roundRef.current = round;
+  isBlackoutRef.current = isBlackout;
+  settingsRef.current = settings;
+
   // Block geometry — slightly smaller than cell to leave visible gap
   const geometry = useMemo(
     () => new THREE.BoxGeometry(BLOCK_SIZE - BLOCK_GAP, BLOCK_HEIGHT, BLOCK_SIZE - BLOCK_GAP),
@@ -164,36 +180,38 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
     const color = new THREE.Color();
     const halfGrid = (GRID_SIZE / 2 - 0.5) * BLOCK_SIZE;
 
-    // 1. Calculate active BPM & exponential beatPulse sync
-    let activeBpm = 0;
-    let seekTime = state.clock.elapsedTime;
-    let isPlaying = false;
+    // Read current state securely from refs
+    const currentBlocks = blocksRef.current;
+    const currentWinnerColor = winnerColorRef.current;
+    const currentPhase = phaseRef.current;
+    const currentRound = roundRef.current;
+    const currentIsBlackout = isBlackoutRef.current;
+    const currentSettings = settingsRef.current;
 
+    // 1. Calculate active BPM & exponential beatPulse sync (Authoritative Three.js clock animation)
+    let activeBpm = 120; // default safe fallback
+
+    // Detect BPM dynamically based on active audio track playing status
     if (typeof window !== 'undefined' && MUSIC_TRACKS) {
       if (MUSIC_TRACKS.lobby && MUSIC_TRACKS.lobby.playing()) {
         activeBpm = 110;
-        const seek = MUSIC_TRACKS.lobby.seek();
-        seekTime = typeof seek === 'number' ? seek : state.clock.elapsedTime;
-        isPlaying = true;
       } else if (MUSIC_TRACKS.dance) {
         const BPM_DANCE = [128, 135, 142];
         for (let i = 0; i < MUSIC_TRACKS.dance.length; i++) {
           const track = MUSIC_TRACKS.dance[i];
           if (track && track.playing()) {
             activeBpm = BPM_DANCE[i];
-            const seek = track.seek();
-            seekTime = typeof seek === 'number' ? seek : state.clock.elapsedTime;
-            isPlaying = true;
             break;
           }
         }
       }
     }
 
-    const isLobby = phase === 'LOBBY';
-    const isPlayingGame = phase === 'STARTING' || phase === 'DANCING' || phase === 'ANNOUNCING';
+    // If Howler is not reporting track.playing() (due to autoplay/loading delays), deduce active BPM by game status
+    if (activeBpm === 120) {
+      const isLobby = currentPhase === 'LOBBY';
+      const isPlayingGame = currentPhase === 'STARTING' || currentPhase === 'DANCING' || currentPhase === 'ANNOUNCING';
 
-    if (!isPlaying) {
       if (isLobby) {
         activeBpm = 110;
       } else if (isPlayingGame) {
@@ -205,11 +223,11 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
         }
         const BPM_DANCE = [128, 135, 142];
         activeBpm = BPM_DANCE[trackIndex];
-      } else {
-        activeBpm = 120;
       }
-      seekTime = state.clock.elapsedTime;
     }
+
+    // Always use Three.js clock as the authoritative source of time to avoid Howler seek freeze/restart bugs!
+    const seekTime = state.clock.elapsedTime;
 
     let beatPulse = 0;
     if (activeBpm > 0) {
@@ -219,7 +237,7 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
     }
 
     // 2. Loop through all 144 blocks to update matrices and colors instantly
-    blocks.flat().forEach((block, i) => {
+    currentBlocks.flat().forEach((block, i) => {
       const x = block.col * BLOCK_SIZE - halfGrid;
       const z = block.row * BLOCK_SIZE - halfGrid;
       const hex = COLOR_HEX[block.color];
@@ -229,21 +247,21 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
 
       if (block.isActive) {
         // A. Handle active block states (idle, announcing, blackout question marks)
-        const isWinner = phase === 'ANNOUNCING' && winnerColor && block.color === winnerColor;
-        const isWinnerReveal = isBlackout && phase === 'ELIMINATING' && winnerColor && block.color === winnerColor;
+        const isWinner = currentPhase === 'ANNOUNCING' && currentWinnerColor && block.color === currentWinnerColor;
+        const isWinnerReveal = currentIsBlackout && currentPhase === 'ELIMINATING' && currentWinnerColor && block.color === currentWinnerColor;
 
         // B. Determine if bobbing/breathing is enabled
         // Disabled in Blind Mode (isBlackout) and Sudden Death (NORMAL round >= 10, CHAOS round >= 1)
-        const suddenDeathMode = settings?.suddenDeathMode || 'NORMAL';
-        const isSuddenDeath = suddenDeathMode === 'CHAOS' || (suddenDeathMode === 'NORMAL' && round >= 10);
-        const enableBobbing = !isBlackout && !isSuddenDeath;
+        const suddenDeathMode = currentSettings?.suddenDeathMode || 'NORMAL';
+        const isSuddenDeath = suddenDeathMode === 'CHAOS' || (suddenDeathMode === 'NORMAL' && currentRound >= 10);
+        const enableBobbing = !currentIsBlackout && !isSuddenDeath;
 
         // C. Handle ANNOUNCING phase tremor & blackout logic
-        if (phase === 'ANNOUNCING') {
+        if (currentPhase === 'ANNOUNCING') {
           const timeLeft = useGameStore.getState().gameState?.timeLeft ?? 0;
           const isLastSecond = timeLeft <= 1;
 
-          if (isBlackout) {
+          if (currentIsBlackout) {
             // In Blind Mode, ALL blocks shake to keep the winner completely hidden, BUT only in the last second!
             if (isLastSecond) {
               const time = state.clock.elapsedTime;
@@ -316,7 +334,7 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
         mesh.setMatrixAt(i, matrix);
 
         // Color application for non-shaking/default states
-        if (isBlackout && !isWinnerReveal) {
+        if (currentIsBlackout && !isWinnerReveal) {
           const isQuestionMarkCell = QUESTION_MARK_MAP[block.row]?.[block.col] === 1;
           if (isQuestionMarkCell) {
             // Neon magenta question mark pixels breathing their glow intensely
@@ -340,6 +358,7 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
           }
         }
         mesh.setColorAt(i, color);
+
 
       } else {
         // B. Handle falling inactive blocks

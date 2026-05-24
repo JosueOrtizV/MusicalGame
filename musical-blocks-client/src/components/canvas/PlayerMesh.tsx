@@ -72,6 +72,9 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
   const leftFlameRef = useRef<THREE.Mesh>(null);
   const rightFlameRef = useRef<THREE.Mesh>(null);
 
+  // Timing reference to throttle dynamic canvas textures upload to GPU (30 FPS)
+  const lastTexUpdateRef = useRef(0);
+
   // Stably assign a dance animation (dance or dance2) based on player ID
   const danceAnimName = useMemo(() => {
     let hash = 0;
@@ -538,38 +541,39 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     const activeCos = cosmeticsRef.current;
     const companionType = activeCos.companionType;
 
+    // Throttle dynamic canvas textures upload to GPU to 30 FPS (33ms) to save huge bandwidth
+    const time = state.clock.elapsedTime;
+    const shouldUpdateTex = (time - lastTexUpdateRef.current) >= 0.033;
+    if (shouldUpdateTex) {
+      lastTexUpdateRef.current = time;
+    }
+
     // -------------------------------------------------------------------------
     //  1. Active Beat Sync (BPM detection and sawtooth envelope pulse)
     // -------------------------------------------------------------------------
     const isLobby = phase === 'LOBBY';
     const isPlayingGame = phase === 'STARTING' || phase === 'DANCING' || phase === 'ANNOUNCING';
     
-    let activeBpm = 0;
-    let seekTime = state.clock.elapsedTime;
-    let isPlaying = false;
+    let activeBpm = 120; // default safe fallback
 
+    // Detect BPM dynamically based on active audio track playing status
     if (typeof window !== 'undefined' && MUSIC_TRACKS) {
       if (MUSIC_TRACKS.lobby && MUSIC_TRACKS.lobby.playing()) {
         activeBpm = 110;
-        const seek = MUSIC_TRACKS.lobby.seek();
-        seekTime = typeof seek === 'number' ? seek : state.clock.elapsedTime;
-        isPlaying = true;
       } else if (MUSIC_TRACKS.dance) {
         const BPM_DANCE = [128, 135, 142];
         for (let i = 0; i < MUSIC_TRACKS.dance.length; i++) {
           const track = MUSIC_TRACKS.dance[i];
           if (track && track.playing()) {
             activeBpm = BPM_DANCE[i];
-            const seek = track.seek();
-            seekTime = typeof seek === 'number' ? seek : state.clock.elapsedTime;
-            isPlaying = true;
             break;
           }
         }
       }
     }
 
-    if (!isPlaying) {
+    // If Howler is not reporting track.playing() (due to autoplay/loading delays), deduce active BPM by game status
+    if (activeBpm === 120) {
       if (isLobby) {
         activeBpm = 110;
       } else if (isPlayingGame) {
@@ -583,11 +587,11 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
         }
         const BPM_DANCE = [128, 135, 142];
         activeBpm = BPM_DANCE[trackIndex];
-      } else {
-        activeBpm = 120;
       }
-      seekTime = state.clock.elapsedTime;
     }
+
+    // Always use Three.js clock as the authoritative source of time to avoid Howler seek freeze/restart bugs!
+    const seekTime = state.clock.elapsedTime;
     
     let beatPulse = 0;
     if (activeBpm > 0 && activePl.isAlive) {
@@ -1015,11 +1019,13 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
         }
       });
 
-      // Flag Three.js dynamic canvas textures to refresh in GPU memory
-      textures.colorTex.needsUpdate = true;
-      textures.emissiveTex.needsUpdate = true;
-      shoesTex.needsUpdate = true;
-      shoesEmissiveTex.needsUpdate = true;
+      // Flag Three.js dynamic canvas textures to refresh in GPU memory (throttled to 30 FPS)
+      if (shouldUpdateTex) {
+        textures.colorTex.needsUpdate = true;
+        textures.emissiveTex.needsUpdate = true;
+        shoesTex.needsUpdate = true;
+        shoesEmissiveTex.needsUpdate = true;
+      }
     }
 
     // -------------------------------------------------------------------------

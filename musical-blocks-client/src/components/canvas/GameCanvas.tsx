@@ -400,7 +400,7 @@ export function GameCanvas() {
             position={[10, 20, 10]}
             intensity={1.2}
             castShadow
-            shadow-mapSize={[2048, 2048]}
+            shadow-mapSize={[1024, 1024]}
             shadow-camera-far={60}
             shadow-camera-left={-10}
             shadow-camera-right={10}

@@ -369,3 +369,99 @@ socket.on('pong', ({ serverT }) => {
 
 > [!IMPORTANT]
 > **¿Sistema de cuentas/auth?** ¿Los jugadores son anónimos (solo nombre) o se requiere login?
+
+---
+
+# Parche Técnico: Corrección de Animación de Bloques en Ronda 2+ (Fase ANNOUNCING)
+
+## Causa Raíz
+El hook `useFrame` de React Three Fiber (R3F) registra un callback persistente en el bucle de renderizado asíncrono de Three.js. Al acceder directamente a las props del componente (`blocks`, `winnerColor`, `phase`, `round`, `isBlackout`), se genera un **stale closure** (closure congelado) que hace referencia a los valores del renderizado inicial (ronda 1). 
+Cuando el juego avanza a la ronda 2, la prop `round` cambia a `2` y `phase` transiciona nuevamente por `'DANCING'` y `'ANNOUNCING'`, pero el bucle de renderizado asíncrono sigue evaluando las variables locales congeladas de la ronda 1. Esto bloquea por completo la animación de los bloques y los temblores a partir de la ronda 2.
+
+## Solución Propuesta
+1. **Referencias Mutables Inmediatas**: Implementar referencias `useRef` para todas las props y estados reactivos consumidos dentro de `useFrame`:
+   ```typescript
+   const blocksRef = useRef(blocks);
+   const winnerColorRef = useRef(winnerColor);
+   const phaseRef = useRef(phase);
+   const roundRef = useRef(round);
+   const isBlackoutRef = useRef(isBlackout);
+   const settingsRef = useRef(settings);
+   ```
+2. **Sincronización síncrona en renderizado**: Actualizar el valor de las refs directamente durante el ciclo de render del componente:
+   ```typescript
+   blocksRef.current = blocks;
+   winnerColorRef.current = winnerColor;
+   phaseRef.current = phase;
+   roundRef.current = round;
+   isBlackoutRef.current = isBlackout;
+   settingsRef.current = settings;
+   ```
+3. **Consumo Seguro en useFrame**: Modificar todo el bucle interno de `useFrame` para leer de las referencias mutables (`.current`). Esto garantiza lecturas en tiempo real, precisas y libres de closures de React en cualquier ronda (1, 2, 3, etc.).
+
+## Plan de Verificación
+1. **Compilación local**:
+   - `npm run build` en el cliente para asegurar cero errores de TypeScript.
+2. **Manual**:
+   - El usuario validará in-game que al iniciar una partida en velocidad `⚡ TURBO`, el ecualizador y el bobbing de los bloques funcione a la perfección tanto en la Ronda 1 como en la Ronda 2, 3 y subsecuentes.
+
+---
+
+# Parche Técnico v2: Solución Definitiva para el Reloj de Animación 3D y la Sincronización de Audio (Pausa y Reanudación Fluida)
+
+## 1. Diagnóstico de la Causa Raíz
+
+### A. Animación 3D Estática en Ronda 2+
+* **El Problema**: El ecualizador, las luces del escenario y las animaciones de zapatos y corazón de los personajes se quedan completamente estáticos en la ronda 2.
+* **Causa**: Estos tres componentes consumían `track.seek()` de Howler.js para calcular el pulso de animación (`beatPulse`). En navegadores modernos, al pausar y reanudar la música por eventos asíncronos de WebSocket, la función `.seek()` de Howler se congela o devuelve un valor constante e inmóvil tras reanudarse en la ronda 2, apagando las animaciones.
+
+### B. Música Duplicada en Ronda 1 y Reinicio Constantemente en Ronda 2+
+* **El Problema**: En la ronda 1, la música suena dos veces de forma solapada (al iniciar `STARTING` y luego en `DANCING`). En rondas posteriores, la música vuelve a empezar de cero en lugar de reanudarse de forma fluida.
+* **Causa**:
+  1. En la ronda 1, tanto `STARTING` como `DANCING` disparan la condición `if (phase === 'STARTING' || phase === 'DANCING')` en [useAudio.ts](file:///d:/Proyectos/MusicalGame/musical-blocks-client/src/hooks/useAudio.ts). Al entrar en `DANCING`, como la música ya está sonando pero `activeDanceTrack.current` no es `null`, el código ejecutaba `activeDanceTrack.current.play()`. En Howler, llamar a `.play()` en un track en reproducción sin pausarlo genera una **reproducción paralela/solapada** del mismo sonido.
+  2. Al haber dos instancias colgadas y corruptas en la ronda 1, cuando la fase `'ELIMINATING'` llamaba a `.pause()`, el estado interno de Howler se corrompía. Para recuperarse en la ronda 2 tras llamar a `.play()`, Howler se veía obligado a matar las instancias de audio y reproducir la pista desde cero, perdiendo el progreso acumulado de la música.
+
+---
+
+## 2. Solución Definitiva y Unificada
+
+### A. Reloj de Animación Autoritativo en Three.js
+Independizaremos por completo el tiempo de renderizado visual del seek físico de Howler. Utilizaremos el reloj nativo e ininterrumpible de Three.js (`state.clock.elapsedTime`) para guiar la oscilación del ecualizador (`beatPulse`) en los tres componentes 3D. 
+Seguiremos leyendo el `activeBpm` del track de Howler dinámicamente para asegurar que la animación vibre exactamente en la misma frecuencia y ritmo que la música reproducida.
+
+### B. Control Seguro de Audio en [useAudio.ts](file:///d:/Proyectos/MusicalGame/musical-blocks-client/src/hooks/useAudio.ts)
+Modificaremos la lógica de transiciones de fase de audio para evitar reproducciones duplicadas y permitir una reanudación limpia en las rondas siguientes:
+```typescript
+if (phase === 'STARTING' || phase === 'DANCING') {
+  if (!activeDanceTrack.current) {
+    // Iniciar por primera vez la música
+    ...
+    activeDanceTrack.current = track;
+    track.play();
+  } else if (!activeDanceTrack.current.playing()) {
+    // Reanudar ÚNICAMENTE si estaba pausada, evitando duplicados
+    activeDanceTrack.current.play();
+    activeDanceTrack.current.fade(activeDanceTrack.current.volume(), 0.45, 500);
+  }
+  // Si ya se estaba reproduciendo, no hacemos nada.
+}
+```
+
+---
+
+## 3. Archivos a Modificar
+
+### 1. [useAudio.ts](file:///d:/Proyectos/MusicalGame/musical-blocks-client/src/hooks/useAudio.ts)
+Implementar el condicional de reproducción seguro (`!activeDanceTrack.current.playing()`) en las transiciones de fases.
+
+### 2. [BlockGrid.tsx](file:///d:/Proyectos/MusicalGame/musical-blocks-client/src/components/canvas/BlockGrid.tsx)
+Actualizar el cálculo de `seekTime` para usar `state.clock.elapsedTime` de forma directa en el loop de `useFrame`.
+
+### 3. [PlayerMesh.tsx](file:///d:/Proyectos/MusicalGame/musical-blocks-client/src/components/canvas/PlayerMesh.tsx)
+Modificar el cálculo de `seekTime` en `useFrame` del personaje para usar `state.clock.elapsedTime`.
+
+### 4. [StageShow.tsx](file:///d:/Proyectos/MusicalGame/musical-blocks-client/src/components/canvas/StageShow.tsx)
+Modificar `seekTime` en `useFrame` del escenario para que las luces y lasers bailen fluidamente con Three.js.
+
+
+

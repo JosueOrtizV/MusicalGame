@@ -320,9 +320,6 @@ function Spotlight({ position, colorIndex, orbitIndex, showStateRef, winnerColor
             angle={0.4}
             penumbra={0.65}
             distance={26}
-            castShadow
-            shadow-mapSize={[512, 512]}
-            shadow-bias={-0.001}
           />
 
           {/* Volumetric Glowing Beam Mesh */}
@@ -505,35 +502,29 @@ export function StageShow() {
   const pointLightRef = useRef<THREE.PointLight>(null);
 
   useFrame((state) => {
-    let activeBpm = 0;
-    let seekTime = state.clock.elapsedTime;
-    let isPlaying = false;
+    let activeBpm = 120; // default safe fallback
 
+    // Detect BPM dynamically based on active audio track playing status
     if (typeof window !== 'undefined' && MUSIC_TRACKS) {
       if (MUSIC_TRACKS.lobby && MUSIC_TRACKS.lobby.playing()) {
         activeBpm = 110;
-        const seek = MUSIC_TRACKS.lobby.seek();
-        seekTime = typeof seek === 'number' ? seek : state.clock.elapsedTime;
-        isPlaying = true;
       } else if (MUSIC_TRACKS.dance) {
         const BPM_DANCE = [128, 135, 142];
         for (let i = 0; i < MUSIC_TRACKS.dance.length; i++) {
           const track = MUSIC_TRACKS.dance[i];
           if (track && track.playing()) {
             activeBpm = BPM_DANCE[i];
-            const seek = track.seek();
-            seekTime = typeof seek === 'number' ? seek : state.clock.elapsedTime;
-            isPlaying = true;
             break;
           }
         }
       }
     }
 
+    // If Howler is not reporting track.playing() (due to autoplay/loading delays), deduce active BPM by game status
     const isLobby = phase === 'LOBBY';
     const isPlayingGame = phase === 'STARTING' || phase === 'DANCING' || phase === 'ANNOUNCING';
 
-    if (!isPlaying) {
+    if (activeBpm === 120) {
       if (isLobby) {
         activeBpm = 110;
       } else if (isPlayingGame) {
@@ -541,15 +532,15 @@ export function StageShow() {
         if (gameSpeed === 'TURBO') {
           trackIndex = (roomId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 2) + 1;
         } else {
-          trackIndex = roomId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 3;
+          trackIndex = (roomId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 3);
         }
         const BPM_DANCE = [128, 135, 142];
         activeBpm = BPM_DANCE[trackIndex];
-      } else {
-        activeBpm = 120;
       }
-      seekTime = state.clock.elapsedTime;
     }
+
+    // Always use Three.js clock as the authoritative source of time to avoid Howler seek freeze/restart bugs!
+    const seekTime = state.clock.elapsedTime;
 
     let beatPulse = 0;
     if (activeBpm > 0) {

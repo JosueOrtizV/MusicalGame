@@ -54,6 +54,8 @@ export function GameHUD() {
 
   const { timeLeft, winnerColor, players } = gameState;
   const playersWithLives = players.filter((p) => p.lives > 0);
+  
+  // Perfectly sync visual danger color with audio beeps at exactly 3 seconds!
   const isUrgent = timeLeft <= 3 && phase === 'ANNOUNCING';
 
   let phaseTitle = '';
