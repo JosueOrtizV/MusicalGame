@@ -57,6 +57,10 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
   const headBoneRef = useRef<THREE.Object3D | null>(null);
   const torsoBoneRef = useRef<THREE.Object3D | null>(null);
 
+  // Refs for custom independent neon shoes soles
+  const leftSoleRef = useRef<THREE.Mesh | null>(null);
+  const rightSoleRef = useRef<THREE.Mesh | null>(null);
+
   // Stably assign a dance animation (dance or dance2) based on player ID
   const danceAnimName = useMemo(() => {
     let hash = 0;
@@ -76,6 +80,14 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
       skinMaterial: 'matte'
     };
   }, [player.cosmetics, player.name, player.id]);
+
+  // Keep player and cosmetics in stable mutable references to prevent stale closures in useFrame
+  const playerRef = useRef(player);
+  const cosmeticsRef = useRef(cosmetics);
+  useEffect(() => {
+    playerRef.current = player;
+    cosmeticsRef.current = cosmetics;
+  }, [player, cosmetics]);
 
   // Read companionType from dynamic player cosmetics
   const companionType = useMemo(() => {
@@ -120,10 +132,12 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     return clone;
   }, [rawScene]);
 
-  // Find and store bone references for real-time declarative attachment binding
+  // Find and store bone and soles references for real-time declarative attachment binding
   useEffect(() => {
     headBoneRef.current = clonedScene.getObjectByName('Head') || null;
     torsoBoneRef.current = clonedScene.getObjectByName('Torso') || null;
+    leftSoleRef.current = (clonedScene.getObjectByName('left_neon_sole') as THREE.Mesh) || null;
+    rightSoleRef.current = (clonedScene.getObjectByName('right_neon_sole') as THREE.Mesh) || null;
   }, [clonedScene]);
 
   // Bind animation actions to the top-level group reference
@@ -176,6 +190,14 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     eCtx: CanvasRenderingContext2D;
     colorTex: THREE.CanvasTexture;
     emissiveTex: THREE.CanvasTexture;
+
+    // Dedicated canvases and textures for independent shoe soles animation
+    shoesCanvas: HTMLCanvasElement;
+    shoesEmissiveCanvas: HTMLCanvasElement;
+    shoesCtx: CanvasRenderingContext2D;
+    shoesECtx: CanvasRenderingContext2D;
+    shoesTex: THREE.CanvasTexture;
+    shoesEmissiveTex: THREE.CanvasTexture;
   } | null>(null);
 
   // Clean up cloned materials and geometries when component unmounts to prevent memory leaks
@@ -199,6 +221,9 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    const initialPl = playerRef.current;
+    const initialCos = cosmeticsRef.current;
+
     // 1. Create albedo (color) canvas
     const colorCanvas = document.createElement('canvas');
     colorCanvas.width = 16;
@@ -212,15 +237,15 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
 
     // Draw suit color (0,0 to 3,3) - vibrant player unique color!
     // Always draw player.color in albedo (the neon fix is done via mat.emissive directly)
-    ctx.fillStyle = player.color;
+    ctx.fillStyle = initialPl.color;
     ctx.fillRect(0, 0, 4, 4);
 
     // Draw visor color (4,0 to 7,3) - dynamic visor!
-    ctx.fillStyle = cosmetics.visorColor ?? '#00f3ff';
+    ctx.fillStyle = initialCos.visorColor ?? '#00f3ff';
     ctx.fillRect(4, 0, 4, 4);
 
     // Draw reactor / soles (8,0 to 11,3) - dynamic reactor!
-    ctx.fillStyle = cosmetics.heartColor ?? '#ff007f';
+    ctx.fillStyle = initialCos.heartColor ?? '#ff007f';
     ctx.fillRect(8, 0, 4, 4);
 
     // Draw headphones (12,0 to 15,3) - high-contrast crisp white!
@@ -228,7 +253,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     ctx.fillRect(12, 0, 4, 4);
 
     // Draw accent soles/shoes (0,4 to 3,7) - dynamic shoes!
-    ctx.fillStyle = cosmetics.shoesColor ?? '#ffe600';
+    ctx.fillStyle = initialCos.shoesColor ?? '#ffe600';
     ctx.fillRect(0, 4, 4, 4);
 
     // Draw secondary dark (4,4 to 7,7)
@@ -247,24 +272,50 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     eCtx.fillRect(0, 0, 16, 16);
 
     // Visor glows dynamically (4,0 to 7,3)
-    eCtx.fillStyle = cosmetics.visorColor ?? '#00f3ff';
+    eCtx.fillStyle = initialCos.visorColor ?? '#00f3ff';
     eCtx.fillRect(4, 0, 4, 4);
 
     // Reactor / soles glow dynamically (8,0 to 11,3)
-    eCtx.fillStyle = cosmetics.heartColor ?? '#ff007f';
+    eCtx.fillStyle = initialCos.heartColor ?? '#ff007f';
     eCtx.fillRect(8, 0, 4, 4);
 
     // Neon holographic skin: fill the ENTIRE canvas with player.color first,
     // then overlay visor and reactor on top so they still show through!
-    if (cosmetics.skinMaterial === 'neon') {
-      eCtx.fillStyle = player.color;
+    if (initialCos.skinMaterial === 'neon') {
+      eCtx.fillStyle = initialPl.color;
       eCtx.fillRect(0, 0, 16, 16); // whole body glows in player color
       // Re-draw visor (cyan) and reactor (magenta) ON TOP so they remain visible
-      eCtx.fillStyle = cosmetics.visorColor ?? '#00f3ff';
+      eCtx.fillStyle = initialCos.visorColor ?? '#00f3ff';
       eCtx.fillRect(4, 0, 4, 4);
-      eCtx.fillStyle = cosmetics.heartColor ?? '#ff007f';
+      eCtx.fillStyle = initialCos.heartColor ?? '#ff007f';
       eCtx.fillRect(8, 0, 4, 4);
     }
+
+    // 3. Create shoes albedo (color) canvas
+    const shoesCanvas = document.createElement('canvas');
+    shoesCanvas.width = 16;
+    shoesCanvas.height = 16;
+    const shoesCtx = shoesCanvas.getContext('2d');
+    if (!shoesCtx) return;
+
+    shoesCtx.fillStyle = '#1a1a24';
+    shoesCtx.fillRect(0, 0, 16, 16);
+
+    shoesCtx.fillStyle = initialCos.shoesColor ?? '#ffe600';
+    shoesCtx.fillRect(8, 0, 4, 4);
+
+    // 4. Create shoes emissive canvas
+    const shoesEmissiveCanvas = document.createElement('canvas');
+    shoesEmissiveCanvas.width = 16;
+    shoesEmissiveCanvas.height = 16;
+    const shoesECtx = shoesEmissiveCanvas.getContext('2d');
+    if (!shoesECtx) return;
+
+    shoesECtx.fillStyle = '#000000';
+    shoesECtx.fillRect(0, 0, 16, 16);
+
+    shoesECtx.fillStyle = initialCos.shoesColor ?? '#ffe600';
+    shoesECtx.fillRect(8, 0, 4, 4);
 
     // Convert to Three.js textures
     const colorTex = new THREE.CanvasTexture(colorCanvas);
@@ -279,6 +330,18 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     emissiveTex.colorSpace = THREE.SRGBColorSpace; // Canvas draws sRGB colors — tell Three.js to decode properly
     emissiveTex.flipY = false; // Match GLTF coordinate system!
 
+    const shoesTex = new THREE.CanvasTexture(shoesCanvas);
+    shoesTex.magFilter = THREE.NearestFilter;
+    shoesTex.minFilter = THREE.NearestFilter;
+    shoesTex.colorSpace = THREE.SRGBColorSpace;
+    shoesTex.flipY = false;
+
+    const shoesEmissiveTex = new THREE.CanvasTexture(shoesEmissiveCanvas);
+    shoesEmissiveTex.magFilter = THREE.NearestFilter;
+    shoesEmissiveTex.minFilter = THREE.NearestFilter;
+    shoesEmissiveTex.colorSpace = THREE.SRGBColorSpace;
+    shoesEmissiveTex.flipY = false;
+
     // Save references to allow safe, fast frame updates in useFrame
     texturesRef.current = {
       colorCanvas,
@@ -286,7 +349,13 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
       ctx,
       eCtx,
       colorTex,
-      emissiveTex
+      emissiveTex,
+      shoesCanvas,
+      shoesEmissiveCanvas,
+      shoesCtx,
+      shoesECtx,
+      shoesTex,
+      shoesEmissiveTex
     };
 
     // Traverse the glTF hierarchy to inject material parameters & custom textures
@@ -303,7 +372,21 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
             if ('color' in originalMat) {
               const mat = originalMat as THREE.MeshStandardMaterial;
               
-              if (cosmetics.skinMaterial === 'neon') {
+              const isSole = node.name === 'left_neon_sole' || node.name === 'right_neon_sole';
+              if (isSole) {
+                // Connect exclusive independent textures to neon soles to restore pixel-art beat pulse!
+                mat.map = shoesTex;
+                mat.emissiveMap = shoesEmissiveTex;
+                mat.color.set('#ffffff'); // reset color to white so texture shows shoesColor purely without blending
+                mat.emissive.set('#ffffff'); // enable full texture emission color
+                mat.emissiveIntensity = 1.0;
+                mat.roughness = 0.85;
+                mat.metalness = 0.05;
+                mat.transparent = false;
+                mat.opacity = 1.0;
+                mat.depthWrite = true;
+                mat.needsUpdate = true;
+              } else if (initialCos.skinMaterial === 'neon') {
                 // For neon: albedo = BLACK so that ambient/directional lights add ZERO to
                 // the final pixel color (diffuse = black × any_light = black).
                 // All color comes EXCLUSIVELY from emissiveMap × emissive(white) × intensity.
@@ -327,7 +410,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
                 mat.emissive.set('#ffffff'); // Enable full texture emission color
                 mat.emissiveIntensity = 3.0; // High bloom intensity!
                 
-                if (cosmetics.skinMaterial === 'chrome') {
+                if (initialCos.skinMaterial === 'chrome') {
                   mat.roughness = 0.08;
                   mat.metalness = 0.55;
                   mat.transparent = false;
@@ -347,7 +430,10 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
               emissiveTex.needsUpdate = true;
               mat.needsUpdate = true;
 
-              mats.push(mat);
+              // Only push to dynamic skinMaterial update array if it's NOT a sole!
+              if (!isSole) {
+                mats.push(mat);
+              }
             }
           });
         }
@@ -361,15 +447,54 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
       if (texturesRef.current) {
         texturesRef.current.colorTex.dispose();
         texturesRef.current.emissiveTex.dispose();
+        texturesRef.current.shoesTex.dispose();
+        texturesRef.current.shoesEmissiveTex.dispose();
         // Zero-size the canvas dimensions to force the browser to immediately free memory
         texturesRef.current.colorCanvas.width = 0;
         texturesRef.current.colorCanvas.height = 0;
         texturesRef.current.emissiveCanvas.width = 0;
         texturesRef.current.emissiveCanvas.height = 0;
+        texturesRef.current.shoesCanvas.width = 0;
+        texturesRef.current.shoesCanvas.height = 0;
+        texturesRef.current.shoesEmissiveCanvas.width = 0;
+        texturesRef.current.shoesEmissiveCanvas.height = 0;
         texturesRef.current = null;
       }
     };
-  }, [player.color, clonedScene, cosmetics]);
+  }, [clonedScene]);
+
+  // Update material physical parameters dynamically when skinMaterial changes
+  useEffect(() => {
+    if (!texturesRef.current) return;
+    const { colorTex, emissiveTex } = texturesRef.current;
+
+    playerMaterials.current.forEach((mat) => {
+      if (cosmetics.skinMaterial === 'neon') {
+        mat.color.set('#000000');
+        mat.map = null;
+        mat.emissive.set('#ffffff');
+        mat.emissiveMap = emissiveTex;
+        mat.emissiveIntensity = 1.0;
+        mat.roughness = 1.0;
+        mat.metalness = 0.0;
+      } else {
+        mat.color.set('#ffffff');
+        mat.map = colorTex;
+        mat.emissiveMap = emissiveTex;
+        mat.emissive.set('#ffffff');
+        mat.emissiveIntensity = 3.0;
+
+        if (cosmetics.skinMaterial === 'chrome') {
+          mat.roughness = 0.08;
+          mat.metalness = 0.55;
+        } else { // 'matte'
+          mat.roughness = 0.85;
+          mat.metalness = 0.05;
+        }
+      }
+      mat.needsUpdate = true;
+    });
+  }, [cosmetics.skinMaterial]);
 
   // Handle spawn and death transitions with custom particles
   useEffect(() => {
@@ -398,6 +523,9 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     if (!groupRef.current) return;
     const g = groupRef.current;
     const phase = useGameStore.getState().gameState?.phase ?? 'LOBBY';
+    const activePl = playerRef.current;
+    const activeCos = cosmeticsRef.current;
+    const companionType = activeCos.companionType;
 
     // -------------------------------------------------------------------------
     //  1. Active Beat Sync (BPM detection and sawtooth envelope pulse)
@@ -451,7 +579,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     }
     
     let beatPulse = 0;
-    if (activeBpm > 0 && player.isAlive) {
+    if (activeBpm > 0 && activePl.isAlive) {
       const elapsedBeats = seekTime * (activeBpm / 60);
       const beatProgress = elapsedBeats % 1;
       beatPulse = Math.pow(1 - beatProgress, 4); // exponential decay synth envelope
@@ -460,7 +588,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     // -------------------------------------------------------------------------
     //  1.5. Dynamic Skeletal Bone Attachments Alignment (Procedural Headphones & Backpack)
     // -------------------------------------------------------------------------
-    if (player.isAlive && meshRef.current) {
+    if (activePl.isAlive && meshRef.current) {
       // Align cyber-headphones with the Head bone
       if (headBoneRef.current && headphoneRef.current) {
         headBoneRef.current.updateWorldMatrix(true, false);
@@ -501,7 +629,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     // -------------------------------------------------------------------------
     //  2. Floating Bobbing Retro Companion Accessory
     // -------------------------------------------------------------------------
-    if (companionRef.current && player.isAlive) {
+    if (companionRef.current && activePl.isAlive) {
       // Floating sinusoidal bobbing + orbit rotation further to the side to avoid clipping
       companionRef.current.position.x = 0.72 + Math.sin(state.clock.elapsedTime * 1.5) * 0.03;
       companionRef.current.position.y = 1.1 + Math.sin(state.clock.elapsedTime * 2.5) * 0.06;
@@ -556,7 +684,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     // Calculate falling Y offset if player is on an eliminated block during ELIMINATING phase
     if (phase === 'ELIMINATING') {
       const gameState = useGameStore.getState().gameState;
-      const block = gameState?.blocks?.[player.position.z]?.[player.position.x];
+      const block = gameState?.blocks?.[activePl.position.z]?.[activePl.position.x];
       if (block && !block.isActive) {
         playerFallingY.current -= delta * 8; // FALL_SPEED is 8 units/s
       } else {
@@ -613,13 +741,13 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
       nextAnim = danceAnimName; // always dance in premium cosmetics preview!
     } else if (phase === 'GAME_OVER') {
       const winnerId = useGameStore.getState().gameState?.winnerId;
-      if (player.id === winnerId) {
+      if (activePl.id === winnerId) {
         nextAnim = 'celebrate';
       } else {
         nextAnim = 'idle';
       }
     } else if (phase === 'LOBBY') {
-      nextAnim = player.isReady ? danceAnimName : 'idle';
+      nextAnim = activePl.isReady ? danceAnimName : 'idle';
     } else if (phase === 'STARTING' || phase === 'DANCING' || phase === 'ANNOUNCING') {
       if (isMoving) {
         nextAnim = 'walk';
@@ -647,7 +775,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
           x: g.position.x + (Math.random() - 0.5) * 0.05,
           y: g.position.y - 0.42, // soles of their feet
           z: g.position.z + (Math.random() - 0.5) * 0.05,
-          color: player.color,
+          color: activePl.color,
           count: 1,
           type: 'dust'
         });
@@ -674,7 +802,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
             x: rightPos.x,
             y: rightPos.y,
             z: rightPos.z,
-            color: player.color,
+            color: activePl.color,
             count: 1,
             type: 'dust'
           });
@@ -686,18 +814,57 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     //  4. Visor, Reactor & Auriculares real-time LED Canvas Redraw
     // -------------------------------------------------------------------------
     const textures = texturesRef.current;
-    if (textures && player.isAlive) {
-      const { ctx, eCtx } = textures;
+    if (textures && activePl.isAlive) {
+      const { ctx, eCtx, shoesCtx, shoesECtx, shoesTex, shoesEmissiveTex } = textures;
       const time = state.clock.elapsedTime;
-      const visorColor = '#00f3ff';
-      const neonPink = '#ff007f';
+      const visorColor = activeCos.visorColor ?? '#00f3ff';
+      const heartColor = activeCos.heartColor ?? '#ff007f';
+      const shoesColor = activeCos.shoesColor ?? '#ffe600';
+      const suitColor = activePl.color;
 
-      // 4a. Visor rendering
-      ctx.fillStyle = '#1a1a24'; // suit background
+      // 4a. Visor rendering base background (DARK, not glowing solid visorColor!)
+      ctx.fillStyle = '#1a1a24'; // suit background (dark slate)
+      ctx.fillRect(0, 0, 16, 16);
+
+      // Suit color (0,0 to 3,3)
+      ctx.fillStyle = suitColor;
+      ctx.fillRect(0, 0, 4, 4);
+
+      // Visor area initialized dark (4,0 to 7,3)
+      ctx.fillStyle = '#1a1a24';
       ctx.fillRect(4, 0, 4, 4);
-      eCtx.fillStyle = '#000000'; // black = no glow
-      eCtx.fillRect(4, 0, 4, 4);
 
+      // Reactor / soles (8,0 to 11,3)
+      ctx.fillStyle = heartColor;
+      ctx.fillRect(8, 0, 4, 4);
+
+      // Headphones (12,0 to 15,3) - white
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(12, 0, 4, 4);
+
+      // Accent soles/shoes (0,4 to 3,7)
+      ctx.fillStyle = shoesColor;
+      ctx.fillRect(0, 4, 4, 4);
+
+      // Secondary dark (4,4 to 7,7)
+      ctx.fillStyle = '#0e0e14';
+      ctx.fillRect(4, 4, 4, 4);
+
+      // Base emissive mapping (All black by default except visor and reactor active pixels)
+      eCtx.fillStyle = '#000000'; // black = no glow
+      eCtx.fillRect(0, 0, 16, 16);
+
+      // Neon holographic skin glow
+      if (activeCos.skinMaterial === 'neon') {
+        eCtx.fillStyle = suitColor;
+        eCtx.fillRect(0, 0, 16, 16); // whole body glows in player color
+        // Overlays
+        eCtx.fillStyle = '#000000'; // visor and reactor are drawn dark initially to allow dynamic glows
+        eCtx.fillRect(4, 0, 4, 4);
+        eCtx.fillRect(8, 0, 4, 4);
+      }
+
+      // Visor animation overlays (glowing active pixels drawn on top of dark visor background)
       if (nextAnim === 'death' || phase === 'ELIMINATING') {
         // x_x eyes
         ctx.fillStyle = '#ff0055';
@@ -718,8 +885,8 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
       } 
       else if (nextAnim === 'celebrate' || phase === 'GAME_OVER') {
         // Heart symbol <3 pulsing
-        ctx.fillStyle = neonPink;
-        eCtx.fillStyle = neonPink;
+        ctx.fillStyle = heartColor;
+        eCtx.fillStyle = heartColor;
         
         const isPulse = Math.floor(time * 5) % 2 === 0;
         if (isPulse) {
@@ -782,8 +949,8 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
       eCtx.fillStyle = '#000000';
       eCtx.fillRect(8, 0, 4, 4);
 
-      ctx.fillStyle = neonPink;
-      eCtx.fillStyle = neonPink;
+      ctx.fillStyle = heartColor;
+      eCtx.fillStyle = heartColor;
 
       if (beatPulse > 0.45) {
         // Pulsing larger arc reactor shape
@@ -800,16 +967,56 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
         eCtx.fillRect(9, 1, 2, 2);
       }
 
+      // 4c. Redraw independent neon shoe soles canvas (restoring pixel-art pulse: 2x2 core to 4x4 expanded cross)
+      shoesCtx.fillStyle = '#1a1a24';
+      shoesCtx.fillRect(0, 0, 16, 16);
+      shoesECtx.fillStyle = '#000000';
+      shoesECtx.fillRect(0, 0, 16, 16);
+
+      shoesCtx.fillStyle = shoesColor;
+      shoesECtx.fillStyle = shoesColor;
+
+      if (beatPulse > 0.45) {
+        // Expand to full cross shape (4x4) at beat pulse peaks
+        shoesCtx.fillRect(9, 0, 2, 1);
+        shoesCtx.fillRect(8, 1, 4, 2);
+        shoesCtx.fillRect(9, 3, 2, 1);
+
+        shoesECtx.fillRect(9, 0, 2, 1);
+        shoesECtx.fillRect(8, 1, 4, 2);
+        shoesECtx.fillRect(9, 3, 2, 1);
+      } else {
+        // Core central 2x2 shape in idle rest state
+        shoesCtx.fillRect(9, 1, 2, 2);
+        shoesECtx.fillRect(9, 1, 2, 2);
+      }
+
+      const activeSoles = [leftSoleRef.current, rightSoleRef.current];
+      activeSoles.forEach((sole) => {
+        if (sole && sole.material instanceof THREE.MeshStandardMaterial) {
+          if (activeCos.skinMaterial === 'neon') {
+            sole.material.color.set('#000000');
+          } else {
+            sole.material.color.set('#ffffff'); // reset color to white so texture shoesColor is fully vibrant
+          }
+          sole.material.emissive.set('#ffffff'); // enable full texture emission color
+          sole.material.emissiveIntensity = 1.0 + beatPulse * 0.4; // Max 1.4 to avoid overexposure!
+        }
+      });
+
       // Flag Three.js dynamic canvas textures to refresh in GPU memory
       textures.colorTex.needsUpdate = true;
       textures.emissiveTex.needsUpdate = true;
+      shoesTex.needsUpdate = true;
+      shoesEmissiveTex.needsUpdate = true;
     }
 
     // -------------------------------------------------------------------------
-    //  4c. Cyber-Backpack LED Indicators Sequential BPM Chasing & Nozzles Pulse
+    //  4d. Cyber-Backpack LED Indicators Sequential BPM Chasing & Nozzles Pulse
     // -------------------------------------------------------------------------
-    if (player.isAlive) {
+    if (activePl.isAlive) {
       const time = state.clock.elapsedTime;
+      const bpColor = activeCos.backpackColor ?? activePl.color;
 
       // LED Chasing: Synced to BPM. Sequential 8th-note style chasing.
       const led1Mat = led1Ref.current?.material as THREE.MeshStandardMaterial;
@@ -822,13 +1029,13 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
         
         const mats = [led1Mat, led2Mat, led3Mat];
         mats.forEach((mat, idx) => {
+          mat.color.set(bpColor);
+          mat.emissive.set(bpColor);
           if (idx === activeLED) {
-            // High brightness decaying smoothly to create a sleek trail
             const decay = Math.pow(1 - fraction, 2);
-            mat.emissiveIntensity = 2.0 + decay * 8.0;
+            mat.emissiveIntensity = 0.9 + decay * 0.5; // Max 1.4!
           } else {
-            // Soft neon ambient flow
-            mat.emissiveIntensity = 0.6 + beatPulse * 1.5;
+            mat.emissiveIntensity = 0.6 + beatPulse * 0.3; // Max 0.9!
           }
         });
       }
@@ -837,25 +1044,28 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
       const nozzles = [leftNozzleRef.current, rightNozzleRef.current];
       nozzles.forEach((nozzle) => {
         if (nozzle) {
+          if (nozzle.material instanceof THREE.MeshStandardMaterial) {
+            nozzle.material.color.set(bpColor);
+            nozzle.material.emissive.set(bpColor);
+          }
           if (isMoving) {
-            // Rapid engine vibration scaling + beat flare
             const vib = 1.0 + beatPulse * 0.4 + Math.sin(time * 35) * 0.12;
             nozzle.scale.set(vib, vib, vib);
             
             if (nozzle.material instanceof THREE.MeshStandardMaterial) {
-              nozzle.material.emissiveIntensity = 5.0 + beatPulse * 5.0;
+              nozzle.material.emissiveIntensity = 1.2 + beatPulse * 0.3; // Max 1.5!
             }
           } else {
-            // Low idle resting core scale and soft glow
             nozzle.scale.set(0.6, 0.6, 0.6);
             if (nozzle.material instanceof THREE.MeshStandardMaterial) {
-              nozzle.material.emissiveIntensity = 1.5;
+              nozzle.material.emissiveIntensity = 0.8;
             }
           }
         }
       });
 
-      // Cyber-Headphones Beat-Sync Pulse
+      // Cyber-Headphones Beat-Sync Pulse and Dynamic Color
+      const hpColor = activeCos.headphonesColor ?? activePl.color;
       const hpLeftRingMat = headphoneLeftRingRef.current?.material as THREE.MeshStandardMaterial;
       const hpLeftDotMat = headphoneLeftDotRef.current?.material as THREE.MeshStandardMaterial;
       const hpRightRingMat = headphoneRightRingRef.current?.material as THREE.MeshStandardMaterial;
@@ -863,7 +1073,9 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
       const hpMats = [hpLeftRingMat, hpLeftDotMat, hpRightRingMat, hpRightDotMat];
       hpMats.forEach((mat) => {
         if (mat) {
-          mat.emissiveIntensity = 2.0 + beatPulse * 6.0;
+          mat.color.set(hpColor);
+          mat.emissive.set(hpColor);
+          mat.emissiveIntensity = 0.8 + beatPulse * 0.5; // Max 1.3 to avoid overexposure!
         }
       });
     }
@@ -871,16 +1083,16 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     // -------------------------------------------------------------------------
     //  5. Beat Pulse emissive intensity modulation
     // -------------------------------------------------------------------------
-    if (playerMaterials.current.length > 0 && player.isAlive) {
+    if (playerMaterials.current.length > 0 && activePl.isAlive) {
       playerMaterials.current.forEach((mat) => {
-        if (cosmetics.skinMaterial === 'neon') {
+        if (activeCos.skinMaterial === 'neon') {
           // ACES tone mapping compresses high values → white. Keep intensity ≤1.5.
           // ACES(1.0)=0.804 (vivid), ACES(1.5)=0.879 (bright), ACES(2.5)=0.938 (cream/white).
           mat.emissiveIntensity = 1.0 + beatPulse * 0.4;
-        } else if (cosmetics.skinMaterial === 'chrome') {
+        } else if (activeCos.skinMaterial === 'chrome') {
           mat.emissiveIntensity = 0.8 + beatPulse * 0.6;
         } else {
-          mat.emissiveIntensity = 2.0 + beatPulse * 2.0;
+          mat.emissiveIntensity = 1.2 + beatPulse * 0.3; // Max 1.5 to avoid overexposure!
         }
       });
     }
@@ -897,17 +1109,30 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
         {/* Declarative Procedural Cyber-Headphones */}
         {player.isAlive && cosmetics.headphonesEnabled && (
           <group ref={headphoneRef}>
-            {/* 1. Headband (half-torus arching over the head) */}
-            <mesh castShadow position={[0, 0.31, 0]}>
-              <torusGeometry args={[0.37, 0.018, 8, 24, Math.PI]} />
-              <meshStandardMaterial color="#1c1c24" roughness={0.18} metalness={0.8} />
-            </mesh>
+            {/* 1. Headband (Voxel Square Headband arching over the head without clipping) */}
+            <group position={[0, 0.48, 0]}>
+              {/* Arco superior horizontal */}
+              <mesh castShadow position={[0, 0.17, 0]}>
+                <boxGeometry args={[0.74, 0.024, 0.04]} />
+                <meshStandardMaterial color="#1c1c24" roughness={0.18} metalness={0.8} />
+              </mesh>
+              {/* Correa vertical izquierda */}
+              <mesh castShadow position={[-0.36, 0, 0]}>
+                <boxGeometry args={[0.024, 0.34, 0.04]} />
+                <meshStandardMaterial color="#1c1c24" roughness={0.18} metalness={0.8} />
+              </mesh>
+              {/* Correa vertical derecha */}
+              <mesh castShadow position={[0.36, 0, 0]}>
+                <boxGeometry args={[0.024, 0.34, 0.04]} />
+                <meshStandardMaterial color="#1c1c24" roughness={0.18} metalness={0.8} />
+              </mesh>
 
-            {/* Headband center neon status band */}
-            <mesh position={[0, 0.68, 0]} castShadow>
-              <boxGeometry args={[0.05, 0.024, 0.04]} />
-              <meshStandardMaterial color="#00f3ff" emissive="#00f3ff" emissiveIntensity={3.0} />
-            </mesh>
+              {/* Headband center neon status band */}
+              <mesh position={[0, 0.182, 0]} castShadow>
+                <boxGeometry args={[0.05, 0.024, 0.04]} />
+                <meshStandardMaterial color="#00f3ff" emissive="#00f3ff" emissiveIntensity={3.0} />
+              </mesh>
+            </group>
 
             {/* 2. Ear Cups (Left and Right) */}
             {/* Left Ear Cup Assembly Group */}
@@ -1025,7 +1250,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
                 <meshStandardMaterial 
                   color={cosmetics.companionColor ?? player.color} 
                   emissive={cosmetics.companionColor ?? player.color}
-                  emissiveIntensity={2.5}
+                  emissiveIntensity={1.2}
                 />
               </mesh>
               {/* Left Tape Reel */}
@@ -1067,7 +1292,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
                 <meshStandardMaterial 
                   color={cosmetics.companionColor ?? player.color} 
                   emissive={cosmetics.companionColor ?? player.color}
-                  emissiveIntensity={2.5}
+                  emissiveIntensity={1.2}
                 />
               </mesh>
               {/* Small Write-Protect Tab Hole */}
@@ -1086,7 +1311,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
                 <meshStandardMaterial 
                   color={cosmetics.companionColor ?? player.color} 
                   emissive={cosmetics.companionColor ?? player.color}
-                  emissiveIntensity={4.0}
+                  emissiveIntensity={1.3}
                 />
               </mesh>
               {/* Outer Cyber Torus Rings */}

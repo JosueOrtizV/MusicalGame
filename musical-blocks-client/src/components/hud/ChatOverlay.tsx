@@ -74,6 +74,17 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
     return () => clearInterval(interval);
   }, []);
 
+  // Listen for global chat:minimize event to close chat panel automatically when opening lobby modals
+  useEffect(() => {
+    const handleMinimize = () => {
+      setIsOpen(false);
+    };
+    window.addEventListener('chat:minimize', handleMinimize);
+    return () => {
+      window.removeEventListener('chat:minimize', handleMinimize);
+    };
+  }, []);
+
   // Handle notification badge for new messages when collapsed
   useEffect(() => {
     if (!isOpen && chatMessages.length > lastMessageCountRef.current) {

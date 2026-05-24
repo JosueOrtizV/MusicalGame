@@ -89,12 +89,26 @@ export const useGameStore = create<GameStore>()(
       localPlayerId: null,
       localPlayerName: '',
       sessionToken: null,
-      localCosmetics: {
-        companionType: 'none',
-        headphonesEnabled: false,
-        backpackEnabled: false,
-        skinMaterial: 'matte',
-      },
+      localCosmetics: (() => {
+        const colors = [
+          '#F6E05E', '#FC8181', '#68D391', '#76E4F7', '#B794F4', 
+          '#FBD38D', '#F687B3', '#90CDF4', '#39FF14', '#FF007F', 
+          '#0066FF', '#FF5500'
+        ];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)] || '#39FF14';
+        return {
+          companionType: 'none',
+          headphonesEnabled: true,
+          backpackEnabled: true,
+          skinMaterial: 'matte',
+          shoesColor: randomColor,
+          visorColor: randomColor,
+          heartColor: randomColor,
+          headphonesColor: randomColor,
+          backpackColor: randomColor,
+          companionColor: randomColor,
+        };
+      })(),
 
       // ---- Game state
       gameState: null,

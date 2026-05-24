@@ -39,9 +39,15 @@ export class PlayerManager {
       hasReturnedToLobby: true,
       cosmetics: {
         companionType: 'none',
-        headphonesEnabled: false,
-        backpackEnabled: false,
+        headphonesEnabled: true,
+        backpackEnabled: true,
         skinMaterial: 'matte',
+        shoesColor: chosenColor,
+        visorColor: chosenColor,
+        heartColor: chosenColor,
+        headphonesColor: chosenColor,
+        backpackColor: chosenColor,
+        companionColor: chosenColor,
       },
     };
     this.players.set(socketId, player);

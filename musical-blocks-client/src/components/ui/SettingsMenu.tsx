@@ -37,6 +37,11 @@ export function SettingsMenu() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && screen !== 'home') {
+        // If there's an active lobby settings or avatar locker modal open, ignore Escape and yield control to the modal
+        const hasOpenModal = document.querySelector('.settings-modal-overlay') || 
+                             document.querySelector('.locker-modal-overlay');
+        if (hasOpenModal) return;
+        
         setIsOpen((prev) => !prev);
       }
     };

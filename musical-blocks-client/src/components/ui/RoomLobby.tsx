@@ -61,9 +61,61 @@ export function RoomLobby() {
   const [isSdExpanded, setIsSdExpanded] = useState(false);
   const [isLockerOpen, setIsLockerOpen] = useState(false);
   const [lockerTab, setLockerTab] = useState<'equip' | 'colors'>('equip');
+  const [draftCosmetics, setDraftCosmetics] = useState<PlayerCosmetics | null>(null);
 
   const localCosmetics = useGameStore((s) => s.localCosmetics);
   const updateLocalCosmetics = useGameStore((s) => s.updateLocalCosmetics);
+
+  const openLocker = () => {
+    setDraftCosmetics(localCosmetics);
+    setIsLockerOpen(true);
+    window.dispatchEvent(new CustomEvent('chat:minimize'));
+  };
+
+  const openSettings = () => {
+    setIsSettingsOpen(true);
+    window.dispatchEvent(new CustomEvent('chat:minimize'));
+  };
+
+  const saveLocker = () => {
+    if (draftCosmetics) {
+      updateLocalCosmetics(draftCosmetics);
+      addToast(
+        lang === 'es' 
+          ? '📋 ¡Estilo guardado y sincronizado!' 
+          : '📋 Style saved and synchronized!', 
+        'success'
+      );
+    }
+    setIsLockerOpen(false);
+    setDraftCosmetics(null);
+  };
+
+  const cancelLocker = () => {
+    setIsLockerOpen(false);
+    setDraftCosmetics(null);
+  };
+
+  const updateDraftCosmetics = (newFields: Partial<PlayerCosmetics>) => {
+    setDraftCosmetics((prev) => (prev ? { ...prev, ...newFields } : null));
+  };
+
+  // Handle Escape key to close open modals
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isLockerOpen) {
+          cancelLocker();
+        } else if (isSettingsOpen) {
+          setIsSettingsOpen(false);
+        }
+      }
+    };
+    if (isLockerOpen || isSettingsOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLockerOpen, isSettingsOpen, draftCosmetics]);
 
   // Auto-sync saved cosmetics to server upon mounting or selection changes
   useEffect(() => {
@@ -73,12 +125,13 @@ export function RoomLobby() {
   const previewPlayer = useMemo(() => {
     const localPlayer = room?.players.find((p) => p.id === localPlayerId);
     if (!localPlayer) return null;
+    const activeCosmetics = isLockerOpen && draftCosmetics ? draftCosmetics : localPlayer.cosmetics;
     return {
       ...localPlayer,
-      color: localCosmetics.primaryColor ?? localPlayer.color,
-      cosmetics: localCosmetics,
+      color: activeCosmetics.primaryColor ?? localPlayer.color,
+      cosmetics: activeCosmetics,
     };
-  }, [room?.players, localPlayerId, localCosmetics]);
+  }, [room?.players, localPlayerId, isLockerOpen, draftCosmetics]);
 
   useEffect(() => {
     if (!room) return;
@@ -137,7 +190,7 @@ export function RoomLobby() {
         {isHost && (
           <button
             className="lobby-settings-btn"
-            onClick={() => setIsSettingsOpen(true)}
+            onClick={openSettings}
             title={t('roomSettingsTitle')}
           >
             🕹️
@@ -147,7 +200,7 @@ export function RoomLobby() {
         {/* Cosmetic Locker Trigger Button (Symmetrical on Top-Left) */}
         <button
           className="lobby-cosmetics-btn"
-          onClick={() => setIsLockerOpen(true)}
+          onClick={openLocker}
           title={lang === 'es' ? 'Locker de Cosméticos' : 'Cosmetic Locker'}
         >
           👕
@@ -806,342 +859,349 @@ export function RoomLobby() {
           </div>
         </div>
       )}
-
       {/* R3F Centered Glassmorphic Cosmetics Locker Modal */}
       {isLockerOpen && (
-        <div className="locker-modal-overlay">
-          <div className="locker-modal-card hud-card">
-            {/* HUD Corner Brackets */}
-            <span className="hud-corner top-left"></span>
-            <span className="hud-corner top-right"></span>
-            <span className="hud-corner bottom-left"></span>
-            <span className="hud-corner bottom-right"></span>
+        (() => {
+          const activeCosmetics = draftCosmetics || localCosmetics;
+          return (
+            <div className="locker-modal-overlay">
+              <div className="locker-modal-card hud-card">
+                {/* HUD Corner Brackets */}
+                <span className="hud-corner top-left"></span>
+                <span className="hud-corner top-right"></span>
+                <span className="hud-corner bottom-left"></span>
+                <span className="hud-corner bottom-right"></span>
 
-            <div className="locker-modal-header">
-              <div className="flex items-center gap-3">
-                {/* Dial Vector Icon */}
-                <svg className="w-6 h-6 text-fuchsia-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
-                <div>
-                  <h2 className="locker-modal-title">{lang === 'es' ? 'Locker de Avatar' : 'Avatar Locker'}</h2>
-                  <p className="hud-terminal-sub">SYSTEM // CALIBRATING_DNA_STREAM... <span className="blinking-cursor">_</span></p>
-                </div>
-              </div>
-              <button 
-                className="flex items-center justify-center w-8 h-8 rounded-full border border-white/10 bg-white/3 hover:bg-rose-500/20 hover:border-rose-500/40 transition-all duration-200 cursor-pointer" 
-                onClick={() => setIsLockerOpen(false)}
-                title={lang === 'es' ? 'Cerrar' : 'Close'}
-              >
-                <svg className="w-4 h-4 text-white/70 hover:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="locker-modal-body">
-              {/* Left Column: 3D Live Preview - ALWAYS FIXED, NO SCROLL */}
-              <div className="locker-modal-preview-panel">
-                <div className="locker-modal-canvas-container hud-terminal-container">
-                  <span className="hud-border-bracket top-left"></span>
-                  <span className="hud-border-bracket top-right"></span>
-                  <span className="hud-border-bracket bottom-left"></span>
-                  <span className="hud-border-bracket bottom-right"></span>
-                  <div className="hud-scanlines"></div>
-                  {/* Neon Scanner laser beam sweep */}
-                  <div className="hud-scanner-beam"></div>
-
-                  {previewPlayer && (
-                    <Canvas camera={{ position: [1, 0.3, 2.8], fov: 55 }}>
-                      <ambientLight intensity={0.7} />
-                      <directionalLight position={[2, 5, 2]} intensity={1.5} castShadow />
-                      <pointLight position={[-3, 3, -3]} intensity={0.5} />
-                      <group position={[0, -0.35, 0]}>
-                        <PlayerMesh player={previewPlayer} isLocal={true} isPreview={true} />
-                      </group>
-                      <OrbitControls
-                        enableZoom={true}
-                        enablePan={false}
-                        minDistance={1.4}
-                        maxDistance={4.0}
-                        minPolarAngle={Math.PI / 2.8}
-                        maxPolarAngle={Math.PI / 2}
-                      />
-                    </Canvas>
-                  )}
-                </div>
-                <p className="locker-modal-hint">
-                  {lang === 'es' ? '↔ Arrastra para rotar en 3D' : '↔ Drag to rotate in 3D'}
-                </p>
-              </div>
-
-              {/* Right Column: Controls - SCROLL INDEPENDIENTE */}
-              <div className="locker-modal-controls-panel">
-                {/* Cyberpunk Navigation Sub-tabs */}
-                <div className="flex border-b border-white/10 mb-4 w-full gap-2 p-1 bg-black/40 rounded-lg">
-                  <button 
-                    className={`flex-1 py-3 px-4 font-mono text-xs font-extrabold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 rounded-md ${
-                      lockerTab === 'equip' 
-                        ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]' 
-                        : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
-                    }`}
-                    onClick={() => setLockerTab('equip')}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <div className="locker-modal-header">
+                  <div className="flex items-center gap-3">
+                    {/* Dial Vector Icon */}
+                    <svg className="w-6 h-6 text-fuchsia-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                     </svg>
-                    <span>{lang === 'es' ? 'Equipamiento' : 'Equipment'}</span>
-                  </button>
-                  <button 
-                    className={`flex-1 py-3 px-4 font-mono text-xs font-extrabold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 rounded-md ${
-                      lockerTab === 'colors' 
-                        ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]' 
-                        : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
-                    }`}
-                    onClick={() => setLockerTab('colors')}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                    </svg>
-                    <span>{lang === 'es' ? 'Colores' : 'Colors'}</span>
-                  </button>
-                </div>
-
-                <div className="locker-tab-content-scroll">
-                  {lockerTab === 'equip' ? (
-                    <div className="flex flex-col gap-5 fade-in">
-                      {/* Accessories */}
-                      <div className="locker-modal-section">
-                        <h3 className="locker-modal-section-title flex items-center gap-2">
-                          <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                          </svg>
-                          <span>{lang === 'es' ? 'Accesorios' : 'Accessories'}</span>
-                        </h3>
-                        <div className="locker-modal-toggles-grid">
-                          <button
-                            className={`locker-modal-toggle-card ${localCosmetics.headphonesEnabled ? 'active' : ''}`}
-                            onClick={() => updateLocalCosmetics({ headphonesEnabled: !localCosmetics.headphonesEnabled })}
-                          >
-                            <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V9a6 6 0 00-12 0v10a2 2 0 002 2z" />
-                            </svg>
-                            <span className="locker-modal-toggle-label">
-                              {lang === 'es' ? 'Auriculares Beat-Sync' : 'Beat-Sync Headphones'}
-                            </span>
-                          </button>
-                          <button
-                            className={`locker-modal-toggle-card ${localCosmetics.backpackEnabled ? 'active' : ''}`}
-                            onClick={() => updateLocalCosmetics({ backpackEnabled: !localCosmetics.backpackEnabled })}
-                          >
-                            <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
-                            <span className="locker-modal-toggle-label">
-                              {lang === 'es' ? 'Cyber-Mochila Jet' : 'Cyber-Backpack Jet'}
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Companions */}
-                      <div className="locker-modal-section">
-                        <h3 className="locker-modal-section-title flex items-center gap-2">
-                          <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                          <span>{lang === 'es' ? 'Cyber-Mascota Flotante' : 'Floating Cyber Pet'}</span>
-                        </h3>
-                        <div className="locker-modal-options-grid">
-                          {(['none', 'cassette', 'floppy', 'orb'] as const).map((type) => (
-                            <button
-                              key={type}
-                              className={`locker-modal-option-btn ${localCosmetics.companionType === type ? 'active' : ''}`}
-                              onClick={() => updateLocalCosmetics({ companionType: type })}
-                            >
-                              {type === 'none' && (
-                                <svg className="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                </svg>
-                              )}
-                              {type === 'cassette' && (
-                                <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2H7a2 2 0 00-2 2v2M8 14h.01M16 14h.01M12 14a1 1 0 100-2 1 1 0 000 2z" />
-                                </svg>
-                              )}
-                              {type === 'floppy' && (
-                                <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-8 0V4a1 1 0 011-1h4a1 1 0 011 1v3M8 7h8m-5 8h2m-6 3h8" />
-                                </svg>
-                              )}
-                              {type === 'orb' && (
-                                <svg className="w-4 h-4 text-cyan-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 15a3 3 0 100-6 3 3 0 000 6z" />
-                                </svg>
-                              )}
-                              <span className="locker-modal-option-name">
-                                {type === 'none' && (lang === 'es' ? 'Ninguna' : 'None')}
-                                {type === 'cassette' && 'Retro Cassette'}
-                                {type === 'floppy' && 'Voxel Floppy'}
-                                {type === 'orb' && 'Pulse Orb'}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Skins */}
-                      <div className="locker-modal-section">
-                        <h3 className="locker-modal-section-title flex items-center gap-2">
-                          <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
-                          <span>{lang === 'es' ? 'Material del Traje' : 'Suit Material'}</span>
-                        </h3>
-                        <div className="locker-modal-skins-row">
-                          {(['matte', 'chrome', 'neon'] as const).map((skin) => (
-                            <button
-                              key={skin}
-                              className={`locker-modal-skin-btn locker-modal-skin-btn--${skin} ${localCosmetics.skinMaterial === skin ? 'active' : ''} flex items-center gap-2`}
-                              onClick={() => updateLocalCosmetics({ skinMaterial: skin })}
-                            >
-                              {skin === 'matte' && (
-                                <>
-                                  <svg className="w-4 h-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                                  </svg>
-                                  <span>{lang === 'es' ? 'Mate Plástico' : 'Matte Plastic'}</span>
-                                </>
-                              )}
-                              {skin === 'chrome' && (
-                                <>
-                                  <svg className="w-4 h-4 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                                  </svg>
-                                  <span>{lang === 'es' ? 'Cromo Espejado' : 'Mirror Chrome'}</span>
-                                </>
-                              )}
-                              {skin === 'neon' && (
-                                <>
-                                  <svg className="w-4 h-4 text-rose-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                  </svg>
-                                  <span>{lang === 'es' ? 'Neón Holograma' : 'Neon Hologram'}</span>
-                                </>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                    <div>
+                      <h2 className="locker-modal-title">{lang === 'es' ? 'Locker de Avatar' : 'Avatar Locker'}</h2>
+                      <p className="hud-terminal-sub">SYSTEM // CALIBRATING_DNA_STREAM... <span className="blinking-cursor">_</span></p>
                     </div>
-                  ) : (
-                    <div className="flex flex-col gap-4 fade-in">
-                      {/* Colors Customization Section */}
-                      <div className="locker-modal-section">
-                        <h3 className="locker-modal-section-title flex items-center gap-2">
-                          <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                          </svg>
-                          <span>{lang === 'es' ? 'Calibrar Colores' : 'Calibrate Colors'}</span>
-                        </h3>
-                        <div className="locker-color-customizer">
-                          {(() => {
-                            const otherPlayers = room?.players.filter((p) => p.id !== localPlayerId) || [];
-                            const takenColors = otherPlayers.map((p) => (p.color || '').toLowerCase());
+                  </div>
+                  <button 
+                    className="flex items-center justify-center w-8 h-8 rounded-full border border-white/10 bg-white/3 hover:bg-rose-500/20 hover:border-rose-500/40 transition-all duration-200 cursor-pointer" 
+                    onClick={cancelLocker}
+                    title={lang === 'es' ? 'Cerrar' : 'Close'}
+                  >
+                    <svg className="w-4 h-4 text-white/70 hover:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
 
-                            const colorItems: { key: keyof PlayerCosmetics; label: string; active: boolean; fallback: string }[] = [
-                              { key: 'primaryColor', label: lang === 'es' ? 'Traje (Principal)' : 'Suit (Primary)', active: true, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
-                              { key: 'shoesColor', label: lang === 'es' ? 'Zapatos' : 'Shoes', active: true, fallback: '#ffe600' },
-                              { key: 'visorColor', label: lang === 'es' ? 'Visor' : 'Visor', active: true, fallback: '#00f3ff' },
-                              { key: 'heartColor', label: lang === 'es' ? 'Corazón' : 'Heart', active: true, fallback: '#ff007f' },
-                              { key: 'headphonesColor', label: lang === 'es' ? 'Auriculares' : 'Headphones', active: localCosmetics.headphonesEnabled, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
-                              { key: 'backpackColor', label: lang === 'es' ? 'Mochila' : 'Backpack', active: localCosmetics.backpackEnabled, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
-                              { key: 'companionColor', label: lang === 'es' ? 'Mascota' : 'Cyber Pet', active: localCosmetics.companionType !== 'none', fallback: previewPlayer?.color || PLAYER_COLORS[0] },
-                            ];
-                            
-                            return colorItems
-                              .filter(item => item.active)
-                              .map((item) => {
-                                const currentValue = localCosmetics[item.key] || item.fallback;
-                                const currentValueStr = String(currentValue || '').toLowerCase();
+                <div className="locker-modal-body">
+                  {/* Left Column: 3D Live Preview - ALWAYS FIXED, NO SCROLL */}
+                  <div className="locker-modal-preview-panel">
+                    <div className="locker-modal-canvas-container hud-terminal-container">
+                      <span className="hud-border-bracket top-left"></span>
+                      <span className="hud-border-bracket top-right"></span>
+                      <span className="hud-border-bracket bottom-left"></span>
+                      <span className="hud-border-bracket bottom-right"></span>
+                      <div className="hud-scanlines"></div>
+                      {/* Neon Scanner laser beam sweep */}
+                      <div className="hud-scanner-beam"></div>
+
+                      {previewPlayer && (
+                        <Canvas camera={{ position: [1, 0.3, 2.8], fov: 55 }}>
+                          <ambientLight intensity={0.7} />
+                          <directionalLight position={[2, 5, 2]} intensity={1.5} castShadow />
+                          <pointLight position={[-3, 3, -3]} intensity={0.5} />
+                          <group position={[0, -0.35, 0]}>
+                            <PlayerMesh player={previewPlayer} isLocal={true} isPreview={true} />
+                          </group>
+                          <OrbitControls
+                            enableZoom={true}
+                            enablePan={false}
+                            minDistance={1.4}
+                            maxDistance={4.0}
+                            minPolarAngle={Math.PI / 2.8}
+                            maxPolarAngle={Math.PI / 2}
+                          />
+                        </Canvas>
+                      )}
+                    </div>
+                    <p className="locker-modal-hint">
+                      {lang === 'es' ? '↔ Arrastra para rotar en 3D' : '↔ Drag to rotate in 3D'}
+                    </p>
+                  </div>
+
+                  {/* Right Column: Controls - SCROLL INDEPENDIENTE */}
+                  <div className="locker-modal-controls-panel">
+                    {/* Cyberpunk Navigation Sub-tabs */}
+                    <div className="flex border-b border-white/10 mb-4 w-full gap-2 p-1 bg-black/40 rounded-lg">
+                      <button 
+                        className={`flex-1 py-3 px-4 font-mono text-xs font-extrabold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 rounded-md ${
+                          lockerTab === 'equip' 
+                            ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]' 
+                            : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
+                        }`}
+                        onClick={() => setLockerTab('equip')}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>{lang === 'es' ? 'Equipamiento' : 'Equipment'}</span>
+                      </button>
+                      <button 
+                        className={`flex-1 py-3 px-4 font-mono text-xs font-extrabold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 rounded-md ${
+                          lockerTab === 'colors' 
+                            ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]' 
+                            : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
+                        }`}
+                        onClick={() => setLockerTab('colors')}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                        </svg>
+                        <span>{lang === 'es' ? 'Colores' : 'Colors'}</span>
+                      </button>
+                    </div>
+
+                    <div className="locker-tab-content-scroll">
+                      {lockerTab === 'equip' ? (
+                        <div className="flex flex-col gap-5 fade-in">
+                          {/* Accessories */}
+                          <div className="locker-modal-section">
+                            <h3 className="locker-modal-section-title flex items-center gap-2">
+                              <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                              </svg>
+                              <span>{lang === 'es' ? 'Accesorios' : 'Accessories'}</span>
+                            </h3>
+                            <div className="locker-modal-toggles-grid">
+                              <button
+                                className={`locker-modal-toggle-card ${activeCosmetics.headphonesEnabled ? 'active' : ''}`}
+                                onClick={() => updateDraftCosmetics({ headphonesEnabled: !activeCosmetics.headphonesEnabled })}
+                              >
+                                <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V9a6 6 0 00-12 0v10a2 2 0 002 2z" />
+                                </svg>
+                                <span className="locker-modal-toggle-label">
+                                  {lang === 'es' ? 'Auriculares Beat-Sync' : 'Beat-Sync Headphones'}
+                                </span>
+                              </button>
+                              <button
+                                className={`locker-modal-toggle-card ${activeCosmetics.backpackEnabled ? 'active' : ''}`}
+                                onClick={() => updateDraftCosmetics({ backpackEnabled: !activeCosmetics.backpackEnabled })}
+                              >
+                                <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                                <span className="locker-modal-toggle-label">
+                                  {lang === 'es' ? 'Cyber-Mochila Jet' : 'Cyber-Backpack Jet'}
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Companions */}
+                          <div className="locker-modal-section">
+                            <h3 className="locker-modal-section-title flex items-center gap-2">
+                              <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              <span>{lang === 'es' ? 'Cyber-Mascota Flotante' : 'Floating Cyber Pet'}</span>
+                            </h3>
+                            <div className="locker-modal-options-grid">
+                              {(['none', 'cassette', 'floppy', 'orb'] as const).map((type) => (
+                                <button
+                                  key={type}
+                                  className={`locker-modal-option-btn ${activeCosmetics.companionType === type ? 'active' : ''}`}
+                                  onClick={() => updateDraftCosmetics({ companionType: type })}
+                                >
+                                  {type === 'none' && (
+                                    <svg className="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                    </svg>
+                                  )}
+                                  {type === 'cassette' && (
+                                    <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2H7a2 2 0 00-2 2v2M8 14h.01M16 14h.01M12 14a1 1 0 100-2 1 1 0 000 2z" />
+                                    </svg>
+                                  )}
+                                  {type === 'floppy' && (
+                                    <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-8 0V4a1 1 0 011-1h4a1 1 0 011 1v3M8 7h8m-5 8h2m-6 3h8" />
+                                    </svg>
+                                  )}
+                                  {type === 'orb' && (
+                                    <svg className="w-4 h-4 text-cyan-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                                    </svg>
+                                  )}
+                                  <span className="locker-modal-option-name">
+                                    {type === 'none' && (lang === 'es' ? 'Ninguna' : 'None')}
+                                    {type === 'cassette' && 'Retro Cassette'}
+                                    {type === 'floppy' && 'Voxel Floppy'}
+                                    {type === 'orb' && 'Pulse Orb'}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Skins */}
+                          <div className="locker-modal-section">
+                            <h3 className="locker-modal-section-title flex items-center gap-2">
+                              <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                              <span>{lang === 'es' ? 'Material del Traje' : 'Suit Material'}</span>
+                            </h3>
+                            <div className="locker-modal-skins-row">
+                              {(['matte', 'chrome', 'neon'] as const).map((skin) => (
+                                <button
+                                  key={skin}
+                                  className={`locker-modal-skin-btn locker-modal-skin-btn--${skin} ${activeCosmetics.skinMaterial === skin ? 'active' : ''} flex items-center gap-2`}
+                                  onClick={() => updateDraftCosmetics({ skinMaterial: skin })}
+                                >
+                                  {skin === 'matte' && (
+                                    <>
+                                      <svg className="w-4 h-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                                      </svg>
+                                      <span>{lang === 'es' ? 'Mate Plástico' : 'Matte Plastic'}</span>
+                                    </>
+                                  )}
+                                  {skin === 'chrome' && (
+                                    <>
+                                      <svg className="w-4 h-4 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                      </svg>
+                                      <span>{lang === 'es' ? 'Cromo Espejado' : 'Mirror Chrome'}</span>
+                                    </>
+                                  )}
+                                  {skin === 'neon' && (
+                                    <>
+                                      <svg className="w-4 h-4 text-rose-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                      </svg>
+                                      <span>{lang === 'es' ? 'Neón Holograma' : 'Neon Hologram'}</span>
+                                    </>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-4 fade-in">
+                          {/* Colors Customization Section */}
+                          <div className="locker-modal-section">
+                            <h3 className="locker-modal-section-title flex items-center gap-2">
+                              <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                              </svg>
+                              <span>{lang === 'es' ? 'Calibrar Colores' : 'Calibrate Colors'}</span>
+                            </h3>
+                            <div className="locker-color-customizer">
+                              {(() => {
+                                const otherPlayers = room?.players.filter((p) => p.id !== localPlayerId) || [];
+                                const takenColors = otherPlayers.map((p) => (p.color || '').toLowerCase());
+
+                                const colorItems: { key: keyof PlayerCosmetics; label: string; active: boolean; fallback: string }[] = [
+                                  { key: 'primaryColor', label: lang === 'es' ? 'Traje (Principal)' : 'Suit (Primary)', active: true, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                  { key: 'shoesColor', label: lang === 'es' ? 'Zapatos' : 'Shoes', active: true, fallback: '#ffe600' },
+                                  { key: 'visorColor', label: lang === 'es' ? 'Visor' : 'Visor', active: true, fallback: '#00f3ff' },
+                                  { key: 'heartColor', label: lang === 'es' ? 'Corazón' : 'Heart', active: true, fallback: '#ff007f' },
+                                  { key: 'headphonesColor', label: lang === 'es' ? 'Auriculares' : 'Headphones', active: activeCosmetics.headphonesEnabled, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                  { key: 'backpackColor', label: lang === 'es' ? 'Mochila' : 'Backpack', active: activeCosmetics.backpackEnabled, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                  { key: 'companionColor', label: lang === 'es' ? 'Mascota' : 'Cyber Pet', active: activeCosmetics.companionType !== 'none', fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                ];
                                 
-                                return (
-                                  <div key={item.key} className="locker-color-row">
-                                    <span className="locker-color-row-title">{item.label}</span>
-                                    <div className="locker-color-swatches-grid">
-                                      {PLAYER_COLORS.map((color) => {
-                                        const isSelected = currentValueStr === color.toLowerCase();
-                                        const isTaken = takenColors.includes(color.toLowerCase());
-                                        const localizedColorName = isTaken 
-                                          ? `${getColorName(color, lang)} (${lang === 'es' ? 'Ocupado' : 'Taken'})`
-                                          : getColorName(color, lang);
-                                        
-                                        const swatchStyle: React.CSSProperties & { '--swatch-color'?: string } = {
-                                          backgroundColor: color,
-                                          '--swatch-color': color,
-                                          width: '22px',
-                                          height: '22px',
-                                          minWidth: '22px',
-                                          minHeight: '22px',
-                                          display: 'inline-block',
-                                          boxShadow: isSelected 
-                                            ? `0 0 12px ${color}, inset 0 0 4px rgba(0,0,0,0.5)` 
-                                            : 'inset 0 0 4px rgba(0,0,0,0.6)',
-                                          borderColor: isSelected ? '#ffffff' : 'rgba(255,255,255,0.25)',
-                                          transform: isSelected ? 'scale(1.2)' : 'scale(1)',
-                                        };
-                                        
-                                        return (
-                                          <button
-                                            key={color}
-                                            type="button"
-                                            className={`w-6 h-6 rounded-full border-2 cursor-pointer flex-shrink-0 transition-all duration-200 hover:scale-115 active:scale-95 focus:outline-none locker-color-swatch-btn ${
-                                              isTaken ? 'taken' : ''
-                                            }`}
-                                            style={swatchStyle}
-                                            onClick={() => {
-                                              if (!isTaken) {
-                                                updateLocalCosmetics({ [item.key]: color });
-                                              }
-                                            }}
-                                            disabled={isTaken}
-                                            title={localizedColorName}
-                                            aria-label={localizedColorName}
-                                          >
-                                            <span className="sr-only">{localizedColorName}</span>
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                );
-                              });
-                          })()}
+                                return colorItems
+                                  .filter(item => item.active)
+                                  .map((item) => {
+                                    const currentValue = activeCosmetics[item.key] || item.fallback;
+                                    const currentValueStr = String(currentValue || '').toLowerCase();
+                                    
+                                    return (
+                                      <div key={item.key} className="locker-color-row">
+                                        <span className="locker-color-row-title">{item.label}</span>
+                                        <div className="locker-color-swatches-grid">
+                                          {PLAYER_COLORS.map((color) => {
+                                            const isSelected = currentValueStr === color.toLowerCase();
+                                            const isTaken = item.key === 'primaryColor' && takenColors.includes(color.toLowerCase());
+                                            const localizedColorName = isTaken 
+                                              ? `${getColorName(color, lang)} (${lang === 'es' ? 'Ocupado' : 'Taken'})`
+                                              : getColorName(color, lang);
+                                            
+                                            const swatchStyle: React.CSSProperties & { '--swatch-color'?: string } = {
+                                              backgroundColor: color,
+                                              '--swatch-color': color,
+                                              width: '22px',
+                                              height: '22px',
+                                              minWidth: '22px',
+                                              minHeight: '22px',
+                                              display: 'inline-block',
+                                              boxShadow: isSelected 
+                                                ? `0 0 12px ${color}, inset 0 0 4px rgba(0,0,0,0.5)` 
+                                                : 'inset 0 0 4px rgba(0,0,0,0.6)',
+                                              borderColor: isSelected ? '#ffffff' : 'rgba(255,255,255,0.25)',
+                                              transform: isSelected ? 'scale(1.2)' : 'scale(1)',
+                                            };
+                                            
+                                            return (
+                                              <button
+                                                key={color}
+                                                type="button"
+                                                className={`w-6 h-6 rounded-full border-2 cursor-pointer flex-shrink-0 transition-all duration-200 hover:scale-115 active:scale-95 focus:outline-none locker-color-swatch-btn ${
+                                                  isTaken ? 'taken' : ''
+                                                }`}
+                                                style={swatchStyle}
+                                                onClick={() => {
+                                                  if (isTaken) {
+                                                    addToast(
+                                                      lang === 'es'
+                                                        ? `⚠️ ¡El color "${getColorName(color, lang)}" ya está ocupado por otro jugador en esta sala!`
+                                                        : `⚠️ The color "${getColorName(color, lang)}" is already taken by another player in this room!`,
+                                                      'error'
+                                                    );
+                                                  } else {
+                                                    updateDraftCosmetics({ [item.key]: color });
+                                                  }
+                                                }}
+                                                title={localizedColorName}
+                                                aria-label={localizedColorName}
+                                              >
+                                                <span className="sr-only">{localizedColorName}</span>
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    );
+                                  });
+                              })()}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  )}
+                  </div>
+                </div>
+
+                <div className="locker-modal-footer">
+                  <button 
+                    className="locker-modal-save-btn flex items-center gap-2" 
+                    onClick={saveLocker}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>{lang === 'es' ? 'Guardar y Cerrar' : 'Save and Close'}</span>
+                  </button>
                 </div>
               </div>
             </div>
-
-            <div className="locker-modal-footer">
-              <button 
-                className="locker-modal-save-btn flex items-center gap-2" 
-                onClick={() => {
-                  setIsLockerOpen(false);
-                  addToast(lang === 'es' ? '📋 ¡Estilo sincronizado en tiempo real!' : '📋 Style synchronized in real time!', 'success');
-                }}
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>{lang === 'es' ? 'Guardar y Cerrar' : 'Save and Close'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+          );
+        })()
       )}
     </div>
   );
