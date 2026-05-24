@@ -52,6 +52,10 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
   const headphoneLeftDotRef = useRef<THREE.Mesh>(null);
   const headphoneRightRingRef = useRef<THREE.Mesh>(null);
   const headphoneRightDotRef = useRef<THREE.Mesh>(null);
+  
+  // Upgraded retro-futurista headphones references
+  const leftHoloRingRef = useRef<THREE.Mesh>(null);
+  const rightHoloRingRef = useRef<THREE.Mesh>(null);
 
   // Refs for animated bone tracking
   const headBoneRef = useRef<THREE.Object3D | null>(null);
@@ -60,6 +64,13 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
   // Refs for custom independent neon shoes soles
   const leftSoleRef = useRef<THREE.Mesh | null>(null);
   const rightSoleRef = useRef<THREE.Mesh | null>(null);
+
+  // Upgraded retro-futurista cyber-backpack references
+  const fusionCoreRef = useRef<THREE.Mesh>(null);
+  const leftWingRef = useRef<THREE.Group>(null);
+  const rightWingRef = useRef<THREE.Group>(null);
+  const leftFlameRef = useRef<THREE.Mesh>(null);
+  const rightFlameRef = useRef<THREE.Mesh>(null);
 
   // Stably assign a dance animation (dance or dance2) based on player ID
   const danceAnimName = useMemo(() => {
@@ -1017,8 +1028,68 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     if (activePl.isAlive) {
       const time = state.clock.elapsedTime;
       const bpColor = activeCos.backpackColor ?? activePl.color;
+      const hpColor = activeCos.headphonesColor ?? activePl.color;
 
-      // LED Chasing: Synced to BPM. Sequential 8th-note style chasing.
+      // 4d. Upgraded Retro-Futurista Headphones Animations
+      if (leftHoloRingRef.current) {
+        // Spin holograms on different axis in opposite directions
+        leftHoloRingRef.current.rotation.x += delta * 1.6;
+        leftHoloRingRef.current.rotation.y += delta * 2.2;
+        
+        // Scale with sound beatPulse
+        const ringScale = 1.0 + beatPulse * 0.35;
+        leftHoloRingRef.current.scale.setScalar(ringScale);
+
+        if (leftHoloRingRef.current.material instanceof THREE.MeshStandardMaterial) {
+          leftHoloRingRef.current.material.color.set(hpColor);
+          leftHoloRingRef.current.material.emissive.set(hpColor);
+          leftHoloRingRef.current.material.emissiveIntensity = 1.0 + beatPulse * 0.4;
+        }
+      }
+
+      if (rightHoloRingRef.current) {
+        rightHoloRingRef.current.rotation.x -= delta * 1.6;
+        rightHoloRingRef.current.rotation.y -= delta * 2.2;
+        
+        const ringScale = 1.0 + beatPulse * 0.35;
+        rightHoloRingRef.current.scale.setScalar(ringScale);
+
+        if (rightHoloRingRef.current.material instanceof THREE.MeshStandardMaterial) {
+          rightHoloRingRef.current.material.color.set(hpColor);
+          rightHoloRingRef.current.material.emissive.set(hpColor);
+          rightHoloRingRef.current.material.emissiveIntensity = 1.0 + beatPulse * 0.4;
+        }
+      }
+
+      // Cyber-Headphones Beat-Sync Pulse and Dynamic Color
+      const hpLeftRingMat = headphoneLeftRingRef.current?.material as THREE.MeshStandardMaterial;
+      const hpLeftDotMat = headphoneLeftDotRef.current?.material as THREE.MeshStandardMaterial;
+      const hpRightRingMat = headphoneRightRingRef.current?.material as THREE.MeshStandardMaterial;
+      const hpRightDotMat = headphoneRightDotRef.current?.material as THREE.MeshStandardMaterial;
+      const hpMats = [hpLeftRingMat, hpLeftDotMat, hpRightRingMat, hpRightDotMat];
+      hpMats.forEach((mat) => {
+        if (mat) {
+          mat.color.set(hpColor);
+          mat.emissive.set(hpColor);
+          mat.emissiveIntensity = 0.8 + beatPulse * 0.5; // Max 1.3 to avoid overexposure!
+        }
+      });
+
+      // 4e. Upgraded Retro-Futurista Backpack/Jetpack Animations
+      
+      // 1. Fusion Core Plasma Pulsation
+      if (fusionCoreRef.current) {
+        const coreScale = 1.0 + beatPulse * 0.28 + Math.sin(time * 26) * 0.05;
+        fusionCoreRef.current.scale.set(coreScale, coreScale, coreScale);
+        
+        if (fusionCoreRef.current.material instanceof THREE.MeshStandardMaterial) {
+          fusionCoreRef.current.material.color.set(bpColor);
+          fusionCoreRef.current.material.emissive.set(bpColor);
+          fusionCoreRef.current.material.emissiveIntensity = 1.0 + beatPulse * 0.4; // Max 1.4
+        }
+      }
+
+      // 2. LED Chasing: Synced to BPM. Sequential 8th-note style chasing.
       const led1Mat = led1Ref.current?.material as THREE.MeshStandardMaterial;
       const led2Mat = led2Ref.current?.material as THREE.MeshStandardMaterial;
       const led3Mat = led3Ref.current?.material as THREE.MeshStandardMaterial;
@@ -1040,7 +1111,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
         });
       }
 
-      // Thruster Nozzle scaling & glow vibration
+      // 3. Thruster Nozzle scaling & glow vibration
       const nozzles = [leftNozzleRef.current, rightNozzleRef.current];
       nozzles.forEach((nozzle) => {
         if (nozzle) {
@@ -1064,18 +1135,58 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
         }
       });
 
-      // Cyber-Headphones Beat-Sync Pulse and Dynamic Color
-      const hpColor = activeCos.headphonesColor ?? activePl.color;
-      const hpLeftRingMat = headphoneLeftRingRef.current?.material as THREE.MeshStandardMaterial;
-      const hpLeftDotMat = headphoneLeftDotRef.current?.material as THREE.MeshStandardMaterial;
-      const hpRightRingMat = headphoneRightRingRef.current?.material as THREE.MeshStandardMaterial;
-      const hpRightDotMat = headphoneRightDotRef.current?.material as THREE.MeshStandardMaterial;
-      const hpMats = [hpLeftRingMat, hpLeftDotMat, hpRightRingMat, hpRightDotMat];
-      hpMats.forEach((mat) => {
-        if (mat) {
-          mat.color.set(hpColor);
-          mat.emissive.set(hpColor);
-          mat.emissiveIntensity = 0.8 + beatPulse * 0.5; // Max 1.3 to avoid overexposure!
+      // 4. Interactive Retro Wireframe Holo-Wings Deployment (dance & move states)
+      const isHighEnergy = isMoving || nextAnim.startsWith('dance') || nextAnim === 'celebrate';
+      const targetWingScale = isHighEnergy ? 1.0 : 0.0;
+      const targetLeftWingRot = isHighEnergy ? 0.35 : 1.35; // folding angles
+      const targetRightWingRot = isHighEnergy ? -0.35 : -1.35;
+
+      if (leftWingRef.current) {
+        // Smoothly lerp scale and deployment rotation
+        leftWingRef.current.scale.setScalar(THREE.MathUtils.lerp(leftWingRef.current.scale.x, targetWingScale, delta * 9));
+        leftWingRef.current.rotation.y = THREE.MathUtils.lerp(leftWingRef.current.rotation.y, targetLeftWingRot, delta * 9);
+        
+        // Pulse holographic transparency and emission along the beat
+        leftWingRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+            child.material.color.set(bpColor);
+            child.material.emissive.set(bpColor);
+            child.material.emissiveIntensity = 0.9 + beatPulse * 0.5; // Max 1.4
+            child.material.opacity = isHighEnergy ? 0.45 + beatPulse * 0.25 : 0.0;
+          }
+        });
+      }
+
+      if (rightWingRef.current) {
+        rightWingRef.current.scale.setScalar(THREE.MathUtils.lerp(rightWingRef.current.scale.x, targetWingScale, delta * 9));
+        rightWingRef.current.rotation.y = THREE.MathUtils.lerp(rightWingRef.current.rotation.y, targetRightWingRot, delta * 9);
+        
+        rightWingRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+            child.material.color.set(bpColor);
+            child.material.emissive.set(bpColor);
+            child.material.emissiveIntensity = 0.9 + beatPulse * 0.5; // Max 1.4
+            child.material.opacity = isHighEnergy ? 0.45 + beatPulse * 0.25 : 0.0;
+          }
+        });
+      }
+
+      // 5. Active Retro cónico plasma exhaust flames
+      const targetFlameZ = isHighEnergy ? 1.3 + Math.sin(time * 38) * 0.18 : 0.15; // stretch and flicker!
+      const targetFlameXY = isHighEnergy ? 1.0 + Math.sin(time * 28) * 0.1 : 0.25;
+
+      const flames = [leftFlameRef.current, rightFlameRef.current];
+      flames.forEach((flame) => {
+        if (flame) {
+          flame.scale.z = THREE.MathUtils.lerp(flame.scale.z, targetFlameZ, delta * 11);
+          flame.scale.x = THREE.MathUtils.lerp(flame.scale.x, targetFlameXY, delta * 11);
+          flame.scale.y = THREE.MathUtils.lerp(flame.scale.y, targetFlameXY, delta * 11);
+
+          if (flame.material instanceof THREE.MeshStandardMaterial) {
+            flame.material.color.set(bpColor);
+            flame.material.emissive.set(bpColor);
+            flame.material.emissiveIntensity = isHighEnergy ? 1.2 + beatPulse * 0.35 : 0.2;
+          }
         }
       });
     }
@@ -1109,69 +1220,144 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
         {/* Declarative Procedural Cyber-Headphones */}
         {player.isAlive && cosmetics.headphonesEnabled && (
           <group ref={headphoneRef}>
-            {/* 1. Headband (Voxel Square Headband arching over the head without clipping) */}
+            {/* 1. Headband (Upgraded Voxel Headband with mechanical plates) */}
             <group position={[0, 0.48, 0]}>
               {/* Arco superior horizontal */}
               <mesh castShadow position={[0, 0.17, 0]}>
                 <boxGeometry args={[0.74, 0.024, 0.04]} />
-                <meshStandardMaterial color="#1c1c24" roughness={0.18} metalness={0.8} />
+                <meshStandardMaterial color="#1a1a24" roughness={0.25} metalness={0.7} />
               </mesh>
               {/* Correa vertical izquierda */}
               <mesh castShadow position={[-0.36, 0, 0]}>
                 <boxGeometry args={[0.024, 0.34, 0.04]} />
-                <meshStandardMaterial color="#1c1c24" roughness={0.18} metalness={0.8} />
+                <meshStandardMaterial color="#1a1a24" roughness={0.25} metalness={0.7} />
               </mesh>
               {/* Correa vertical derecha */}
               <mesh castShadow position={[0.36, 0, 0]}>
                 <boxGeometry args={[0.024, 0.34, 0.04]} />
-                <meshStandardMaterial color="#1c1c24" roughness={0.18} metalness={0.8} />
+                <meshStandardMaterial color="#1a1a24" roughness={0.25} metalness={0.7} />
+              </mesh>
+
+              {/* Placas decorativas de disipación retro-futurista */}
+              <mesh position={[0, 0.18, 0.015]} castShadow>
+                <boxGeometry args={[0.18, 0.03, 0.02]} />
+                <meshStandardMaterial color="#2d2d3a" roughness={0.3} metalness={0.65} />
               </mesh>
 
               {/* Headband center neon status band */}
-              <mesh position={[0, 0.182, 0]} castShadow>
-                <boxGeometry args={[0.05, 0.024, 0.04]} />
-                <meshStandardMaterial color="#00f3ff" emissive="#00f3ff" emissiveIntensity={3.0} />
+              <mesh position={[0, 0.185, 0.026]} castShadow>
+                <boxGeometry args={[0.06, 0.012, 0.01]} />
+                <meshStandardMaterial color={cosmetics.headphonesColor ?? player.color} emissive={cosmetics.headphonesColor ?? player.color} emissiveIntensity={3.0} />
               </mesh>
             </group>
 
             {/* 2. Ear Cups (Left and Right) */}
             {/* Left Ear Cup Assembly Group */}
             <group position={[-0.37, 0.31, 0]}>
+              {/* Capa 1: Base de blindaje octogonal exterior */}
               <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
-                <cylinderGeometry args={[0.085, 0.085, 0.035, 16]} />
-                <meshStandardMaterial color="#22222a" roughness={0.15} metalness={0.9} />
+                <cylinderGeometry args={[0.088, 0.088, 0.03, 8]} />
+                <meshStandardMaterial color="#2d2d3a" roughness={0.2} metalness={0.8} />
               </mesh>
-              <mesh castShadow rotation={[0, 0, Math.PI / 2]} position={[0.028, 0, 0]}>
-                <cylinderGeometry args={[0.087, 0.087, 0.03, 16]} />
-                <meshStandardMaterial color="#0a0a0f" roughness={0.8} metalness={0.1} />
+              {/* Capa 2: Almohadilla negra de cuero analógico */}
+              <mesh castShadow rotation={[0, 0, Math.PI / 2]} position={[0.026, 0, 0]}>
+                <cylinderGeometry args={[0.09, 0.09, 0.024, 16]} />
+                <meshStandardMaterial color="#08080c" roughness={0.9} metalness={0.05} />
               </mesh>
+              {/* Capa 3: Anillo neón interior clásico */}
               <mesh ref={headphoneLeftRingRef} castShadow rotation={[0, Math.PI / 2, 0]} position={[-0.018, 0, 0]}>
                 <torusGeometry args={[0.055, 0.01, 8, 16]} />
                 <meshStandardMaterial color={cosmetics.headphonesColor ?? player.color} emissive={cosmetics.headphonesColor ?? player.color} emissiveIntensity={3.0} roughness={0.1} />
               </mesh>
+              {/* Capa 4: Núcleo neón del altavoz */}
               <mesh ref={headphoneLeftDotRef} castShadow rotation={[0, 0, Math.PI / 2]} position={[-0.02, 0, 0]}>
                 <cylinderGeometry args={[0.024, 0.024, 0.008, 8]} />
                 <meshStandardMaterial color={cosmetics.headphonesColor ?? player.color} emissive={cosmetics.headphonesColor ?? player.color} emissiveIntensity={3.0} roughness={0.1} />
+              </mesh>
+
+              {/* 🎤 Brazo de Micrófono Táctico Retro-Futurista */}
+              <group position={[-0.01, -0.06, 0.05]} rotation={[0.4, -0.2, 0]}>
+                {/* Tramo 1 del brazo */}
+                <mesh castShadow>
+                  <boxGeometry args={[0.014, 0.014, 0.07]} />
+                  <meshStandardMaterial color="#1a1a24" roughness={0.3} metalness={0.8} />
+                </mesh>
+                {/* Codo articulado voxel */}
+                <mesh position={[0, 0, 0.035]} castShadow>
+                  <boxGeometry args={[0.018, 0.018, 0.018]} />
+                  <meshStandardMaterial color="#3a3a4c" roughness={0.2} metalness={0.8} />
+                </mesh>
+                {/* Tramo 2 del brazo */}
+                <mesh position={[0, -0.03, 0.055]} rotation={[-0.3, 0, 0]} castShadow>
+                  <boxGeometry args={[0.012, 0.012, 0.06]} />
+                  <meshStandardMaterial color="#1a1a24" roughness={0.3} metalness={0.8} />
+                </mesh>
+                {/* Cable voxelizado en espiral (cobre/inductivo) */}
+                <mesh position={[0, -0.01, 0.01]} rotation={[Math.PI / 2, 0, 0]}>
+                  <cylinderGeometry args={[0.007, 0.007, 0.03, 8]} />
+                  <meshStandardMaterial color="#b87333" metalness={0.7} roughness={0.2} />
+                </mesh>
+                {/* Punta de Micrófono con LED indicador */}
+                <mesh position={[0, -0.045, 0.08]} castShadow>
+                  <boxGeometry args={[0.02, 0.02, 0.02]} />
+                  <meshStandardMaterial color="#2d2d3a" roughness={0.4} metalness={0.6} />
+                </mesh>
+                <mesh position={[0, -0.045, 0.091]}>
+                  <boxGeometry args={[0.01, 0.01, 0.006]} />
+                  <meshStandardMaterial color={cosmetics.headphonesColor ?? player.color} emissive={cosmetics.headphonesColor ?? player.color} emissiveIntensity={3.0} />
+                </mesh>
+              </group>
+
+              {/* 🪐 Anillo Holográfico Flotante Rotativo (useFrame) */}
+              <mesh ref={leftHoloRingRef}>
+                <torusGeometry args={[0.13, 0.006, 8, 24]} />
+                <meshStandardMaterial 
+                  color={cosmetics.headphonesColor ?? player.color} 
+                  emissive={cosmetics.headphonesColor ?? player.color} 
+                  transparent={true} 
+                  opacity={0.65} 
+                  roughness={0.1} 
+                  metalness={0.9} 
+                  depthWrite={false}
+                />
               </mesh>
             </group>
 
             {/* Right Ear Cup Assembly Group */}
             <group position={[0.37, 0.31, 0]}>
+              {/* Capa 1: Base de blindaje octogonal exterior */}
               <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
-                <cylinderGeometry args={[0.085, 0.085, 0.035, 16]} />
-                <meshStandardMaterial color="#22222a" roughness={0.15} metalness={0.9} />
+                <cylinderGeometry args={[0.088, 0.088, 0.03, 8]} />
+                <meshStandardMaterial color="#2d2d3a" roughness={0.2} metalness={0.8} />
               </mesh>
-              <mesh castShadow rotation={[0, 0, Math.PI / 2]} position={[-0.028, 0, 0]}>
-                <cylinderGeometry args={[0.087, 0.087, 0.03, 16]} />
-                <meshStandardMaterial color="#0a0a0f" roughness={0.8} metalness={0.1} />
+              {/* Capa 2: Almohadilla negra de cuero analógico */}
+              <mesh castShadow rotation={[0, 0, Math.PI / 2]} position={[-0.026, 0, 0]}>
+                <cylinderGeometry args={[0.09, 0.09, 0.024, 16]} />
+                <meshStandardMaterial color="#08080c" roughness={0.9} metalness={0.05} />
               </mesh>
+              {/* Capa 3: Anillo neón interior clásico */}
               <mesh ref={headphoneRightRingRef} castShadow rotation={[0, Math.PI / 2, 0]} position={[0.018, 0, 0]}>
                 <torusGeometry args={[0.055, 0.01, 8, 16]} />
                 <meshStandardMaterial color={cosmetics.headphonesColor ?? player.color} emissive={cosmetics.headphonesColor ?? player.color} emissiveIntensity={3.0} roughness={0.1} />
               </mesh>
+              {/* Capa 4: Núcleo neón del altavoz */}
               <mesh ref={headphoneRightDotRef} castShadow rotation={[0, 0, Math.PI / 2]} position={[0.02, 0, 0]}>
                 <cylinderGeometry args={[0.024, 0.024, 0.008, 8]} />
                 <meshStandardMaterial color={cosmetics.headphonesColor ?? player.color} emissive={cosmetics.headphonesColor ?? player.color} emissiveIntensity={3.0} roughness={0.1} />
+              </mesh>
+
+              {/* 🪐 Anillo Holográfico Flotante Rotativo (useFrame) */}
+              <mesh ref={rightHoloRingRef}>
+                <torusGeometry args={[0.13, 0.006, 8, 24]} />
+                <meshStandardMaterial 
+                  color={cosmetics.headphonesColor ?? player.color} 
+                  emissive={cosmetics.headphonesColor ?? player.color} 
+                  transparent={true} 
+                  opacity={0.65} 
+                  roughness={0.1} 
+                  metalness={0.9} 
+                  depthWrite={false}
+                />
               </mesh>
             </group>
           </group>
@@ -1181,28 +1367,173 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
         {player.isAlive && cosmetics.backpackEnabled && (
           <group ref={backpackRef}>
             <group position={[0, 0.28, 0.125]}>
-              {/* A. Main Chassis */}
+              {/* A. Upgraded Segmented Voxel Chassis */}
+              {/* Cuerpo principal */}
               <mesh castShadow receiveShadow position={[0, 0, 0.04]}>
-                <boxGeometry args={[0.2, 0.28, 0.08]} />
-                <meshStandardMaterial color="#16161c" roughness={0.18} metalness={0.8} />
+                <boxGeometry args={[0.18, 0.26, 0.08]} />
+                <meshStandardMaterial color="#16161c" roughness={0.25} metalness={0.75} />
               </mesh>
 
-              {/* B. Glowing LED Indicators */}
+              {/* Alerón/Blindaje lateral izquierdo */}
+              <mesh position={[-0.1, 0, 0.02]} rotation={[0, -0.2, 0]} castShadow receiveShadow>
+                <boxGeometry args={[0.03, 0.22, 0.06]} />
+                <meshStandardMaterial color="#2d2d3a" roughness={0.3} metalness={0.65} />
+              </mesh>
+
+              {/* Alerón/Blindaje lateral derecho */}
+              <mesh position={[0.1, 0, 0.02]} rotation={[0, 0.2, 0]} castShadow receiveShadow>
+                <boxGeometry args={[0.03, 0.22, 0.06]} />
+                <meshStandardMaterial color="#2d2d3a" roughness={0.3} metalness={0.65} />
+              </mesh>
+
+              {/* Rejillas analógicas superiores de ventilación */}
+              <mesh position={[-0.05, 0.132, 0.04]} castShadow>
+                <boxGeometry args={[0.03, 0.01, 0.04]} />
+                <meshStandardMaterial color="#08080c" roughness={0.8} metalness={0.1} />
+              </mesh>
+              <mesh position={[0.05, 0.132, 0.04]} castShadow>
+                <boxGeometry args={[0.03, 0.01, 0.04]} />
+                <meshStandardMaterial color="#08080c" roughness={0.8} metalness={0.1} />
+              </mesh>
+
+              {/* B. Retro Fusion Core Plasma Reactor (estilo condensador de fluzo) */}
+              <group position={[0, 0.02, 0.082]}>
+                {/* Anillo de inducción metálico base */}
+                <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+                  <torusGeometry args={[0.06, 0.012, 8, 16]} />
+                  <meshStandardMaterial color="#2d2d3a" roughness={0.15} metalness={0.9} />
+                </mesh>
+                {/* Reactor de Vacío Central de Plasma */}
+                <mesh ref={fusionCoreRef} position={[0, 0, 0.005]}>
+                  <sphereGeometry args={[0.042, 16, 16]} />
+                  <meshStandardMaterial 
+                    color={cosmetics.backpackColor ?? player.color} 
+                    emissive={cosmetics.backpackColor ?? player.color} 
+                    emissiveIntensity={3.0} 
+                    roughness={0.1} 
+                  />
+                </mesh>
+                {/* Filamentos de inducción retro (cobre) */}
+                {/* Filamento superior */}
+                <mesh position={[0, 0.05, 0.002]} castShadow>
+                  <boxGeometry args={[0.008, 0.018, 0.008]} />
+                  <meshStandardMaterial color="#b87333" metalness={0.8} roughness={0.2} />
+                </mesh>
+                {/* Filamento inferior izquierdo */}
+                <mesh position={[-0.038, -0.028, 0.002]} rotation={[0, 0, 0.9]} castShadow>
+                  <boxGeometry args={[0.008, 0.018, 0.008]} />
+                  <meshStandardMaterial color="#b87333" metalness={0.8} roughness={0.2} />
+                </mesh>
+                {/* Filamento inferior derecho */}
+                <mesh position={[0.038, -0.028, 0.002]} rotation={[0, 0, -0.9]} castShadow>
+                  <boxGeometry args={[0.008, 0.018, 0.008]} />
+                  <meshStandardMaterial color="#b87333" metalness={0.8} roughness={0.2} />
+                </mesh>
+              </group>
+
+              {/* C. Glowing LED Indicators */}
               <mesh ref={led1Ref} position={[0, 0.08, 0.081]} castShadow>
-                <boxGeometry args={[0.12, 0.024, 0.015]} />
+                <boxGeometry args={[0.08, 0.016, 0.01]} />
                 <meshStandardMaterial color={cosmetics.backpackColor ?? player.color} emissive={cosmetics.backpackColor ?? player.color} emissiveIntensity={3.0} roughness={0.1} />
               </mesh>
-              <mesh ref={led2Ref} position={[0, 0, 0.081]} castShadow>
-                <boxGeometry args={[0.12, 0.024, 0.015]} />
+              <mesh ref={led2Ref} position={[0, 0.05, 0.081]} castShadow>
+                <boxGeometry args={[0.08, 0.016, 0.01]} />
                 <meshStandardMaterial color="#00f3ff" emissive="#00f3ff" emissiveIntensity={3.0} roughness={0.1} />
               </mesh>
-              <mesh ref={led3Ref} position={[0, -0.08, 0.081]} castShadow>
-                <boxGeometry args={[0.12, 0.024, 0.015]} />
+              <mesh ref={led3Ref} position={[0, 0.02, 0.081]} castShadow>
+                <boxGeometry args={[0.08, 0.016, 0.01]} />
                 <meshStandardMaterial color="#ff007f" emissive="#ff007f" emissiveIntensity={3.0} roughness={0.1} />
               </mesh>
 
-              {/* C. Dual Exhaust Thrusters */}
-              {/* Left Thruster */}
+              {/* D. Interactive Retro Wireframe Holo-Wings (Desplegadas al bailar/moverse) */}
+              {/* Ala Holográfica Izquierda */}
+              <group ref={leftWingRef} position={[-0.09, 0.04, 0.02]} rotation={[0, 1.35, 0]}>
+                {/* Panel superior 1 */}
+                <mesh position={[-0.14, 0, 0]} rotation={[0, 0, 0.05]}>
+                  <boxGeometry args={[0.26, 0.025, 0.003]} />
+                  <meshStandardMaterial 
+                    color={cosmetics.backpackColor ?? player.color} 
+                    emissive={cosmetics.backpackColor ?? player.color} 
+                    emissiveIntensity={3.0} 
+                    transparent={true} 
+                    opacity={0.5} 
+                    roughness={0.1}
+                    depthWrite={false}
+                  />
+                </mesh>
+                {/* Panel intermedio 2 */}
+                <mesh position={[-0.11, -0.04, 0]} rotation={[0, 0, 0.1]}>
+                  <boxGeometry args={[0.2, 0.018, 0.003]} />
+                  <meshStandardMaterial 
+                    color={cosmetics.backpackColor ?? player.color} 
+                    emissive={cosmetics.backpackColor ?? player.color} 
+                    emissiveIntensity={3.0} 
+                    transparent={true} 
+                    opacity={0.5} 
+                    roughness={0.1}
+                    depthWrite={false}
+                  />
+                </mesh>
+                {/* Panel inferior 3 */}
+                <mesh position={[-0.08, -0.07, 0]} rotation={[0, 0, 0.15]}>
+                  <boxGeometry args={[0.14, 0.012, 0.003]} />
+                  <meshStandardMaterial 
+                    color={cosmetics.backpackColor ?? player.color} 
+                    emissive={cosmetics.backpackColor ?? player.color} 
+                    emissiveIntensity={3.0} 
+                    transparent={true} 
+                    opacity={0.5} 
+                    roughness={0.1}
+                    depthWrite={false}
+                  />
+                </mesh>
+              </group>
+
+              {/* Ala Holográfica Derecha */}
+              <group ref={rightWingRef} position={[0.09, 0.04, 0.02]} rotation={[0, -1.35, 0]}>
+                {/* Panel superior 1 */}
+                <mesh position={[0.14, 0, 0]} rotation={[0, 0, -0.05]}>
+                  <boxGeometry args={[0.26, 0.025, 0.003]} />
+                  <meshStandardMaterial 
+                    color={cosmetics.backpackColor ?? player.color} 
+                    emissive={cosmetics.backpackColor ?? player.color} 
+                    emissiveIntensity={3.0} 
+                    transparent={true} 
+                    opacity={0.5} 
+                    roughness={0.1}
+                    depthWrite={false}
+                  />
+                </mesh>
+                {/* Panel intermedio 2 */}
+                <mesh position={[0.11, -0.04, 0]} rotation={[0, 0, -0.1]}>
+                  <boxGeometry args={[0.2, 0.018, 0.003]} />
+                  <meshStandardMaterial 
+                    color={cosmetics.backpackColor ?? player.color} 
+                    emissive={cosmetics.backpackColor ?? player.color} 
+                    emissiveIntensity={3.0} 
+                    transparent={true} 
+                    opacity={0.5} 
+                    roughness={0.1}
+                    depthWrite={false}
+                  />
+                </mesh>
+                {/* Panel inferior 3 */}
+                <mesh position={[0.08, -0.07, 0]} rotation={[0, 0, -0.15]}>
+                  <boxGeometry args={[0.14, 0.012, 0.003]} />
+                  <meshStandardMaterial 
+                    color={cosmetics.backpackColor ?? player.color} 
+                    emissive={cosmetics.backpackColor ?? player.color} 
+                    emissiveIntensity={3.0} 
+                    transparent={true} 
+                    opacity={0.5} 
+                    roughness={0.1}
+                    depthWrite={false}
+                  />
+                </mesh>
+              </group>
+
+              {/* E. Dual Exhaust Thrusters with Plasma Flames */}
+              {/* Left Thruster & Plasma Flame */}
               <group position={[-0.06, -0.14, 0.04]} rotation={[0.3, 0, 0.15]}>
                 <mesh castShadow>
                   <cylinderGeometry args={[0.018, 0.024, 0.06, 8]} />
@@ -1212,9 +1543,22 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
                   <cylinderGeometry args={[0.012, 0.012, 0.01, 8]} />
                   <meshStandardMaterial color={cosmetics.backpackColor ?? player.color} emissive={cosmetics.backpackColor ?? player.color} emissiveIntensity={4.0} roughness={0.1} />
                 </mesh>
+                {/* Llama de propulsión de plasma voxelizada cónica */}
+                <mesh ref={leftFlameRef} position={[0, -0.07, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                  <cylinderGeometry args={[0.0, 0.016, 0.08, 8]} />
+                  <meshStandardMaterial 
+                    color={cosmetics.backpackColor ?? player.color} 
+                    emissive={cosmetics.backpackColor ?? player.color} 
+                    emissiveIntensity={3.0} 
+                    transparent={true} 
+                    opacity={0.85} 
+                    roughness={0.1}
+                    depthWrite={false}
+                  />
+                </mesh>
               </group>
 
-              {/* Right Thruster */}
+              {/* Right Thruster & Plasma Flame */}
               <group position={[0.06, -0.14, 0.04]} rotation={[0.3, 0, -0.15]}>
                 <mesh castShadow>
                   <cylinderGeometry args={[0.018, 0.024, 0.06, 8]} />
@@ -1223,6 +1567,19 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
                 <mesh ref={rightNozzleRef} position={[0, -0.026, 0]} rotation={[Math.PI / 2, 0, 0]}>
                   <cylinderGeometry args={[0.012, 0.012, 0.01, 8]} />
                   <meshStandardMaterial color={cosmetics.backpackColor ?? player.color} emissive={cosmetics.backpackColor ?? player.color} emissiveIntensity={4.0} roughness={0.1} />
+                </mesh>
+                {/* Llama de propulsión de plasma voxelizada cónica */}
+                <mesh ref={rightFlameRef} position={[0, -0.07, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                  <cylinderGeometry args={[0.0, 0.016, 0.08, 8]} />
+                  <meshStandardMaterial 
+                    color={cosmetics.backpackColor ?? player.color} 
+                    emissive={cosmetics.backpackColor ?? player.color} 
+                    emissiveIntensity={3.0} 
+                    transparent={true} 
+                    opacity={0.85} 
+                    roughness={0.1}
+                    depthWrite={false}
+                  />
                 </mesh>
               </group>
             </group>
