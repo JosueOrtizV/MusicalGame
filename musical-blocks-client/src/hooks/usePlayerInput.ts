@@ -35,6 +35,17 @@ export function usePlayerInput() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      // Ignore game keyboard inputs if the user is writing in a text input or textarea
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+         target.tagName === 'TEXTAREA' ||
+         target.isContentEditable)
+      ) {
+        return;
+      }
+
       const dir = KEY_MAP[e.key];
       if (!dir) return;
 
@@ -48,6 +59,17 @@ export function usePlayerInput() {
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
+      // Ignore game keyboard inputs if the user is writing in a text input or textarea
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+         target.tagName === 'TEXTAREA' ||
+         target.isContentEditable)
+      ) {
+        return;
+      }
+
       const dir = KEY_MAP[e.key];
       if (!dir) return;
       useGameStore.getState().setDirectionPressed(dir, false);
