@@ -17,11 +17,16 @@ import { securityLogger } from '../utils/logger';
 export class PlayerManager {
   private players: Map<string, Player> = new Map();
   private lastMoveTime: Map<string, number> = new Map();
-  private colorIndex = 0;
 
   // ---- Player lifecycle ----------------------------------------------------
 
   add(socketId: string, name: string, isHost: boolean): Player {
+    const takenColors = Array.from(this.players.values()).map((p) => p.color);
+    const availableColors = PLAYER_COLORS.filter((c) => !takenColors.includes(c));
+    const chosenColor = availableColors.length > 0
+      ? availableColors[Math.floor(Math.random() * availableColors.length)]
+      : PLAYER_COLORS[Math.floor(Math.random() * PLAYER_COLORS.length)];
+
     const player: Player = {
       id: socketId,
       name,
@@ -30,10 +35,15 @@ export class PlayerManager {
       lives: 0,
       isReady: false,
       isHost,
-      color: PLAYER_COLORS[this.colorIndex % PLAYER_COLORS.length],
+      color: chosenColor,
       hasReturnedToLobby: true,
+      cosmetics: {
+        companionType: 'none',
+        headphonesEnabled: false,
+        backpackEnabled: false,
+        skinMaterial: 'matte',
+      },
     };
-    this.colorIndex++;
     this.players.set(socketId, player);
     return player;
   }

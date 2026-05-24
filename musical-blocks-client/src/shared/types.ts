@@ -44,6 +44,20 @@ export interface GridPosition {
   z: number; // row    (0 = nearest)
 }
 
+export interface PlayerCosmetics {
+  companionType: 'cassette' | 'floppy' | 'orb' | 'none';
+  headphonesEnabled: boolean;
+  backpackEnabled: boolean;
+  skinMaterial: 'matte' | 'chrome' | 'neon';
+  primaryColor?: string;
+  shoesColor?: string;
+  visorColor?: string;
+  heartColor?: string;
+  headphonesColor?: string;
+  backpackColor?: string;
+  companionColor?: string;
+}
+
 /** A single player in the game */
 export interface Player {
   id: string;          // socket.id
@@ -55,6 +69,7 @@ export interface Player {
   isHost: boolean;     // only relevant for private rooms
   color: string;       // hex avatar color, assigned on join
   hasReturnedToLobby: boolean; // true if player is waiting in lobby, false if viewing results
+  cosmetics: PlayerCosmetics;
 }
 
 /** A single cell in the 12×12 grid */
@@ -158,6 +173,7 @@ export interface ClientEvents {
 
   // Lobby actions
   'player:ready':      (payload: { ready: boolean; token?: string }) => void;
+  'player:update_cosmetics': (payload: { cosmetics: PlayerCosmetics; token?: string }) => void;
   'host:start_game':   (payload?: { token?: string }) => void; // host-only: force start
   'host:back_to_lobby': (payload?: { token?: string }) => void; // host-only: reset game to waiting state
   'player:return_lobby': (payload?: { token?: string }) => void; // player returns to lobby while game is finished
@@ -210,19 +226,23 @@ export const COLOR_HEX: Record<BlockColor, string> = {
 
 /** Player avatar colors — cycled on join */
 export const PLAYER_COLORS: string[] = [
-  '#F6E05E', // yellow
-  '#FC8181', // red
-  '#68D391', // green
-  '#76E4F7', // cyan
-  '#B794F4', // purple
-  '#FBD38D', // orange
-  '#F687B3', // pink
-  '#90CDF4', // light blue
+  '#F6E05E', // Amarillo
+  '#FC8181', // Rojo suave
+  '#68D391', // Verde esmeralda
+  '#76E4F7', // Cyan neón
+  '#B794F4', // Púrpura cyberpunk
+  '#FBD38D', // Naranja atardecer
+  '#F687B3', // Rosa chicle
+  '#90CDF4', // Azul cielo
+  '#39FF14', // Verde lima ultra
+  '#FF007F', // Rosa neón
+  '#0066FF', // Azul eléctrico
+  '#FF5500', // Rojo coral neón
 ];
 
 /** Round durations in seconds — index = round-1, clamped at last value */
 export const ROUND_DURATIONS: Record<GameSpeed, number[]> = {
-  CHILL:  [25, 22, 20, 18, 16, 15, 14, 12, 12, 12],
-  NORMAL: [30, 25, 20, 15, 12, 10,  8,  6,  6,  6],
-  TURBO:  [15, 12, 10,  8,  6,  5,  4,  4,  4,  4]
+  CHILL:  [25, 22, 20, 18, 16, 15, 14, 12, 10, 10],
+  NORMAL: [25, 22, 20, 15, 12, 10,  8,  6,  6,  6],
+  TURBO:  [12, 10, 8,  7,  6,  5,  4,  4,  4,  4]
 };

@@ -11,6 +11,7 @@ import {
   GameBlock,
   Direction,
   ChatMessage,
+  PlayerCosmetics,
 } from '@/src/shared/types';
 import { persist } from 'zustand/middleware';
 
@@ -27,6 +28,7 @@ interface GameStore {
   localPlayerId: string | null;
   localPlayerName: string;
   sessionToken: string | null;
+  localCosmetics: PlayerCosmetics;
 
   // ---- Game state ----------------------------------------------------------
   gameState: GameState | null;
@@ -47,6 +49,7 @@ interface GameStore {
   // ---- Actions -------------------------------------------------------------
   setConnected: (v: boolean) => void;
   setConnectionError: (msg: string | null) => void;
+  updateLocalCosmetics: (cosmetics: Partial<PlayerCosmetics>) => void;
 
   setRoom: (room: Room) => void;
   setLocalPlayer: (id: string, name: string) => void;
@@ -86,6 +89,12 @@ export const useGameStore = create<GameStore>()(
       localPlayerId: null,
       localPlayerName: '',
       sessionToken: null,
+      localCosmetics: {
+        companionType: 'none',
+        headphonesEnabled: false,
+        backpackEnabled: false,
+        skinMaterial: 'matte',
+      },
 
       // ---- Game state
       gameState: null,
@@ -106,6 +115,10 @@ export const useGameStore = create<GameStore>()(
       // ---- Actions
       setConnected: (v) => set((s) => { s.isConnected = v; }),
       setConnectionError: (msg) => set((s) => { s.connectionError = msg; }),
+      updateLocalCosmetics: (cosmetics) =>
+        set((s) => {
+          s.localCosmetics = { ...s.localCosmetics, ...cosmetics };
+        }),
 
       setRoom: (room) =>
         set((s) => {
@@ -113,6 +126,37 @@ export const useGameStore = create<GameStore>()(
           
           if (room.sessionToken) {
             s.sessionToken = room.sessionToken;
+          }
+
+          // Sync localCosmetics with authoritative player cosmetics from the server if they differ
+          const me = room.players.find((p) => p.id === s.localPlayerId);
+          if (me && me.cosmetics) {
+            const keys: Array<keyof PlayerCosmetics> = [
+              'companionType',
+              'headphonesEnabled',
+              'backpackEnabled',
+              'skinMaterial',
+              'primaryColor',
+              'shoesColor',
+              'visorColor',
+              'heartColor',
+              'headphonesColor',
+              'backpackColor',
+              'companionColor',
+            ];
+            let isDifferent = false;
+            for (const key of keys) {
+              if (me.cosmetics[key] !== s.localCosmetics[key]) {
+                isDifferent = true;
+                break;
+              }
+            }
+            if (isDifferent) {
+              s.localCosmetics = {
+                ...s.localCosmetics,
+                ...me.cosmetics,
+              };
+            }
           }
           
           // Sync URL query parameter for private rooms
@@ -244,7 +288,8 @@ export const useGameStore = create<GameStore>()(
         language: state.language,
         volume: state.volume,
         isMuted: state.isMuted,
-        localPlayerName: state.localPlayerName
+        localPlayerName: state.localPlayerName,
+        localCosmetics: state.localCosmetics
       }),
     }
   )

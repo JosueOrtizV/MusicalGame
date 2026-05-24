@@ -13,6 +13,7 @@ import {
   ServerEvents,
   RoomSettings,
   ChatMessage,
+  PlayerCosmetics,
 } from '@shared/types';
 import { GridManager } from './GridManager';
 import { PlayerManager } from './PlayerManager';
@@ -204,6 +205,34 @@ export class GameRoom {
   setPlayerReady(socketId: string, ready: boolean): void {
     this.players.setReady(socketId, ready);
     this.broadcastRoomUpdate();
+  }
+
+  setPlayerCosmetics(socketId: string, cosmetics: PlayerCosmetics): void {
+    const player = this.players.get(socketId);
+    if (player) {
+      // Get colors currently used by other players in the room
+      const otherPlayers = this.players.getAll().filter((p) => p.id !== socketId);
+      const takenColors = new Set(otherPlayers.map((p) => (p.color || '').toLowerCase()));
+
+      const sanitizedCosmetics = { ...cosmetics };
+
+      if (cosmetics.primaryColor) {
+        const requestedColor = cosmetics.primaryColor;
+        if (takenColors.has(requestedColor.toLowerCase())) {
+          // Color is already taken by another player! Revert to the player's current valid color.
+          sanitizedCosmetics.primaryColor = player.color;
+        } else {
+          // Color is free! Apply it.
+          player.color = requestedColor;
+        }
+      } else {
+        // If primaryColor is not provided, make sure it is populated with the assigned color
+        sanitizedCosmetics.primaryColor = player.color;
+      }
+
+      player.cosmetics = sanitizedCosmetics;
+      this.broadcastRoomUpdate();
+    }
   }
 
   updateSettings(settings: RoomSettings): void {

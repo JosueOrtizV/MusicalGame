@@ -75,6 +75,7 @@ export function useSocket() {
 
     // ---- Game events -------------------------------------------------------
     socket.on('game:state', (state) => {
+      console.log('[Socket Debug] game:state received, players:', state.players.map(p => ({ id: p.id, name: p.name, cosmetics: p.cosmetics })));
       useGameStore.getState().setGameState(state);
     });
 

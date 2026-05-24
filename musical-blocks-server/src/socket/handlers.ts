@@ -6,6 +6,7 @@ import {
   RoomVisibility,
   Direction,
   RoomSettings,
+  PlayerCosmetics,
 } from '@shared/types';
 import { RoomRegistry } from '../game/RoomRegistry';
 import { generateSessionToken, verifySessionToken } from '../utils/crypto';
@@ -186,6 +187,17 @@ export function registerHandlers(
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
     room.setPlayerReady(sid, ready);
+  });
+
+  // ---- Update cosmetics ----------------------------------------------------
+  socket.on('player:update_cosmetics', ({ cosmetics }: { cosmetics: PlayerCosmetics; token?: string }) => {
+    const room = registry.getRoomBySocketId(sid);
+    if (!room) {
+      console.log(`[Server Error] player:update_cosmetics failed - Room not found for player ${sid}`);
+      return;
+    }
+    console.log(`[Server] Player "${sid}" updated cosmetics to:`, cosmetics);
+    room.setPlayerCosmetics(sid, cosmetics);
   });
 
   // ---- Host starts game ----------------------------------------------------

@@ -14,6 +14,7 @@ import { MUSIC_TRACKS } from '@/src/hooks/useAudio';
 interface PlayerMeshProps {
   player: Player;
   isLocal: boolean;
+  isPreview?: boolean;
 }
 
 const PLAYER_Y_OFFSET = 0.45; // sits on top of block
@@ -21,7 +22,7 @@ const PLAYER_Y_OFFSET = 0.45; // sits on top of block
 // ---------------------------------------------------------------------------
 //  PlayerMesh — voxel character loading 3D GLB with 6 custom animations
 // ---------------------------------------------------------------------------
-export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
+export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshProps) {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Group>(null);
   const companionRef = useRef<THREE.Group>(null);
@@ -65,15 +66,21 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
     return hash % 2 === 0 ? 'dance' : 'dance2';
   }, [player.id]);
 
-  // Stably assign a cyber companion variant based on player ID
+  // Extract and default player cosmetics
+  const cosmetics = useMemo(() => {
+    console.log(`[PlayerMesh Debug] Player "${player.name}" (${player.id}) cosmetics:`, player.cosmetics);
+    return player.cosmetics || {
+      companionType: 'none',
+      headphonesEnabled: false,
+      backpackEnabled: false,
+      skinMaterial: 'matte'
+    };
+  }, [player.cosmetics, player.name, player.id]);
+
+  // Read companionType from dynamic player cosmetics
   const companionType = useMemo(() => {
-    let hash = 0;
-    for (let i = 0; i < player.id.length; i++) {
-      hash += player.id.charCodeAt(i);
-    }
-    const types: ('cassette' | 'floppy' | 'orb')[] = ['cassette', 'floppy', 'orb'];
-    return types[hash % 3];
-  }, [player.id]);
+    return cosmetics.companionType;
+  }, [cosmetics.companionType]);
 
   const halfGrid = (12 / 2 - 0.5) * BLOCK_SIZE;
 
@@ -88,11 +95,12 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
   // Initialize group position once on mount so we don't snap/override in JSX
   const positionInitialized = useRef(false);
   useEffect(() => {
+    if (isPreview) return;
     if (groupRef.current && !positionInitialized.current) {
       groupRef.current.position.set(targetX, PLAYER_Y_OFFSET, targetZ);
       positionInitialized.current = true;
     }
-  }, [targetX, targetZ]);
+  }, [targetX, targetZ, isPreview]);
 
   // Load the cyber voxel player model
   const { scene: rawScene, animations } = useGLTF('/models/player.glb?v=5');
@@ -203,23 +211,24 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
     ctx.fillRect(0, 0, 16, 16);
 
     // Draw suit color (0,0 to 3,3) - vibrant player unique color!
+    // Always draw player.color in albedo (the neon fix is done via mat.emissive directly)
     ctx.fillStyle = player.color;
     ctx.fillRect(0, 0, 4, 4);
 
-    // Draw visor color (4,0 to 7,3) - neon cyan!
-    ctx.fillStyle = '#00f3ff';
+    // Draw visor color (4,0 to 7,3) - dynamic visor!
+    ctx.fillStyle = cosmetics.visorColor ?? '#00f3ff';
     ctx.fillRect(4, 0, 4, 4);
 
-    // Draw reactor / soles (8,0 to 11,3) - neon magenta!
-    ctx.fillStyle = '#ff007f';
+    // Draw reactor / soles (8,0 to 11,3) - dynamic reactor!
+    ctx.fillStyle = cosmetics.heartColor ?? '#ff007f';
     ctx.fillRect(8, 0, 4, 4);
 
     // Draw headphones (12,0 to 15,3) - high-contrast crisp white!
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(12, 0, 4, 4);
 
-    // Draw accent yellow (0,4 to 3,7)
-    ctx.fillStyle = '#ffe600';
+    // Draw accent soles/shoes (0,4 to 3,7) - dynamic shoes!
+    ctx.fillStyle = cosmetics.shoesColor ?? '#ffe600';
     ctx.fillRect(0, 4, 4, 4);
 
     // Draw secondary dark (4,4 to 7,7)
@@ -237,13 +246,25 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
     eCtx.fillStyle = '#000000';
     eCtx.fillRect(0, 0, 16, 16);
 
-    // Visor glows cyan (4,0 to 7,3)
-    eCtx.fillStyle = '#00f3ff';
+    // Visor glows dynamically (4,0 to 7,3)
+    eCtx.fillStyle = cosmetics.visorColor ?? '#00f3ff';
     eCtx.fillRect(4, 0, 4, 4);
 
-    // Reactor / soles glow magenta (8,0 to 11,3)
-    eCtx.fillStyle = '#ff007f';
+    // Reactor / soles glow dynamically (8,0 to 11,3)
+    eCtx.fillStyle = cosmetics.heartColor ?? '#ff007f';
     eCtx.fillRect(8, 0, 4, 4);
+
+    // Neon holographic skin: fill the ENTIRE canvas with player.color first,
+    // then overlay visor and reactor on top so they still show through!
+    if (cosmetics.skinMaterial === 'neon') {
+      eCtx.fillStyle = player.color;
+      eCtx.fillRect(0, 0, 16, 16); // whole body glows in player color
+      // Re-draw visor (cyan) and reactor (magenta) ON TOP so they remain visible
+      eCtx.fillStyle = cosmetics.visorColor ?? '#00f3ff';
+      eCtx.fillRect(4, 0, 4, 4);
+      eCtx.fillStyle = cosmetics.heartColor ?? '#ff007f';
+      eCtx.fillRect(8, 0, 4, 4);
+    }
 
     // Convert to Three.js textures
     const colorTex = new THREE.CanvasTexture(colorCanvas);
@@ -255,6 +276,7 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
     const emissiveTex = new THREE.CanvasTexture(emissiveCanvas);
     emissiveTex.magFilter = THREE.NearestFilter;
     emissiveTex.minFilter = THREE.NearestFilter;
+    emissiveTex.colorSpace = THREE.SRGBColorSpace; // Canvas draws sRGB colors — tell Three.js to decode properly
     emissiveTex.flipY = false; // Match GLTF coordinate system!
 
     // Save references to allow safe, fast frame updates in useFrame
@@ -281,18 +303,44 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
             if ('color' in originalMat) {
               const mat = originalMat as THREE.MeshStandardMaterial;
               
-              // Reset material base color to white to avoid multiplying/darkening our textures
-              mat.color.set('#ffffff');
-              
-              // Map our dynamic, high-contrast, sharp color textures
-              mat.map = colorTex;
-              mat.emissiveMap = emissiveTex;
-              mat.emissive.set('#ffffff'); // Enable full texture emission color
-              mat.emissiveIntensity = 3.0; // High bloom intensity!
-              
-              // Premium collectible physical feel: shiny matte vinyl shell with metallic details
-              mat.roughness = 0.15;
-              mat.metalness = 0.5;
+              if (cosmetics.skinMaterial === 'neon') {
+                // For neon: albedo = BLACK so that ambient/directional lights add ZERO to
+                // the final pixel color (diffuse = black × any_light = black).
+                // All color comes EXCLUSIVELY from emissiveMap × emissive(white) × intensity.
+                // emissiveMap is filled: player.color body + cyan visor + magenta reactor.
+                mat.color.set('#000000');
+                mat.map = null;         // No albedo map — color must only come from emissive
+                mat.emissive.set('#ffffff');
+                mat.emissiveMap = emissiveTex;
+                mat.emissiveIntensity = 1.0; // ACES tone mapping: 1.0→0.804 = vivid color. 2.5→0.938 = cream/white.
+                mat.roughness = 1.0;
+                mat.metalness = 0.0;
+                mat.transparent = false;
+                mat.opacity = 1.0;
+                mat.depthWrite = true;
+              } else {
+                // Reset material base color to white to avoid multiplying/darkening our textures
+                mat.color.set('#ffffff');
+                // Map our dynamic, high-contrast, sharp color textures
+                mat.map = colorTex;
+                mat.emissiveMap = emissiveTex;
+                mat.emissive.set('#ffffff'); // Enable full texture emission color
+                mat.emissiveIntensity = 3.0; // High bloom intensity!
+                
+                if (cosmetics.skinMaterial === 'chrome') {
+                  mat.roughness = 0.08;
+                  mat.metalness = 0.55;
+                  mat.transparent = false;
+                  mat.opacity = 1.0;
+                  mat.depthWrite = true;
+                } else { // 'matte'
+                  mat.roughness = 0.85;
+                  mat.metalness = 0.05;
+                  mat.transparent = false;
+                  mat.opacity = 1.0;
+                  mat.depthWrite = true;
+                }
+              }
               
               // Force texture and material updates
               colorTex.needsUpdate = true;
@@ -321,7 +369,7 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
         texturesRef.current = null;
       }
     };
-  }, [player.color, clonedScene]);
+  }, [player.color, clonedScene, cosmetics]);
 
   // Handle spawn and death transitions with custom particles
   useEffect(() => {
@@ -454,10 +502,10 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
     //  2. Floating Bobbing Retro Companion Accessory
     // -------------------------------------------------------------------------
     if (companionRef.current && player.isAlive) {
-      // Floating sinusoidal bobbing + orbit rotation
-      companionRef.current.position.y = 1.0 + Math.sin(state.clock.elapsedTime * 2.5) * 0.08;
-      companionRef.current.position.x = 0.45 + Math.sin(state.clock.elapsedTime * 1.5) * 0.02;
-      companionRef.current.position.z = 0.1 + Math.cos(state.clock.elapsedTime * 1.5) * 0.02;
+      // Floating sinusoidal bobbing + orbit rotation further to the side to avoid clipping
+      companionRef.current.position.x = 0.72 + Math.sin(state.clock.elapsedTime * 1.5) * 0.03;
+      companionRef.current.position.y = 1.1 + Math.sin(state.clock.elapsedTime * 2.5) * 0.06;
+      companionRef.current.position.z = 0.15 + Math.cos(state.clock.elapsedTime * 1.5) * 0.03;
       
       if (companionType === 'orb') {
         companionRef.current.rotation.y = state.clock.elapsedTime * 0.8;
@@ -519,16 +567,23 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
     }
 
     // Smooth client position interpolation
-    const lerpFactor = 1 - Math.pow(0.001, delta * LERP_SPEED);
-    g.position.x += (targetX - g.position.x) * lerpFactor;
-    g.position.z += (targetZ - g.position.z) * lerpFactor;
-    g.position.y = PLAYER_Y_OFFSET + playerFallingY.current;
+    if (isPreview) {
+      g.position.set(0, 0, 0);
+      if (meshRef.current) {
+        meshRef.current.rotation.y += delta * 0.18; // Much slower, majestic rotation on its own axis
+      }
+    } else {
+      const lerpFactor = 1 - Math.pow(0.001, delta * LERP_SPEED);
+      g.position.x += (targetX - g.position.x) * lerpFactor;
+      g.position.z += (targetZ - g.position.z) * lerpFactor;
+      g.position.y = PLAYER_Y_OFFSET + playerFallingY.current;
+    }
 
     // Velocity detection to toggle walking and smooth rotation
-    const dx = targetX - g.position.x;
-    const dz = targetZ - g.position.z;
+    const dx = isPreview ? 0 : targetX - g.position.x;
+    const dz = isPreview ? 0 : targetZ - g.position.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
-    const isMoving = dist > 0.015;
+    const isMoving = !isPreview && dist > 0.015;
 
     if (isMoving) {
       idleTimer.current = 0;
@@ -554,6 +609,8 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
     if (isDead) {
       nextAnim = 'death';
       loopType = THREE.LoopOnce;
+    } else if (isPreview) {
+      nextAnim = danceAnimName; // always dance in premium cosmetics preview!
     } else if (phase === 'GAME_OVER') {
       const winnerId = useGameStore.getState().gameState?.winnerId;
       if (player.id === winnerId) {
@@ -816,8 +873,15 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
     // -------------------------------------------------------------------------
     if (playerMaterials.current.length > 0 && player.isAlive) {
       playerMaterials.current.forEach((mat) => {
-        // Bloom intensity pulses synchronously to music beats!
-        mat.emissiveIntensity = 3.0 + beatPulse * 4.0;
+        if (cosmetics.skinMaterial === 'neon') {
+          // ACES tone mapping compresses high values → white. Keep intensity ≤1.5.
+          // ACES(1.0)=0.804 (vivid), ACES(1.5)=0.879 (bright), ACES(2.5)=0.938 (cream/white).
+          mat.emissiveIntensity = 1.0 + beatPulse * 0.4;
+        } else if (cosmetics.skinMaterial === 'chrome') {
+          mat.emissiveIntensity = 0.8 + beatPulse * 0.6;
+        } else {
+          mat.emissiveIntensity = 2.0 + beatPulse * 2.0;
+        }
       });
     }
   });
@@ -827,11 +891,11 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
       ref={groupRef}
     >
       {/* Voxel Animated Model wrapped in a sub-group for independent rotation */}
-      <group ref={meshRef} position={[0, -0.45, 0]}>
+      <group ref={meshRef} position={[0, -0.45, 0]} rotation={[0, isPreview ? Math.PI : 0, 0]}>
         <primitive object={clonedScene} scale={0.96} position={[0, 0, 0]} />
 
         {/* Declarative Procedural Cyber-Headphones */}
-        {player.isAlive && (
+        {player.isAlive && cosmetics.headphonesEnabled && (
           <group ref={headphoneRef}>
             {/* 1. Headband (half-torus arching over the head) */}
             <mesh castShadow position={[0, 0.31, 0]}>
@@ -858,11 +922,11 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
               </mesh>
               <mesh ref={headphoneLeftRingRef} castShadow rotation={[0, Math.PI / 2, 0]} position={[-0.018, 0, 0]}>
                 <torusGeometry args={[0.055, 0.01, 8, 16]} />
-                <meshStandardMaterial color={player.color} emissive={player.color} emissiveIntensity={3.0} roughness={0.1} />
+                <meshStandardMaterial color={cosmetics.headphonesColor ?? player.color} emissive={cosmetics.headphonesColor ?? player.color} emissiveIntensity={3.0} roughness={0.1} />
               </mesh>
               <mesh ref={headphoneLeftDotRef} castShadow rotation={[0, 0, Math.PI / 2]} position={[-0.02, 0, 0]}>
                 <cylinderGeometry args={[0.024, 0.024, 0.008, 8]} />
-                <meshStandardMaterial color={player.color} emissive={player.color} emissiveIntensity={3.0} roughness={0.1} />
+                <meshStandardMaterial color={cosmetics.headphonesColor ?? player.color} emissive={cosmetics.headphonesColor ?? player.color} emissiveIntensity={3.0} roughness={0.1} />
               </mesh>
             </group>
 
@@ -878,18 +942,18 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
               </mesh>
               <mesh ref={headphoneRightRingRef} castShadow rotation={[0, Math.PI / 2, 0]} position={[0.018, 0, 0]}>
                 <torusGeometry args={[0.055, 0.01, 8, 16]} />
-                <meshStandardMaterial color={player.color} emissive={player.color} emissiveIntensity={3.0} roughness={0.1} />
+                <meshStandardMaterial color={cosmetics.headphonesColor ?? player.color} emissive={cosmetics.headphonesColor ?? player.color} emissiveIntensity={3.0} roughness={0.1} />
               </mesh>
               <mesh ref={headphoneRightDotRef} castShadow rotation={[0, 0, Math.PI / 2]} position={[0.02, 0, 0]}>
                 <cylinderGeometry args={[0.024, 0.024, 0.008, 8]} />
-                <meshStandardMaterial color={player.color} emissive={player.color} emissiveIntensity={3.0} roughness={0.1} />
+                <meshStandardMaterial color={cosmetics.headphonesColor ?? player.color} emissive={cosmetics.headphonesColor ?? player.color} emissiveIntensity={3.0} roughness={0.1} />
               </mesh>
             </group>
           </group>
         )}
 
         {/* Declarative Procedural Cyber-Backpack */}
-        {player.isAlive && (
+        {player.isAlive && cosmetics.backpackEnabled && (
           <group ref={backpackRef}>
             <group position={[0, 0.28, 0.125]}>
               {/* A. Main Chassis */}
@@ -901,7 +965,7 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
               {/* B. Glowing LED Indicators */}
               <mesh ref={led1Ref} position={[0, 0.08, 0.081]} castShadow>
                 <boxGeometry args={[0.12, 0.024, 0.015]} />
-                <meshStandardMaterial color={player.color} emissive={player.color} emissiveIntensity={3.0} roughness={0.1} />
+                <meshStandardMaterial color={cosmetics.backpackColor ?? player.color} emissive={cosmetics.backpackColor ?? player.color} emissiveIntensity={3.0} roughness={0.1} />
               </mesh>
               <mesh ref={led2Ref} position={[0, 0, 0.081]} castShadow>
                 <boxGeometry args={[0.12, 0.024, 0.015]} />
@@ -921,7 +985,7 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
                 </mesh>
                 <mesh ref={leftNozzleRef} position={[0, -0.026, 0]} rotation={[Math.PI / 2, 0, 0]}>
                   <cylinderGeometry args={[0.012, 0.012, 0.01, 8]} />
-                  <meshStandardMaterial color={player.color} emissive={player.color} emissiveIntensity={4.0} roughness={0.1} />
+                  <meshStandardMaterial color={cosmetics.backpackColor ?? player.color} emissive={cosmetics.backpackColor ?? player.color} emissiveIntensity={4.0} roughness={0.1} />
                 </mesh>
               </group>
 
@@ -933,7 +997,7 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
                 </mesh>
                 <mesh ref={rightNozzleRef} position={[0, -0.026, 0]} rotation={[Math.PI / 2, 0, 0]}>
                   <cylinderGeometry args={[0.012, 0.012, 0.01, 8]} />
-                  <meshStandardMaterial color={player.color} emissive={player.color} emissiveIntensity={4.0} roughness={0.1} />
+                  <meshStandardMaterial color={cosmetics.backpackColor ?? player.color} emissive={cosmetics.backpackColor ?? player.color} emissiveIntensity={4.0} roughness={0.1} />
                 </mesh>
               </group>
             </group>
@@ -942,7 +1006,7 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
       </group>
 
       {/* Floating Retro Cyber Companion Accessory */}
-      {player.isAlive && (
+      {player.isAlive && companionType !== 'none' && (
         <group ref={companionRef}>
           {companionType === 'cassette' && (
             <group>
@@ -950,29 +1014,29 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
               <mesh castShadow receiveShadow>
                 <boxGeometry args={[0.3, 0.2, 0.06]} />
                 <meshStandardMaterial 
-                  color="#2a2b36" 
-                  roughness={0.2} 
-                  metalness={0.8}
+                  color="#4b4e6d" // Elegant retro dark slate-blue plastic, highly visible
+                  roughness={0.55} // Diffuse plastic reflection
+                  metalness={0.05} // Non-metallic matte plastic
                 />
               </mesh>
               {/* Tape Label (Central stripe) */}
               <mesh position={[0, 0, 0.031]} castShadow>
                 <boxGeometry args={[0.2, 0.08, 0.005]} />
                 <meshStandardMaterial 
-                  color={player.color} 
-                  emissive={player.color}
+                  color={cosmetics.companionColor ?? player.color} 
+                  emissive={cosmetics.companionColor ?? player.color}
                   emissiveIntensity={2.5}
                 />
               </mesh>
               {/* Left Tape Reel */}
               <mesh ref={leftReelRef} position={[-0.06, -0.01, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
                 <cylinderGeometry args={[0.035, 0.035, 0.062, 8]} />
-                <meshStandardMaterial color="#ffffff" metalness={0.9} roughness={0.1} />
+                <meshStandardMaterial color="#ffffff" metalness={0.1} roughness={0.4} />
               </mesh>
               {/* Right Tape Reel */}
               <mesh ref={rightReelRef} position={[0.06, -0.01, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
                 <cylinderGeometry args={[0.035, 0.035, 0.062, 8]} />
-                <meshStandardMaterial color="#ffffff" metalness={0.9} roughness={0.1} />
+                <meshStandardMaterial color="#ffffff" metalness={0.1} roughness={0.4} />
               </mesh>
             </group>
           )}
@@ -983,9 +1047,9 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
               <mesh castShadow receiveShadow>
                 <boxGeometry args={[0.26, 0.26, 0.03]} />
                 <meshStandardMaterial 
-                  color="#1e1f29" 
-                  roughness={0.3} 
-                  metalness={0.7} 
+                  color="#383b52" // Gorgeous retro violet slate-blue plastic, highly visible
+                  roughness={0.5} // Diffuse plastic reflection
+                  metalness={0.05} // Non-metallic matte plastic
                 />
               </mesh>
               {/* Metal Shutter (slides horizontally on beat pulse) */}
@@ -993,16 +1057,16 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
                 <boxGeometry args={[0.09, 0.1, 0.032]} />
                 <meshStandardMaterial 
                   color="#cccccc" 
-                  metalness={0.9} 
-                  roughness={0.1} 
+                  metalness={0.5} 
+                  roughness={0.35} 
                 />
               </mesh>
               {/* Glowing Sticker Label */}
               <mesh position={[0, 0.04, 0.016]} castShadow>
                 <boxGeometry args={[0.18, 0.12, 0.005]} />
                 <meshStandardMaterial 
-                  color={player.color} 
-                  emissive={player.color}
+                  color={cosmetics.companionColor ?? player.color} 
+                  emissive={cosmetics.companionColor ?? player.color}
                   emissiveIntensity={2.5}
                 />
               </mesh>
@@ -1020,8 +1084,8 @@ export function PlayerMesh({ player, isLocal }: PlayerMeshProps) {
               <mesh ref={orbCoreRef} castShadow>
                 <sphereGeometry args={[0.08, 16, 16]} />
                 <meshStandardMaterial 
-                  color={player.color} 
-                  emissive={player.color}
+                  color={cosmetics.companionColor ?? player.color} 
+                  emissive={cosmetics.companionColor ?? player.color}
                   emissiveIntensity={4.0}
                 />
               </mesh>

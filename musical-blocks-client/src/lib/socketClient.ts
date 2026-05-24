@@ -32,6 +32,7 @@ export function getSocket(): AppSocket {
     _socket.emit = function (eventName: string, ...args: any[]) {
       const stateAlteringEvents = [
         'player:ready',
+        'player:update_cosmetics',
         'host:start_game',
         'host:back_to_lobby',
         'player:return_lobby',
