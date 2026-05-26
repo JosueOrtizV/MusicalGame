@@ -101,6 +101,7 @@ export const useGameStore = create<GameStore>()(
           headphonesEnabled: true,
           backpackEnabled: true,
           skinMaterial: 'matte',
+          primaryColor: randomColor, // Guardar color preferido de ficha
           shoesColor: randomColor,
           visorColor: randomColor,
           heartColor: randomColor,
@@ -142,34 +143,12 @@ export const useGameStore = create<GameStore>()(
             s.sessionToken = room.sessionToken;
           }
 
-          // Sync localCosmetics with authoritative player cosmetics from the server if they differ
+          // Sync localCosmetics primaryColor with authoritative player cosmetics from the server if they differ (color conflict resolution)
           const me = room.players.find((p) => p.id === s.localPlayerId);
           if (me && me.cosmetics) {
-            const keys: Array<keyof PlayerCosmetics> = [
-              'companionType',
-              'headphonesEnabled',
-              'backpackEnabled',
-              'skinMaterial',
-              'primaryColor',
-              'shoesColor',
-              'visorColor',
-              'heartColor',
-              'headphonesColor',
-              'backpackColor',
-              'companionColor',
-            ];
-            let isDifferent = false;
-            for (const key of keys) {
-              if (me.cosmetics[key] !== s.localCosmetics[key]) {
-                isDifferent = true;
-                break;
-              }
-            }
-            if (isDifferent) {
-              s.localCosmetics = {
-                ...s.localCosmetics,
-                ...me.cosmetics,
-              };
+            // Sincronizar ÚNICAMENTE el color de la ficha de lobby si el servidor nos asignó uno diferente por estar ocupado
+            if (me.cosmetics.primaryColor && me.cosmetics.primaryColor !== s.localCosmetics.primaryColor) {
+              s.localCosmetics.primaryColor = me.cosmetics.primaryColor;
             }
           }
           

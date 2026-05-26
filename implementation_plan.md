@@ -461,7 +461,39 @@ Actualizar el cálculo de `seekTime` para usar `state.clock.elapsedTime` de form
 Modificar el cálculo de `seekTime` en `useFrame` del personaje para usar `state.clock.elapsedTime`.
 
 ### 4. [StageShow.tsx](file:///d:/Proyectos/MusicalGame/musical-blocks-client/src/components/canvas/StageShow.tsx)
-Modificar `seekTime` en `useFrame` del escenario para que las luces y lasers bailen fluidamente con Three.js.
+Modificar `seekTime` in `useFrame` del escenario para que las luces y lasers bailen fluidamente con Three.js.
 
+---
 
+# Parche Técnico v3: Persistencia y Sincronización Premium de Colores y Cosméticos de Jugadores
 
+## 1. Diagnóstico de la Causa Raíz
+* **El Problema**: Los cosméticos personalizados del jugador (accesorios como auriculares, mochilas y sus colores específicos) se borraban o sobreescribían con el color por defecto asignado por el servidor al iniciar una nueva partida o volver al lobby tras finalizar una ronda.
+* **Causa**:
+  1. El cliente no inicializaba el campo `primaryColor` (el color de la ficha del lobby) dentro de `localCosmetics` en `gameStore.ts`. 
+  2. Al unirse a una partida, el servidor le asignaba al jugador cosméticos por defecto y un color de ficha aleatorio (`chosenColor`).
+  3. En `setRoom` de `gameStore.ts` del cliente, la lógica de sincronización comparaba los cosméticos del servidor contra los locales. Al no tener el cliente el campo `primaryColor`, la comparación `me.cosmetics.primaryColor !== s.localCosmetics.primaryColor` (ej. `#FBD38D !== undefined`) siempre se evaluaba como `true`. Como consecuencia de esta *race condition*, el cliente sobrescribía localmente **todos sus accesorios y colores personalizados** con los valores por defecto del servidor, destruyendo la personalización en su `localStorage`.
+
+---
+
+## 2. Solución Premium e Inteligente
+1. **Inicialización Completa**: Añadiremos el campo `primaryColor` en `localCosmetics` de `gameStore.ts` del cliente. Este actuará como el "color favorito de ficha" del jugador y se persistirá de forma segura en `localStorage`.
+2. **Protección Sincrónica en el Cliente**: Refactorizaremos la sincronización de `setRoom` en `gameStore.ts` para que **bloquee cualquier intento de sobreescribir los accesorios** (`shoesColor`, `visorColor`, etc.) de la store local. El cliente únicamente sincronizará el `primaryColor` si el servidor lo cambia por conflicto de duplicados en la sala:
+   ```typescript
+   const me = room.players.find((p) => p.id === s.localPlayerId);
+   if (me && me.cosmetics) {
+     // Sincronizar ÚNICAMENTE el color de ficha si el servidor nos dio uno diferente por estar ocupado
+     if (me.cosmetics.primaryColor && me.cosmetics.primaryColor !== s.localCosmetics.primaryColor) {
+       s.localCosmetics.primaryColor = me.cosmetics.primaryColor;
+     }
+   }
+   ```
+3. **Flujo de Resolución de Conflictos**: Cuando el jugador entre a una nueva partida, enviará automáticamente sus cosméticos completos (incluido `primaryColor`). El servidor (mediante `setPlayerCosmetics`) intentará otorgarle su color favorito. Si ya está ocupado por otro jugador, el servidor le asignará otro color disponible, y el cliente actualizará únicamente su ficha (`primaryColor`), respetando al 100% sus zapatos, visor, corazón, mochila y auriculares elegidos.
+
+---
+
+## 3. Archivos a Modificar
+
+### 1. [gameStore.ts](file:///d:/Proyectos/MusicalGame/musical-blocks-client/src/stores/gameStore.ts)
+- Añadir `primaryColor` en la inicialización de `localCosmetics` de la store.
+- Modificar la acción `setRoom` para que solo sincronice `primaryColor` si hay conflicto, blindando la store local contra la sobreescritura del servidor.
