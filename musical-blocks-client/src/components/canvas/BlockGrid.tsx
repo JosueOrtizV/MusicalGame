@@ -162,7 +162,7 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
       // On elimination: spawn neon burst particles
       if (!block.isActive && !block.isDead && fallingY.current[i] === 0) {
         elimTime.current[i] = Date.now();
-        spawnParticles({ x, y: 0, z, color: hex, count: 18, type: 'burst' });
+        spawnParticles({ x, y: 0, z, color: hex, count: 4, type: 'burst' });
       }
       if (block.isActive) {
         fallingY.current[i] = 0;
