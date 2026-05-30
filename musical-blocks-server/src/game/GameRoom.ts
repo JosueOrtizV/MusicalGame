@@ -47,6 +47,11 @@ export class GameRoom {
 
   private settings: RoomSettings = { maxColors: 6, gameSpeed: 'NORMAL', maxLives: 3, suddenDeathMode: 'NORMAL', enableCollisions: false };
 
+  // Dynamic audio synchronization indices
+  private lobbySongIndex = 0;
+  private gameSongIndices: number[] = [];
+  private victorySongIndex = 0;
+
   constructor(
     private readonly io: SocketServer<ClientEvents, ServerEvents>,
     hostSocketId: string,
@@ -57,6 +62,7 @@ export class GameRoom {
     this.visibility = visibility;
     this.hostId = hostSocketId;
 
+    this.randomizeSongs();
     this.players.add(hostSocketId, hostName, true);
 
     this.loop = new GameLoop(this.grid, this.players, {
@@ -352,6 +358,9 @@ export class GameRoom {
       hostId: this.hostId,
       gameState: this.status === 'playing' ? this.buildState() : null,
       settings: this.settings,
+      lobbySongIndex: this.lobbySongIndex,
+      gameSongIndices: this.gameSongIndices,
+      victorySongIndex: this.victorySongIndex,
     };
   }
 
@@ -394,8 +403,44 @@ export class GameRoom {
       this.winnerColor = null;
       this.round = 0;
       this.players.resetAlive();
+      this.randomizeSongs(); // Randomize tracks for the next match!
     }
     this.broadcastRoomUpdate();
+  }
+
+  private randomizeSongs(): void {
+    // Save previous selections to avoid back-to-back repeats in the same room
+    const previousLobbyIdx = this.lobbySongIndex;
+    const previousFirstGameIdx = this.gameSongIndices.length > 0 ? this.gameSongIndices[0] : null;
+    const previousVictoryIdx = this.victorySongIndex;
+
+    // 1. Lobby track: choose a new one different from the previous match
+    if (previousLobbyIdx !== undefined) {
+      do {
+        this.lobbySongIndex = Math.floor(Math.random() * 3);
+      } while (this.lobbySongIndex === previousLobbyIdx);
+    } else {
+      this.lobbySongIndex = Math.floor(Math.random() * 3);
+    }
+    
+    // 2. Game tracks: shuffle 10 songs and guarantee the FIRST song playing is different
+    const indices = Array.from({ length: 10 }, (_, i) => i);
+    do {
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+    } while (previousFirstGameIdx !== null && indices[0] === previousFirstGameIdx);
+    this.gameSongIndices = indices;
+    
+    // 3. Victory track: choose a new one different from the previous match
+    if (previousVictoryIdx !== undefined) {
+      do {
+        this.victorySongIndex = Math.floor(Math.random() * 3);
+      } while (this.victorySongIndex === previousVictoryIdx);
+    } else {
+      this.victorySongIndex = Math.floor(Math.random() * 3);
+    }
   }
 
   getFormattedConfig(): string {

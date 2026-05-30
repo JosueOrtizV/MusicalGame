@@ -7,7 +7,7 @@ import { GameBlock, BlockColor, COLOR_HEX, GRID_SIZE, GamePhase } from '@/src/sh
 import { BLOCK_SIZE, BLOCK_HEIGHT, BLOCK_GAP, FALL_SPEED } from '@/src/lib/constants';
 import { spawnParticles } from './ParticleSystem';
 import { useGameStore } from '@/src/stores/gameStore';
-import { MUSIC_TRACKS } from '@/src/hooks/useAudio';
+import { LOBBY_SONGS, DANCE_SONGS, WINNER_SONGS } from '@/src/hooks/useAudio';
 
 interface BlockGridProps {
   blocks: GameBlock[][];
@@ -192,15 +192,19 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
     let activeBpm = 120; // default safe fallback
 
     // Detect BPM dynamically based on active audio track playing status
-    if (typeof window !== 'undefined' && MUSIC_TRACKS) {
-      if (MUSIC_TRACKS.lobby && MUSIC_TRACKS.lobby.playing()) {
+    if (typeof window !== 'undefined') {
+      const lobbyPlaying = LOBBY_SONGS.some(t => t.playing());
+      const winnerPlaying = WINNER_SONGS.some(t => t.playing());
+      
+      if (lobbyPlaying) {
         activeBpm = 110;
-      } else if (MUSIC_TRACKS.dance) {
-        const BPM_DANCE = [128, 135, 142];
-        for (let i = 0; i < MUSIC_TRACKS.dance.length; i++) {
-          const track = MUSIC_TRACKS.dance[i];
-          if (track && track.playing()) {
-            activeBpm = BPM_DANCE[i];
+      } else if (winnerPlaying) {
+        activeBpm = 115;
+      } else {
+        const DANCE_BPMS = [128, 135, 142, 130, 128, 135, 140, 142, 132, 128];
+        for (let i = 0; i < DANCE_SONGS.length; i++) {
+          if (DANCE_SONGS[i].playing()) {
+            activeBpm = DANCE_BPMS[i];
             break;
           }
         }

@@ -130,6 +130,11 @@ export interface Room {
   gameState: GameState | null; // null while in LOBBY phase
   settings: RoomSettings;
   sessionToken?: string; // HMAC token signed by server
+
+  // Audio synchronization across the room
+  lobbySongIndex: number;
+  gameSongIndices: number[]; // Shuffled playlist indices
+  victorySongIndex: number;
 }
 
 // ---------------------------------------------------------------------------

@@ -6,16 +6,32 @@ import { useGameStore } from '@/src/stores/gameStore';
 import { Player } from '@/src/shared/types';
 
 // ---------------------------------------------------------------------------
-//  Audio Assets Definition
+//  Audio Assets Definition — Lobby, Game (Dance), and Victory (Winner) tracks
 // ---------------------------------------------------------------------------
-export const MUSIC_TRACKS = {
-  lobby: new Howl({ src: ['/audio/music/lobby/Between_Save_Points.mp3'], loop: true, volume: 0.4 }),
-  dance: [
-    new Howl({ src: ['/audio/music/Apex_Ascent.mp3'], loop: true, volume: 0.45 }),
-    new Howl({ src: ['/audio/music/Fuego_en_los_pies.mp3'], loop: true, volume: 0.45 }),
-    new Howl({ src: ['/audio/music/The_Final_Jump.mp3'], loop: true, volume: 0.45 }),
-  ],
-};
+export const LOBBY_SONGS = [
+  new Howl({ src: ['/audio/music/lobby/Between_Save_Points.mp3'], loop: true, volume: 0.4, html5: true }),
+  new Howl({ src: ['/audio/music/lobby/Lobby2.m4a'], loop: true, volume: 0.4, html5: true }),
+  new Howl({ src: ['/audio/music/lobby/generated_task.m4a'], loop: true, volume: 0.4, html5: true }),
+];
+
+export const DANCE_SONGS = [
+  new Howl({ src: ['/audio/music/Apex_Ascent.mp3'], loop: false, volume: 0.45, html5: true }),
+  new Howl({ src: ['/audio/music/Fuego_en_los_pies.mp3'], loop: false, volume: 0.45, html5: true }),
+  new Howl({ src: ['/audio/music/The_Final_Jump.mp3'], loop: false, volume: 0.45, html5: true }),
+  new Howl({ src: ['/audio/music/Blackout Pulse.mp3'], loop: false, volume: 0.45, html5: true }),
+  new Howl({ src: ['/audio/music/Cyber Dancer.m4a'], loop: false, volume: 0.45, html5: true }),
+  new Howl({ src: ['/audio/music/Digital Ashes.m4a'], loop: false, volume: 0.45, html5: true }),
+  new Howl({ src: ['/audio/music/Overclocked Relay.m4a'], loop: false, volume: 0.45, html5: true }),
+  new Howl({ src: ['/audio/music/Overclocked.mp3'], loop: false, volume: 0.45, html5: true }),
+  new Howl({ src: ['/audio/music/Power on Right.m4a'], loop: false, volume: 0.45, html5: true }),
+  new Howl({ src: ['/audio/music/Voxel Drift.m4a'], loop: false, volume: 0.45, html5: true }),
+];
+
+export const WINNER_SONGS = [
+  new Howl({ src: ['/audio/music/winner/Skyward_Ascent.mp3'], loop: true, volume: 0.35, html5: true }),
+  new Howl({ src: ['/audio/music/winner/Title_Screen_Winner.mp3'], loop: true, volume: 0.35, html5: true }),
+  new Howl({ src: ['/audio/music/winner/Victory_Bound.mp3'], loop: true, volume: 0.35, html5: true }),
+];
 
 const SFX = {
   join: new Howl({ src: ['/audio/Effects/Jugador se une.mp3'], volume: 0.6 }),
@@ -24,6 +40,21 @@ const SFX = {
   fall: new Howl({ src: ['/audio/Effects/Caída de Bloques.mp3'], volume: 0.7 }),
   death: new Howl({ src: ['/audio/Effects/Muerte de Jugador.mp3'], volume: 0.9 }),
   win: new Howl({ src: ['/audio/Effects/Victoria Final.mp3'], volume: 0.8 }),
+};
+
+// Helpers to prevent track overlaps
+const stopWinnerSongs = () => {
+  WINNER_SONGS.forEach(t => t.stop());
+};
+
+const stopAllLobbySongsExcept = (exceptTrack?: Howl) => {
+  LOBBY_SONGS.forEach(t => {
+    if (t !== exceptTrack) t.stop();
+  });
+};
+
+const stopAllDanceSongs = () => {
+  DANCE_SONGS.forEach(t => t.stop());
 };
 
 // ---------------------------------------------------------------------------
@@ -36,43 +67,75 @@ export function useGameAudio() {
   const screen = useGameStore((s) => s.screen);
   const isMuted = useGameStore((s) => s.isMuted);
   const volume = useGameStore((s) => s.volume);
+  const room = useGameStore((s) => s.room);
 
   const phase = gameState?.phase;
   const timeLeft = gameState?.timeLeft ?? 0;
   const players = gameState?.players ?? EMPTY_PLAYERS;
-  const roomId = useGameStore((s) => s.room?.id) || 'DEFAULT';
 
   const aliveCount = players.filter(p => p.isAlive).length;
-  const gameSpeed = useGameStore((s) => s.room?.settings?.gameSpeed) || 'NORMAL';
 
   const prevPhase = useRef<string | undefined>(undefined);
   const prevTimeLeft = useRef<number>(0);
   const prevPlayerCount = useRef<number>(0);
   const prevAliveCount = useRef<number>(0);
+  
   const activeDanceTrack = useRef<Howl | null>(null);
+  const playlistIndexRef = useRef<number>(0);
 
-  // 1. Sync global volume and mute
+  // Sync global volume and mute
   useEffect(() => {
     Howler.mute(isMuted);
     Howler.volume(volume);
   }, [isMuted, volume]);
 
-  // 2. Main Audio Logic Effect
+  // Dynamic recursive playlist advancement function
+  const bindOnEnd = (track: Howl) => {
+    track.off('end');
+    track.on('end', () => {
+      console.log(`[Audio] Song ended. Loading next track in room playlist.`);
+      track.stop();
+      
+      playlistIndexRef.current++;
+      const playlist = room?.gameSongIndices || [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+      const nextIdx = playlist[playlistIndexRef.current % playlist.length];
+      const nextTrack = DANCE_SONGS[nextIdx] || DANCE_SONGS[0];
+      
+      activeDanceTrack.current = nextTrack;
+      bindOnEnd(nextTrack);
+      
+      nextTrack.play();
+      
+      const currentPhase = useGameStore.getState().gameState?.phase;
+      const vol = currentPhase === 'ANNOUNCING' ? 0.30 : 0.45;
+      nextTrack.volume(vol);
+    });
+  };
+
+  // Main Audio Logic Effect
   useEffect(() => {
     if (screen === 'home') {
-      MUSIC_TRACKS.lobby.stop();
+      stopAllLobbySongsExcept();
       activeDanceTrack.current?.stop();
       activeDanceTrack.current = null;
+      stopWinnerSongs();
+      stopAllDanceSongs();
       return;
     }
 
-    // ---- LOBBY MUSIC ----
+    // ---- LOBBY MUSIC (authoritative sync) ----
     if (screen === 'lobby') {
-      if (!MUSIC_TRACKS.lobby.playing()) {
-        activeDanceTrack.current?.stop();
-        activeDanceTrack.current = null;
-        MUSIC_TRACKS.lobby.play();
-        MUSIC_TRACKS.lobby.fade(0, 0.4, 1000);
+      const lobbyIdx = room?.lobbySongIndex ?? 0;
+      const activeLobbyTrack = LOBBY_SONGS[lobbyIdx] || LOBBY_SONGS[0];
+
+      activeDanceTrack.current?.stop();
+      activeDanceTrack.current = null;
+      stopWinnerSongs();
+
+      if (!activeLobbyTrack.playing()) {
+        stopAllLobbySongsExcept(activeLobbyTrack);
+        activeLobbyTrack.play();
+        activeLobbyTrack.fade(0, 0.4, 1000);
       }
 
       // SFX: Player Join
@@ -87,37 +150,31 @@ export function useGameAudio() {
       // Phase Transitions
       if (phase !== prevPhase.current) {
         if (phase === 'STARTING' || phase === 'DANCING') {
-          // Resume or Start Music at FULL VOLUME
-          if (!activeDanceTrack.current) {
-            MUSIC_TRACKS.lobby.fade(0.4, 0, 500);
-            setTimeout(() => MUSIC_TRACKS.lobby.stop(), 500);
+          // Stop Lobby Music
+          stopAllLobbySongsExcept();
+          stopWinnerSongs();
 
-            // Track selection based on Room ID and Game Speed
-            let track: Howl;
-            if (gameSpeed === 'TURBO') {
-              // Force intense tracks (index 1: Fuego_en_los_pies, index 2: The_Final_Jump)
-              const trackIndex = (roomId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 2) + 1;
-              track = MUSIC_TRACKS.dance[trackIndex];
-            } else {
-              const trackIndex = roomId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % MUSIC_TRACKS.dance.length;
-              track = MUSIC_TRACKS.dance[trackIndex];
-            }
-            
+          if (!activeDanceTrack.current) {
+            playlistIndexRef.current = 0;
+            const playlist = room?.gameSongIndices || [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            const activeIdx = playlist[0];
+            const track = DANCE_SONGS[activeIdx] || DANCE_SONGS[0];
+
             activeDanceTrack.current = track;
+            bindOnEnd(track);
             track.play();
             track.volume(0.45);
           } else if (!activeDanceTrack.current.playing()) {
-            // Reanudar la música ÚNICAMENTE si estaba pausada de la ronda anterior, evitando duplicarla
+            // Resume the track from pause (La fiesta sigue!)
             activeDanceTrack.current.play();
             activeDanceTrack.current.fade(activeDanceTrack.current.volume(), 0.45, 500);
           }
         }
         else if (phase === 'ANNOUNCING') {
           SFX.announce.play();
-          // Music continues normally here (La fiesta sigue!)
         }
         else if (phase === 'ELIMINATING') {
-          // PAUSE music immediately when blocks fall
+          // Pause game music immediately during block falling phase
           if (activeDanceTrack.current?.playing()) {
             activeDanceTrack.current.pause();
           }
@@ -127,16 +184,34 @@ export function useGameAudio() {
         else if (phase === 'GAME_OVER') {
           activeDanceTrack.current?.stop();
           activeDanceTrack.current = null;
-          if (screen === 'winner') SFX.win.play();
+
+          if (screen === 'winner' || screen === 'dead') {
+            stopWinnerSongs();
+            stopAllDanceSongs();
+            
+            const winIdx = room?.victorySongIndex ?? 0;
+            const winTrack = WINNER_SONGS[winIdx] || WINNER_SONGS[0];
+
+            SFX.win.play();
+
+            // Delay victory music slightly so the epic SFX doesn't get obscured
+            setTimeout(() => {
+              const currentPhase = useGameStore.getState().gameState?.phase;
+              if (currentPhase === 'GAME_OVER') {
+                winTrack.play();
+                winTrack.fade(0, 0.35, 1500); // Fades in smoothly at low volume
+              }
+            }, 1000);
+          }
         }
       }
 
-      // Handle Volume during Countdown (Last N seconds of ANNOUNCING)
+      // Handle Volume during Countdown (Last 3 seconds of ANNOUNCING)
       if (phase === 'ANNOUNCING') {
         const countdownThreshold = 3;
         
         if (timeLeft <= countdownThreshold && timeLeft > 0) {
-          // Fade music down to hear beeps, but keep it audible (0.15)
+          // Fade music down to hear countdown beeps clearly
           if (activeDanceTrack.current?.playing() && activeDanceTrack.current.volume() > 0.16) {
             activeDanceTrack.current.fade(0.45, 0.30, 500);
           }
@@ -144,7 +219,7 @@ export function useGameAudio() {
             SFX.countdown.play();
           }
         } else if (timeLeft > countdownThreshold) {
-          // Ensure music is at full volume if it was faded
+          // Restore full volume
           if (activeDanceTrack.current?.playing() && activeDanceTrack.current.volume() < 0.4) {
             activeDanceTrack.current.fade(activeDanceTrack.current.volume(), 0.45, 500);
           }
@@ -163,16 +238,14 @@ export function useGameAudio() {
     prevTimeLeft.current = timeLeft;
     prevPlayerCount.current = players.length;
 
-  }, [screen, phase, timeLeft, players.length, aliveCount, roomId, gameSpeed]);
+  }, [screen, phase, timeLeft, players.length, aliveCount, room]);
 
-  // 3. Handle Visibility Change (Background/Foreground)
+  // Handle Visibility Change (Background/Foreground)
   useEffect(() => {
     const handleVisibility = () => {
       if (document.hidden) {
-        // Force mute when hidden to stop music on mobile background
         Howler.mute(true);
       } else {
-        // Restore mute state only if the user hasn't manually muted
         Howler.mute(isMuted);
       }
     };
