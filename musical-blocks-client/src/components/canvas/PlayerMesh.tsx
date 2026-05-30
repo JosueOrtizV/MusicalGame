@@ -86,14 +86,13 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
 
   // Extract and default player cosmetics
   const cosmetics = useMemo(() => {
-    console.log(`[PlayerMesh Debug] Player "${player.name}" (${player.id}) cosmetics:`, player.cosmetics);
     return player.cosmetics || {
       companionType: 'none',
       headphonesEnabled: false,
       backpackEnabled: false,
       skinMaterial: 'matte'
     };
-  }, [player.cosmetics, player.name, player.id]);
+  }, [player.cosmetics]);
 
   // Keep player and cosmetics in stable mutable references to prevent stale closures in useFrame
   const playerRef = useRef(player);

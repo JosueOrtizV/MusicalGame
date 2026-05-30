@@ -196,7 +196,6 @@ export function registerHandlers(
       console.log(`[Server Error] player:update_cosmetics failed - Room not found for player ${sid}`);
       return;
     }
-    console.log(`[Server] Player "${sid}" updated cosmetics to:`, cosmetics);
     room.setPlayerCosmetics(sid, cosmetics);
   });
 

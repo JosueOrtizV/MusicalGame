@@ -98,7 +98,6 @@ export function useGameAudio() {
   const bindOnEnd = (track: Howl) => {
     track.off('end');
     track.on('end', () => {
-      console.log(`[Audio] Song ended. Loading next track in room playlist.`);
       track.stop();
       
       playlistIndexRef.current++;
