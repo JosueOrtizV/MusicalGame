@@ -57,15 +57,14 @@ export function WinnerScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Countdown timer starts only when the card is visible
+  // Countdown timer starts immediately on mount to stay perfectly in sync with the server's 15s timeout
   useEffect(() => {
-    if (!isCardVisible) return;
     if (countdown <= 0) return;
     const timer = setTimeout(() => {
       setCountdown((c) => c - 1);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [countdown, isCardVisible]);
+  }, [countdown]);
 
   // Spawn initial burst of confetti once card displays
   useEffect(() => {

@@ -177,11 +177,33 @@ export class GameRoom {
       this.status = 'finished';
       this.currentPhase = 'GAME_OVER';
       this.winnerId = winner?.id ?? null;
+      const winnerName = winner?.name ?? null;
+
+      for (const player of this.players.getAll()) {
+        player.hasReturnedToLobby = false;
+      }
 
       this.io.to(this.id).emit('game:over', {
-        winnerId: winner?.id ?? null,
-        winnerName: winner?.name ?? null,
+        winnerId: this.winnerId,
+        winnerName,
       });
+
+      if (winnerName) {
+        this.broadcastSystemMessage(`${winnerName} won the game!`);
+      } else {
+        this.broadcastSystemMessage(`Game Over! Everyone died.`);
+      }
+
+      console.log(`[Game] Room ${this.id} ended prematurely (player disconnected). Winner: ${winnerName || 'None'} (Round ${this.round})`);
+
+      if (this.gameOverTimeout) {
+        clearTimeout(this.gameOverTimeout);
+      }
+
+      // Auto-reset room to waiting after 15 seconds
+      this.gameOverTimeout = setTimeout(() => {
+        this.resetRoom();
+      }, 15000);
     }
 
     if (this.players.count() > 0) {
