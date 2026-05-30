@@ -21,6 +21,7 @@ export function GameHUD() {
 
   const [showBanner, setShowBanner] = useState(false);
   const [bannerText, setBannerText] = useState('');
+  const [isPlayersExpanded, setIsPlayersExpanded] = useState(false);
 
   // Show round banner on phase change
   useEffect(() => {
@@ -108,9 +109,10 @@ export function GameHUD() {
         </div>
 
         {/* ---- Player list -------------------------------------------------- */}
-        <div className="hud-players">
-          <div className="hud-players-title">
-            {t('alivePlayers', { alive: playersWithLives.length, total: players.length })}
+        <div className={`hud-players ${isPlayersExpanded ? 'expanded' : ''}`}>
+          <div className="hud-players-title" onClick={() => setIsPlayersExpanded(!isPlayersExpanded)}>
+            <span>{t('alivePlayers', { alive: playersWithLives.length, total: players.length })}</span>
+            <span className="hud-players-toggle-icon">▼</span>
           </div>
           {players.map((p) => (
             <div

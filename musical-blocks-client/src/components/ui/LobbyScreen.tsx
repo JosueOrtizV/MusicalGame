@@ -198,6 +198,13 @@ export function LobbyScreen() {
       <div className="lobby-particles" aria-hidden />
 
       <div className="lobby-card">
+        {/* HUD Corner Brackets & Scanlines for the authentic retro-arcade cockpit feel */}
+        <span className="hud-corner top-left"></span>
+        <span className="hud-corner top-right"></span>
+        <span className="hud-corner bottom-left"></span>
+        <span className="hud-corner bottom-right"></span>
+        <div className="hud-scanlines"></div>
+
         {loading === 'direct' ? (
           <div className="lobby-logo" style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
             <span className="logo-emoji">⏳</span>

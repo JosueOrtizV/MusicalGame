@@ -95,6 +95,13 @@ export function WinnerScreen() {
       <div className="confetti-bg" aria-hidden />
 
       <div className="overlay-card overlay-card--winner">
+        {/* HUD Corner Brackets & Scanlines for the authentic arcade victory screen */}
+        <span className="hud-corner top-left"></span>
+        <span className="hud-corner top-right"></span>
+        <span className="hud-corner bottom-left"></span>
+        <span className="hud-corner bottom-right"></span>
+        <div className="hud-scanlines"></div>
+
         <div className="overlay-header">
           {isLocalWinner ? (
             <>
@@ -119,12 +126,14 @@ export function WinnerScreen() {
                <div className="winner-name-badge" style={{ 
                  display: 'inline-block',
                  padding: '0.5rem 1.5rem',
-                 background: 'rgba(255,255,255,0.05)',
-                 borderRadius: '30px',
-                 border: `1px solid ${winner.color}44`,
+                 background: 'rgba(20, 20, 47, 0.85)',
+                 borderRadius: 'var(--radius)',
+                 border: '1px solid var(--c-accent-2)',
+                 boxShadow: 'var(--glow-rose)',
                  fontSize: '1.4rem',
                  fontWeight: 800,
-                 margin: '1.5rem 0'
+                 margin: '1.5rem 0',
+                 textShadow: '0 0 10px var(--c-accent-2)'
                }}>
                  <span style={{ color: winner.color, marginRight: '0.5rem' }}>★</span>
                  {winner.name}

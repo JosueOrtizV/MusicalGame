@@ -106,23 +106,34 @@ export function SettingsMenu() {
 
           {screen !== 'home' && (
             <>
-              <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.1)', margin: '0.5rem 0' }} />
+              <div style={{ height: '1px', backgroundColor: 'rgba(124, 58, 237, 0.15)', margin: '0.5rem 0' }} />
               <button 
                 onClick={handleLeaveGame}
                 style={{ 
                   width: '100%', 
                   padding: '0.6rem', 
-                  backgroundColor: 'rgba(239, 68, 68, 0.2)', 
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)', 
                   color: '#ef4444',
                   border: '1px solid rgba(239, 68, 68, 0.4)',
-                  borderRadius: '0.5rem',
+                  borderRadius: 'var(--radius)',
                   fontWeight: 'bold',
+                  fontFamily: 'var(--font-retro)',
+                  fontSize: '0.65rem',
+                  letterSpacing: '0.05em',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                   marginTop: '0.5rem'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.4)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.35)';
+                  e.currentTarget.style.borderColor = '#ef4444';
+                  e.currentTarget.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
                 {t('leaveRoom')}
               </button>

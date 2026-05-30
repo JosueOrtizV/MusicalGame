@@ -186,6 +186,13 @@ export function RoomLobby() {
   return (
     <div className="room-lobby-bg">
       <div className="room-lobby-card">
+        {/* HUD Corner Brackets & Scanlines for maximum Retro-Futurism aesthetic */}
+        <span className="hud-corner top-left"></span>
+        <span className="hud-corner top-right"></span>
+        <span className="hud-corner bottom-left"></span>
+        <span className="hud-corner bottom-right"></span>
+        <div className="hud-scanlines"></div>
+
         {/* Host Settings Trigger Button */}
         {isHost && (
           <button
@@ -444,6 +451,13 @@ export function RoomLobby() {
       {isSettingsOpen && (
         <div className="settings-modal-overlay">
           <div className="settings-modal-card">
+            {/* HUD Corner Brackets & Scanlines for Retro-Futurism vibe */}
+            <span className="hud-corner top-left"></span>
+            <span className="hud-corner top-right"></span>
+            <span className="hud-corner bottom-left"></span>
+            <span className="hud-corner bottom-right"></span>
+            <div className="hud-scanlines"></div>
+
             <div className="settings-modal-header">
               <h3 className="settings-modal-title">{t('roomSettingsTitle')}</h3>
               <button

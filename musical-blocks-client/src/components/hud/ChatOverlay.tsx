@@ -178,11 +178,11 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
             bottom: '0px',
             right: '40px',
             padding: '10px 24px',
-            background: 'rgba(5, 5, 20, 0.95)',
-            border: '1px solid rgba(0, 240, 255, 0.4)',
+            background: 'rgba(15, 15, 35, 0.95)',
+            border: '1px solid var(--c-border)',
             borderBottom: 'none',
-            borderRadius: '6px 6px 0 0',
-            color: '#00f0ff',
+            borderRadius: 'var(--radius) var(--radius) 0 0',
+            color: 'var(--c-accent-3)',
             fontFamily: 'var(--font-display)',
             fontSize: '0.85rem',
             fontWeight: 'bold',
@@ -191,31 +191,31 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-            boxShadow: '0 -4px 20px rgba(0, 240, 255, 0.25)',
+            boxShadow: '0 -4px 20px rgba(124, 58, 237, 0.25)',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             zIndex: 99999,
             pointerEvents: 'auto',
             outline: 'none'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#ff00ff';
-            e.currentTarget.style.color = '#ff00ff';
-            e.currentTarget.style.boxShadow = '0 -6px 25px rgba(255, 0, 255, 0.35)';
+            e.currentTarget.style.borderColor = 'var(--c-accent-2)';
+            e.currentTarget.style.color = 'var(--c-accent-2)';
+            e.currentTarget.style.boxShadow = '0 -6px 25px rgba(244, 63, 94, 0.35)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.4)';
-            e.currentTarget.style.color = '#00f0ff';
-            e.currentTarget.style.boxShadow = '0 -4px 20px rgba(0, 240, 255, 0.25)';
+            e.currentTarget.style.borderColor = 'var(--c-border)';
+            e.currentTarget.style.color = 'var(--c-accent-3)';
+            e.currentTarget.style.boxShadow = '0 -4px 20px rgba(124, 58, 237, 0.25)';
           }}
         >
-          <span>💬 <span className={inGame ? "chat-btn-text-ingame" : ""}>{t('chatPlaceholder')?.replace('...', '') || 'CHAT'}</span></span>
+          <span>💬 <span className={inGame ? "chat-btn-text-ingame" : ""}>CHAT</span></span>
           {hasNewMessages && (
             <span style={{
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              backgroundColor: '#f43f5e',
-              boxShadow: '0 0 8px #f43f5e',
+              backgroundColor: 'var(--c-accent-2)',
+              boxShadow: 'var(--glow-rose)',
               display: 'inline-block'
             }} />
           )}
@@ -235,36 +235,44 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
             maxHeight: '75vh',
             display: 'flex',
             flexDirection: 'column',
-            background: 'rgba(5, 5, 20, 0.85)',
+            background: 'rgba(15, 15, 35, 0.9)',
             backdropFilter: 'blur(12px)',
-            borderRadius: '12px',
-            border: '1px solid rgba(0, 240, 255, 0.25)',
-            boxShadow: '0 10px 40px rgba(0, 240, 255, 0.15), inset 0 0 20px rgba(0, 240, 255, 0.05)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--c-border)',
+            boxShadow: 'var(--shadow), var(--glow-purple)',
             overflow: 'hidden',
             zIndex: 99999,
             pointerEvents: 'auto',
             animation: 'modal-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
+          {/* HUD Corner Brackets & Scanlines for the authentic terminal style */}
+          <span className="hud-corner top-left"></span>
+          <span className="hud-corner top-right"></span>
+          <span className="hud-corner bottom-left"></span>
+          <span className="hud-corner bottom-right"></span>
+          <div className="hud-scanlines"></div>
+
           {/* Header */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '12px 16px',
-            background: 'rgba(0, 20, 40, 0.6)',
-            borderBottom: '1px solid rgba(0, 240, 255, 0.15)',
+            background: 'rgba(20, 20, 47, 0.75)',
+            borderBottom: '1px solid var(--c-border)',
+            zIndex: 6
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ animation: 'pulse 2s infinite' }}>💬</span>
               <span style={{
-                color: '#00f0ff',
+                color: 'var(--c-accent-3)',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 'bold',
                 letterSpacing: '0.05em',
-                fontSize: '0.9rem',
-                textShadow: '0 0 10px rgba(0, 240, 255, 0.5)'
-              }}>{t('chatPlaceholder')?.replace('...', '') || 'CHAT'}</span>
+                fontSize: '0.75rem',
+                textShadow: '0 0 10px var(--c-accent)'
+              }}>CHAT</span>
             </div>
             
             <button 
@@ -279,7 +287,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
                 outline: 'none',
                 padding: '0 4px'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#ff00ff'}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--c-accent-2)'}
               onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)'}
             >
               &times;
@@ -287,7 +295,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
           </div>
 
           {/* Messages */}
-          <div className="lobby-chat-messages" style={{ flex: 1, padding: '12px', overflowY: 'auto' }}>
+          <div className="lobby-chat-messages" style={{ flex: 1, padding: '12px', overflowY: 'auto', zIndex: 6 }}>
             {chatMessages.map((msg) => (
               <div 
                 key={msg.id} 
@@ -295,9 +303,9 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
                 style={{
                   margin: '4px 0',
                   padding: '6px 10px',
-                  borderRadius: '0 6px 6px 0',
-                  background: msg.isSystem ? 'rgba(244, 63, 94, 0.1)' : 'rgba(0, 240, 255, 0.05)',
-                  borderLeft: msg.isSystem ? '3px solid #f43f5e' : `3px solid ${getSenderColor(msg)}`,
+                  borderRadius: '0 var(--radius) var(--radius) 0',
+                  background: msg.isSystem ? 'rgba(244, 63, 94, 0.1)' : 'rgba(124, 58, 237, 0.05)',
+                  borderLeft: msg.isSystem ? '3px solid var(--c-accent-2)' : `3px solid ${getSenderColor(msg)}`,
                   wordBreak: 'break-word',
                   overflowWrap: 'anywhere',
                   whiteSpace: 'pre-wrap'
@@ -316,9 +324,10 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
           <form onSubmit={handleSend} className="lobby-chat-input-form" style={{
             display: 'flex',
             padding: '12px',
-            background: 'rgba(0, 0, 0, 0.4)',
-            borderTop: '1px solid rgba(0, 240, 255, 0.15)',
-            gap: '8px'
+            background: 'rgba(10, 10, 26, 0.95)',
+            borderTop: '1px solid var(--c-border)',
+            gap: '8px',
+            zIndex: 6
           }}>
             <input
               type="text"
@@ -329,26 +338,26 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
               className="lobby-chat-input"
               style={{
                 flex: 1,
-                background: 'rgba(0, 10, 20, 0.6)',
-                border: '1px solid rgba(0, 240, 255, 0.3)',
-                borderRadius: '4px',
+                background: 'rgba(5, 5, 20, 0.65)',
+                border: '1px solid var(--c-border)',
+                borderRadius: 'var(--radius)',
                 padding: '8px 12px',
                 color: '#fff',
                 fontSize: '0.85rem',
                 outline: 'none',
                 transition: 'border-color 0.2s'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#00f0ff'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(0, 240, 255, 0.3)'}
+              onFocus={(e) => e.target.style.borderColor = 'var(--c-accent-2)'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--c-border)'}
             />
             <button 
               type="submit" 
               className="lobby-chat-submit"
               style={{
-                background: 'rgba(0, 240, 255, 0.1)',
-                border: '1px solid rgba(0, 240, 255, 0.3)',
-                borderRadius: '4px',
-                color: '#00f0ff',
+                background: 'rgba(124, 58, 237, 0.1)',
+                border: '1px solid var(--c-border)',
+                borderRadius: 'var(--radius)',
+                color: 'var(--c-accent-3)',
                 padding: '0 12px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
