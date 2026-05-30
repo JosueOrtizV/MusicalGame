@@ -5,6 +5,11 @@ import { Howl, Howler } from 'howler';
 import { useGameStore } from '@/src/stores/gameStore';
 import { Player } from '@/src/shared/types';
 
+// Increase Howler's HTML5 Audio pool size to support our 13+ dynamic tracks concurrently without warnings!
+if (typeof window !== 'undefined') {
+  Howler.html5PoolSize = 100;
+}
+
 // ---------------------------------------------------------------------------
 //  Audio Assets Definition — Lobby, Game (Dance), and Victory (Winner) tracks
 // ---------------------------------------------------------------------------
