@@ -13,9 +13,39 @@ import { SettingsMenu } from '@/src/components/ui/SettingsMenu';
 
 // GameCanvas must be dynamic (no SSR) — Three.js requires browser APIs
 const GameCanvas = dynamic(
-  () => import('@/src/components/canvas/GameCanvas').then((m) => m.GameCanvas),
-  { ssr: false },
+  () => import('@/src/components/canvas/GameCanvas')
+    .then((m) => m.GameCanvas)
+    .catch((err) => {
+      // If a chunk loading error occurs (common when server restarts or updates chunk hashes),
+      // reload the page to fetch the latest manifest and avoid a crash screen.
+      if (err.name === 'ChunkLoadError' || /chunk/i.test(err.message) || /loading/i.test(err.message)) {
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
+      }
+      throw err;
+    }),
+  { 
+    ssr: false,
+    loading: () => (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        background: 'var(--c-bg)',
+        fontFamily: 'var(--font-retro)',
+        color: 'var(--c-accent)',
+        fontSize: '0.9rem',
+        textShadow: 'var(--glow-purple)'
+      }}>
+        LOADING 3D ENGINE...
+      </div>
+    )
+  },
 );
+
 
 // ---------------------------------------------------------------------------
 //  Page — root router based on game screen state
