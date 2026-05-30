@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useGameStore } from '@/src/stores/gameStore';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { getSocket } from '@/src/lib/socketClient';
+import { GearIcon, VolumeUpIcon, VolumeMuteIcon, GlobeIcon } from './Icons';
 
 export function SettingsMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -65,8 +66,9 @@ export function SettingsMenu() {
         className="settings-menu-btn" 
         onClick={() => setIsOpen(!isOpen)}
         title={t('settings')}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
-        ⚙️
+        <GearIcon size={18} />
       </button>
 
       {isOpen && (
@@ -75,8 +77,9 @@ export function SettingsMenu() {
             <span className="settings-label">
               {t('language')}
             </span>
-            <button className="settings-toggle" onClick={toggleLanguage}>
-              {language === 'es' ? '🇪🇸 ESP' : '🇬🇧 ENG'}
+            <button className="settings-toggle" onClick={toggleLanguage} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <GlobeIcon size={12} />
+              <span>{language === 'es' ? 'ESP' : 'ENG'}</span>
             </button>
           </div>
 
@@ -88,8 +91,9 @@ export function SettingsMenu() {
               <button 
                 className={`settings-mute-btn ${isMuted ? 'muted' : ''}`}
                 onClick={toggleMute}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                {isMuted ? '🔇' : '🔊'}
+                {isMuted ? <VolumeMuteIcon size={16} /> : <VolumeUpIcon size={16} />}
               </button>
               <input 
                 type="range"
@@ -144,3 +148,4 @@ export function SettingsMenu() {
     </div>
   );
 }
+

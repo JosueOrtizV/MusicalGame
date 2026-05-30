@@ -6,6 +6,7 @@ import { COLOR_HEX, Direction } from '@/src/shared/types';
 import { getSocket, serverNow } from '@/src/lib/socketClient';
 import { useTranslation, DictKey } from '@/src/hooks/useTranslation';
 import { ChatOverlay } from './ChatOverlay';
+import { VolumeMuteIcon, VolumeUpIcon, HeartIcon, SkullIcon, EyeIcon } from '../ui/Icons';
 
 // ---------------------------------------------------------------------------
 //  HUD overlay — Timer, color indicator, player list, round banner
@@ -78,8 +79,13 @@ export function GameHUD() {
         )}
 
         {/* ---- Mute Toggle -------------------------------------------------- */}
-        <button className="hud-mute-btn" onClick={toggleMute} title="Toggle Audio">
-          {isMuted ? '🔇' : '🔊'}
+        <button 
+          className="hud-mute-btn" 
+          onClick={toggleMute} 
+          title="Toggle Audio"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          {isMuted ? <VolumeMuteIcon size={18} /> : <VolumeUpIcon size={18} />}
         </button>
 
         {/* ---- ANNOUNCING overlay ------------------------------------------- */}
@@ -127,11 +133,14 @@ export function GameHUD() {
                 {p.id === localPlayerId ? '★ ' : ''}{p.name}
               </span>
               {p.lives > 0 ? (
-                <span className="hud-player-lives" style={{ marginLeft: 'auto', fontSize: '11px', color: '#f43f5e', fontWeight: 'bold' }}>
-                  ❤️ x{p.lives}
+                <span className="hud-player-lives" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#f43f5e', fontWeight: 'bold' }}>
+                  <HeartIcon size={11} style={{ fill: '#f43f5e' }} />
+                  <span>x{p.lives}</span>
                 </span>
               ) : (
-                <span className="hud-player-skull" style={{ marginLeft: 'auto' }}>💀</span>
+                <span className="hud-player-skull" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                  <SkullIcon size={12} style={{ color: '#94a3b8' }} />
+                </span>
               )}
             </div>
           ))}
@@ -141,7 +150,7 @@ export function GameHUD() {
         <MobileDPad />
 
         {/* ---- Round info --------------------------------------------------- */}
-        {gameState.round > 0 && <div className="hud-round">Round {gameState.round}</div>}
+        {gameState.round > 0 && <div className="hud-round">{t('roundNumber', { round: gameState.round })}</div>}
       </div>
 
       {/* ---- Chat (Outside hud-overlay wrapper to avoid pointer-events: none and capped z-index) ---- */}
@@ -160,8 +169,9 @@ function MobileDPad() {
 
   if (screen === 'dead') {
     return (
-      <div className="hud-dpad-spectator">
-        <span className="spectator-eye">👁️</span> Spectating
+      <div className="hud-dpad-spectator" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <EyeIcon size={16} style={{ color: '#38bdf8' }} />
+        <span>Spectating</span>
       </div>
     );
   }
@@ -197,3 +207,4 @@ function MobileDPad() {
     </div>
   );
 }
+

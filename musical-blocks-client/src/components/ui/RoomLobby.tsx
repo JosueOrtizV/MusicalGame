@@ -8,6 +8,31 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { PlayerMesh } from '../canvas/PlayerMesh';
 import { PLAYER_COLORS, PlayerCosmetics } from '@/src/shared/types';
+import {
+  JoystickIcon,
+  ShirtIcon,
+  CopyIcon,
+  SnowflakeIcon,
+  LightningIcon,
+  StopwatchIcon,
+  HeartIcon,
+  GlassesIcon,
+  UsersIcon,
+  SkullIcon,
+  DoveIcon,
+  HeadphonesIcon,
+  BackpackIcon,
+  CassetteIcon,
+  FloppyIcon,
+  OrbIcon,
+  DiamondIcon,
+  CheckIcon,
+  HourglassIcon,
+  EyeIcon,
+  PaletteIcon,
+  CrownIcon
+} from './Icons';
+
 
 // Cyberpunk descriptive color names dictionary for premium tooltips
 const COLOR_NAMES_ES: Record<string, string> = {
@@ -82,8 +107,8 @@ export function RoomLobby() {
       updateLocalCosmetics(draftCosmetics);
       addToast(
         lang === 'es' 
-          ? '📋 ¡Estilo guardado y sincronizado!' 
-          : '📋 Style saved and synchronized!', 
+          ? '¡Estilo guardado y sincronizado!' 
+          : 'Style saved and synchronized!', 
         'success'
       );
     }
@@ -199,8 +224,9 @@ export function RoomLobby() {
             className="lobby-settings-btn"
             onClick={openSettings}
             title={t('roomSettingsTitle')}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            🕹️
+            <JoystickIcon size={18} />
           </button>
         )}
 
@@ -209,8 +235,9 @@ export function RoomLobby() {
           className="lobby-cosmetics-btn"
           onClick={openLocker}
           title={lang === 'es' ? 'Locker de Cosméticos' : 'Cosmetic Locker'}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          👕
+          <ShirtIcon size={18} />
         </button>
 
         {/* Header */}
@@ -219,9 +246,9 @@ export function RoomLobby() {
             {isPrivate ? t('privateRoom', { id: room.id }) : t('publicRoom')}
           </h2>
           {isPrivate && (
-            <button className="room-code-badge" onClick={copyCode} title="Click to copy">
+            <button className="room-code-badge" onClick={copyCode} title="Click to copy" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span className="room-code-text">{room.id}</span>
-              <span className="room-code-copy">📋</span>
+              <span className="room-code-copy" style={{ display: 'flex', alignItems: 'center' }}><CopyIcon size={12} /></span>
             </button>
           )}
           <p className="room-hint">
@@ -243,7 +270,7 @@ export function RoomLobby() {
                       '#ef4444'
               }}
             />
-            <span className="difficulty-indicator-text">
+            <span className="difficulty-indicator-text" style={{ display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: '2px' }}>
 
               <strong
                 style={{
@@ -267,18 +294,35 @@ export function RoomLobby() {
                       '#3b82f6',
                   textShadow: (room.settings?.gameSpeed === 'CHILL') ? '0 0 10px rgba(56, 189, 248, 0.3)' :
                     (room.settings?.gameSpeed === 'TURBO') ? '0 0 10px rgba(234, 179, 8, 0.3)' :
-                      '0 0 10px rgba(59, 130, 246, 0.3)'
+                      '0 0 10px rgba(59, 130, 246, 0.3)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
                 }}
               >
-                {(room.settings?.gameSpeed === 'CHILL') ? '❄️ ' + t('speedChill') :
-                  (room.settings?.gameSpeed === 'TURBO') ? '⚡ ' + t('speedTurbo') :
-                    '⏱️ ' + t('speedNormal')}
+                {(room.settings?.gameSpeed === 'CHILL') ? (
+                  <>
+                    <SnowflakeIcon size={12} />
+                    <span>{t('speedChill')}</span>
+                  </>
+                ) : (room.settings?.gameSpeed === 'TURBO') ? (
+                  <>
+                    <LightningIcon size={12} />
+                    <span>{t('speedTurbo')}</span>
+                  </>
+                ) : (
+                  <>
+                    <StopwatchIcon size={12} />
+                    <span>{t('speedNormal')}</span>
+                  </>
+                )}
               </strong>
               {room.settings?.maxLives !== undefined && (
                 <>
                   <span style={{ margin: '0 8px', color: 'var(--c-muted)', opacity: 0.5 }}>•</span>
-                  <strong style={{ color: '#f43f5e', textShadow: '0 0 10px rgba(244, 63, 94, 0.4)' }}>
-                    ❤️ {room.settings.maxLives} {room.settings.maxLives === 1 ? (lang === 'es' ? 'Vida' : 'Life') : (lang === 'es' ? 'Vidas' : 'Lives')}
+                  <strong style={{ color: '#f43f5e', textShadow: '0 0 10px rgba(244, 63, 94, 0.4)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <HeartIcon size={12} style={{ fill: '#f43f5e' }} />
+                    <span>{room.settings.maxLives} {room.settings.maxLives === 1 ? (lang === 'es' ? 'Vida' : 'Life') : (lang === 'es' ? 'Vidas' : 'Lives')}</span>
                   </strong>
                 </>
               )}
@@ -288,10 +332,14 @@ export function RoomLobby() {
                   <strong
                     style={{
                       color: '#d946ef',
-                      textShadow: '0 0 10px rgba(217, 70, 239, 0.4)'
+                      textShadow: '0 0 10px rgba(217, 70, 239, 0.4)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
                     }}
                   >
-                    🕶️ {t('blindModeLabel')}
+                    <GlassesIcon size={12} />
+                    <span>{t('blindModeLabel')}</span>
                   </strong>
                 </>
               )}
@@ -301,10 +349,14 @@ export function RoomLobby() {
                   <strong
                     style={{
                       color: '#00f0ff',
-                      textShadow: '0 0 10px rgba(0, 240, 255, 0.4)'
+                      textShadow: '0 0 10px rgba(0, 240, 255, 0.4)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
                     }}
                   >
-                    👥 {t('collisionsLabel')}
+                    <UsersIcon size={12} />
+                    <span>{t('collisionsLabel')}</span>
                   </strong>
                 </>
               )}
@@ -314,10 +366,23 @@ export function RoomLobby() {
                   <strong
                     style={{
                       color: room.settings.suddenDeathMode === 'CHAOS' ? '#f43f5e' : '#10b981',
-                      textShadow: room.settings.suddenDeathMode === 'CHAOS' ? '0 0 10px rgba(244, 63, 94, 0.4)' : '0 0 10px rgba(16, 185, 129, 0.4)'
+                      textShadow: room.settings.suddenDeathMode === 'CHAOS' ? '0 0 10px rgba(244, 63, 94, 0.4)' : '0 0 10px rgba(16, 185, 129, 0.4)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
                     }}
                   >
-                    {room.settings.suddenDeathMode === 'CHAOS' ? '💀 ' + t('sdChaos') : '🕊️ ' + t('sdOff')}
+                    {room.settings.suddenDeathMode === 'CHAOS' ? (
+                      <>
+                        <SkullIcon size={12} />
+                        <span>{t('sdChaos')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <DoveIcon size={12} />
+                        <span>{t('sdOff')}</span>
+                      </>
+                    )}
                   </strong>
                 </>
               )}
@@ -342,42 +407,67 @@ export function RoomLobby() {
                   <span className="room-player-name">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                       {p.name}
-                      {p.isHost && <span className="room-host-badge"> {t('hostBadge')}</span>}
+                      {p.isHost && (
+                        <span className="room-host-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                          <CrownIcon size={10} style={{ color: '#eab308' }} />
+                          {t('hostBadge')}
+                        </span>
+                      )}
                       {p.id === localPlayerId && <span className="room-you-badge"> {t('youBadge')}</span>}
                     </div>
                     {/* Cosméticos activos */}
                     {p.cosmetics && (
-                      <div className="lobby-player-cosmetics-badges">
-                        {p.cosmetics.headphonesEnabled && <span title={lang === 'es' ? 'Auriculares Beat-Sync' : 'Beat-Sync Headphones'}>🎧</span>}
-                        {p.cosmetics.backpackEnabled && <span title={lang === 'es' ? 'Cyber-Backpack Jet' : 'Cyber-Backpack Jet'}>🎒</span>}
+                      <div className="lobby-player-cosmetics-badges" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        {p.cosmetics.headphonesEnabled && (
+                          <span title={lang === 'es' ? 'Auriculares Beat-Sync' : 'Beat-Sync Headphones'} style={{ display: 'flex', alignItems: 'center' }}>
+                            <HeadphonesIcon size={14} />
+                          </span>
+                        )}
+                        {p.cosmetics.backpackEnabled && (
+                          <span title={lang === 'es' ? 'Cyber-Backpack Jet' : 'Cyber-Backpack Jet'} style={{ display: 'flex', alignItems: 'center' }}>
+                            <BackpackIcon size={14} />
+                          </span>
+                        )}
                         {p.cosmetics.companionType && p.cosmetics.companionType !== 'none' && (
-                          <span title={lang === 'es' ? `Cyber-Mascota: ${p.cosmetics.companionType}` : `Companion: ${p.cosmetics.companionType}`}>
-                            {p.cosmetics.companionType === 'cassette' && '📼'}
-                            {p.cosmetics.companionType === 'floppy' && '💾'}
-                            {p.cosmetics.companionType === 'orb' && '🔮'}
+                          <span 
+                            title={lang === 'es' ? `Cyber-Mascota: ${p.cosmetics.companionType}` : `Companion: ${p.cosmetics.companionType}`}
+                            style={{ display: 'flex', alignItems: 'center' }}
+                          >
+                            {p.cosmetics.companionType === 'cassette' && <CassetteIcon size={14} />}
+                            {p.cosmetics.companionType === 'floppy' && <FloppyIcon size={14} />}
+                            {p.cosmetics.companionType === 'orb' && <OrbIcon size={14} />}
                           </span>
                         )}
                         {p.cosmetics.skinMaterial && p.cosmetics.skinMaterial !== 'matte' && (
                           <span
                             className={`lobby-skin-badge lobby-skin-badge--${p.cosmetics.skinMaterial}`}
                             title={lang === 'es' ? `Material: ${p.cosmetics.skinMaterial}` : `Skin: ${p.cosmetics.skinMaterial}`}
+                            style={{ display: 'flex', alignItems: 'center' }}
                           >
-                            {p.cosmetics.skinMaterial === 'chrome' ? '💎' : '⚡'}
+                            {p.cosmetics.skinMaterial === 'chrome' ? (
+                              <DiamondIcon size={12} style={{ fill: 'var(--c-accent-2)' }} />
+                            ) : (
+                              <LightningIcon size={12} style={{ fill: 'var(--c-accent)' }} />
+                            )}
                           </span>
                         )}
                       </div>
                     )}
                   </span>
-                  <span className={`room-ready-badge ${p.isReady ? 'ready' : 'not-ready'}`}>
+                  <span className={`room-ready-badge ${p.isReady ? 'ready' : 'not-ready'}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     {isViewingResults ? (
                       <>
-                        <span className="room-status-emoji">👀</span>
+                        <EyeIcon size={12} style={{ color: '#38bdf8' }} />
                         <span className="room-status-text">{t('viewingResults')}</span>
                       </>
                     ) : (
                       <>
-                        <span className="room-status-emoji">{p.isReady ? '✅' : '⌛'}</span>
-                        <span className="room-status-text">{p.isReady ? t('ready').replace('✅', '').trim() : t('notReady').replace('⌛', '').trim()}</span>
+                        {p.isReady ? (
+                          <CheckIcon size={12} style={{ color: '#10b981' }} />
+                        ) : (
+                          <HourglassIcon size={12} style={{ color: '#f59e0b' }} />
+                        )}
+                        <span className="room-status-text">{p.isReady ? t('ready') : t('notReady')}</span>
                       </>
                     )}
                   </span>
@@ -475,28 +565,28 @@ export function RoomLobby() {
                   className={`settings-tab-btn ${activeTab === 'difficulty' ? 'active' : ''}`}
                   onClick={() => setActiveTab('difficulty')}
                 >
-                  <span className="tab-icon">🎨</span>
+                  <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><PaletteIcon size={16} /></span>
                   <span className="tab-label">{t('tabColors')}</span>
                 </button>
                 <button
                   className={`settings-tab-btn ${activeTab === 'speed' ? 'active' : ''}`}
                   onClick={() => setActiveTab('speed')}
                 >
-                  <span className="tab-icon">⏱️</span>
+                  <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><StopwatchIcon size={16} /></span>
                   <span className="tab-label">{t('tabSpeed')}</span>
                 </button>
                 <button
                   className={`settings-tab-btn ${activeTab === 'lives' ? 'active' : ''}`}
                   onClick={() => setActiveTab('lives')}
                 >
-                  <span className="tab-icon">❤️</span>
+                  <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><HeartIcon size={16} style={{ fill: '#f43f5e' }} /></span>
                   <span className="tab-label">{t('tabLives')}</span>
                 </button>
                 <button
                   className={`settings-tab-btn ${activeTab === 'modifiers' ? 'active' : ''}`}
                   onClick={() => setActiveTab('modifiers')}
                 >
-                  <span className="tab-icon">💀</span>
+                  <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><SkullIcon size={16} /></span>
                   <span className="tab-label">{t('tabModifiers')}</span>
                 </button>
               </div>
@@ -518,8 +608,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">🟢</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="voxel-color-dot" style={{ backgroundColor: '#10b981', display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px' }} />
                           <span className="tier-name">{t('easyLabel')}</span>
                         </div>
                         <p className="tier-desc">{t('easyDesc')}</p>
@@ -534,8 +624,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">🔵</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="voxel-color-dot" style={{ backgroundColor: '#3b82f6', display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px' }} />
                           <span className="tier-name">{t('normalLabel')}</span>
                         </div>
                         <p className="tier-desc">{t('normalDesc')}</p>
@@ -550,8 +640,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">🟡</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="voxel-color-dot" style={{ backgroundColor: '#eab308', display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px' }} />
                           <span className="tier-name">{t('hardLabel')}</span>
                         </div>
                         <p className="tier-desc">{t('hardDesc')}</p>
@@ -566,8 +656,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">🔴</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="voxel-color-dot" style={{ backgroundColor: '#ef4444', display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px' }} />
                           <span className="tier-name">{t('extremeLabel')}</span>
                         </div>
                         <p className="tier-desc">{t('extremeDesc')}</p>
@@ -591,8 +681,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">❄️</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><SnowflakeIcon size={16} /></span>
                           <span className="tier-name">{t('speedChill')}</span>
                         </div>
                         <p className="tier-desc">{t('speedChillDesc')}</p>
@@ -607,8 +697,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">⏱️</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><StopwatchIcon size={16} /></span>
                           <span className="tier-name">{t('speedNormal')}</span>
                         </div>
                         <p className="tier-desc">{t('speedNormalDesc')}</p>
@@ -623,8 +713,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">⚡</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><LightningIcon size={16} /></span>
                           <span className="tier-name">{t('speedTurbo')}</span>
                         </div>
                         <p className="tier-desc">{t('speedTurboDesc')}</p>
@@ -647,8 +737,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">☠️</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><SkullIcon size={16} /></span>
                           <span className="tier-name">{t('lives1')}</span>
                         </div>
                         <p className="tier-desc">{t('lives1Desc')}</p>
@@ -662,8 +752,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">❤️</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><HeartIcon size={16} style={{ fill: '#f43f5e' }} /></span>
                           <span className="tier-name">{t('lives3')}</span>
                         </div>
                         <p className="tier-desc">{t('lives3Desc')}</p>
@@ -677,8 +767,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">💖</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><HeartIcon size={16} style={{ fill: '#f43f5e', filter: 'drop-shadow(0 0 4px #f43f5e)' }} /></span>
                           <span className="tier-name">{t('lives5')}</span>
                         </div>
                         <p className="tier-desc">{t('lives5Desc')}</p>
@@ -703,8 +793,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">🕶️</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><GlassesIcon size={16} /></span>
                           <span className="tier-name">{t('blindModeLabel')}</span>
                         </div>
                         <p className="tier-desc">{t('blindModeDesc')}</p>
@@ -719,8 +809,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">👥</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><UsersIcon size={16} /></span>
                           <span className="tier-name">{t('collisionsLabel')}</span>
                         </div>
                         <p className="tier-desc">
@@ -747,10 +837,15 @@ export function RoomLobby() {
                       }}
                       onClick={() => setIsSdExpanded(!isSdExpanded)}
                     >
-                      <div className="tier-header" style={{ margin: 0, gap: '10px' }}>
-                        <span className="tier-icon" style={{ fontSize: '1.2rem' }}>
-                          {room.settings?.suddenDeathMode === 'CHAOS' ? '💀' :
-                            room.settings?.suddenDeathMode === 'OFF' ? '🕊️' : '⏱️'}
+                      <div className="tier-header" style={{ margin: 0, gap: '10px', display: 'flex', alignItems: 'center' }}>
+                        <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                          {room.settings?.suddenDeathMode === 'CHAOS' ? (
+                            <SkullIcon size={16} />
+                          ) : room.settings?.suddenDeathMode === 'OFF' ? (
+                            <DoveIcon size={16} />
+                          ) : (
+                            <StopwatchIcon size={16} />
+                          )}
                         </span>
                         <span className="tier-name" style={{ fontSize: '0.9rem', color: 'var(--c-accent)' }}>
                           {t('suddenDeathLabel')}
@@ -818,8 +913,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">🕊️</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><DoveIcon size={16} /></span>
                           <span className="tier-name">{t('sdOff')}</span>
                         </div>
                         <p className="tier-desc">{t('sdOffDesc')}</p>
@@ -834,8 +929,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">⏱️</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><StopwatchIcon size={16} /></span>
                           <span className="tier-name">{t('sdNormal')}</span>
                         </div>
                         <p className="tier-desc">{t('sdNormalDesc')}</p>
@@ -850,8 +945,8 @@ export function RoomLobby() {
                           });
                         }}
                       >
-                        <div className="tier-header">
-                          <span className="tier-icon">💀</span>
+                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><SkullIcon size={16} /></span>
                           <span className="tier-name">{t('sdChaos')}</span>
                         </div>
                         <p className="tier-desc">{t('sdChaosDesc')}</p>

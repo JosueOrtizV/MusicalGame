@@ -7,6 +7,7 @@ import { useToastStore } from '@/src/stores/toastStore';
 import { Room, RoomSummary } from '@/src/shared/types';
 
 import { useTranslation } from '@/src/hooks/useTranslation';
+import { SpinnerIcon, MusicIcon, LockIcon, GlobeIcon } from './Icons';
 
 // ---------------------------------------------------------------------------
 //  LobbyScreen — home screen + room selection
@@ -207,7 +208,7 @@ export function LobbyScreen() {
 
         {loading === 'direct' ? (
           <div className="lobby-logo" style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-            <span className="logo-emoji">⏳</span>
+            <span className="logo-emoji" style={{ color: 'var(--c-accent)' }}><SpinnerIcon size={48} /></span>
             <h1 className="logo-title">{t('loading')}</h1>
             <p className="logo-sub">{t('joiningRoomSpinner', { code: pendingDirectJoinCode || '' })}</p>
           </div>
@@ -215,7 +216,7 @@ export function LobbyScreen() {
           <>
             {/* Logo */}
             <div className="lobby-logo">
-              <span className="logo-emoji">🎵</span>
+              <span className="logo-emoji" style={{ color: 'var(--c-accent)' }}><MusicIcon size={48} /></span>
               <h1 className="logo-title">{t('gameTitle')}</h1>
               <p className="logo-sub">{t('gameSubtitle')}</p>
             </div>
@@ -310,7 +311,7 @@ export function LobbyScreen() {
           <>
             {/* Join Private Step */}
             <div className="lobby-logo">
-              <span className="logo-emoji">🔑</span>
+              <span className="logo-emoji" style={{ color: 'var(--c-accent-2)' }}><LockIcon size={48} /></span>
               <h1 className="logo-title">{t('joinRoomTitle')}</h1>
               <p className="logo-sub">{t('joinRoomSub')}</p>
             </div>
@@ -353,7 +354,7 @@ export function LobbyScreen() {
           <>
             {/* Public Rooms Step */}
             <div className="lobby-logo">
-              <span className="logo-emoji">🌐</span>
+              <span className="logo-emoji" style={{ color: 'var(--c-accent)' }}><GlobeIcon size={48} /></span>
               <h1 className="logo-title">{t('activeRooms')}</h1>
               <p className="logo-sub">{publicRooms.length > 0 ? t('gameSubtitle') : t('noPublicRooms')}</p>
             </div>
@@ -402,3 +403,4 @@ export function LobbyScreen() {
     </div>
   );
 }
+

@@ -68,7 +68,7 @@ export class GameRoom {
         this.round = round;
         this.currentPhase = 'DANCING';
         this.winnerColor = null;
-        this.broadcastSystemMessage(`🔵 Round ${round} started!`);
+        this.broadcastSystemMessage(`Round ${round} started!`);
         this.io.to(this.id).emit('game:round_start', {
           round,
           duration,
@@ -93,7 +93,7 @@ export class GameRoom {
               playerId: deadId,
               playerName: p.name,
             });
-            this.broadcastSystemMessage(`☠️ ${p.name} fell into the void!`);
+            this.broadcastSystemMessage(`${p.name} fell into the void!`);
           }
         }
         this.io.to(this.id).emit('game:state', this.buildState());
@@ -110,9 +110,9 @@ export class GameRoom {
         this.io.to(this.id).emit('game:over', { winnerId, winnerName });
         
         if (winnerName) {
-          this.broadcastSystemMessage(`🏆 ${winnerName} won the game!`);
+          this.broadcastSystemMessage(`${winnerName} won the game!`);
         } else {
-          this.broadcastSystemMessage(`💀 Game Over! Everyone died.`);
+          this.broadcastSystemMessage(`Game Over! Everyone died.`);
         }
         
         console.log(`[Game] Room ${this.id} ended. Winner: ${winnerName || 'None'} (Round ${this.round})`);
@@ -196,7 +196,7 @@ export class GameRoom {
     const player = this.players.get(playerId);
     if (targetSocket && player) {
       console.log(`[Room] "${player.name}" was kicked from room ${this.id} (${reason})`);
-      this.broadcastSystemMessage(`🚫 ${player.name} has been kicked by the host`);
+      this.broadcastSystemMessage(`${player.name} has been kicked by the host`);
       targetSocket.emit('room:kicked', { reason });
       this.removePlayer(playerId);
     }
@@ -406,16 +406,16 @@ export class GameRoom {
     else if (colors >= 10) diffName = 'Extreme';
 
     const speed = this.settings.gameSpeed ?? 'NORMAL';
-    let speedStr = '⏱️ STANDARD';
-    if (speed === 'CHILL') speedStr = '❄️ CHILL';
-    else if (speed === 'TURBO') speedStr = '⚡ TURBO';
+    let speedStr = 'STANDARD';
+    if (speed === 'CHILL') speedStr = 'CHILL';
+    else if (speed === 'TURBO') speedStr = 'TURBO';
 
     const lives = this.settings.maxLives ?? 3;
-    const livesStr = `❤️  ${lives} ${lives === 1 ? 'Life' : 'Lives'}`;
+    const livesStr = `${lives} ${lives === 1 ? 'Life' : 'Lives'}`;
 
     let config = `${diffName} (${colors} Colors) • ${speedStr} • ${livesStr}`;
     if (this.settings.isBlindMode) {
-      config += ' • 👁️  BLIND';
+      config += ' • BLIND';
     }
     return config;
   }

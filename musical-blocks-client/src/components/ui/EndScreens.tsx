@@ -5,6 +5,7 @@ import { getSocket } from '@/src/lib/socketClient';
 import { spawnParticles } from '../canvas/ParticleSystem';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '@/src/hooks/useTranslation';
+import { GhostIcon, CrownIcon, FlagIcon } from './Icons';
 
 // ---------------------------------------------------------------------------
 //  GameOverScreen — shown when local player dies (spectating)
@@ -23,8 +24,8 @@ export function GameOverScreen() {
   if (!visible) return null;
 
   return (
-    <div className="spectator-banner">
-      <div className="spectator-banner-icon">👻</div>
+    <div className="spectator-banner" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="spectator-banner-icon" style={{ display: 'flex', alignItems: 'center' }}><GhostIcon size={32} /></div>
       <div className="spectator-banner-text">
         <h3 className="spectator-title">{t('youFell')}</h3>
         <p className="spectator-sub">{t('spectating')}</p>
@@ -105,13 +106,13 @@ export function WinnerScreen() {
         <div className="overlay-header">
           {isLocalWinner ? (
             <>
-              <div className="overlay-icon">🏆</div>
+              <div className="overlay-icon" style={{ display: 'flex', justifyContent: 'center', color: '#eab308' }}><CrownIcon size={48} /></div>
               <h2 className="overlay-title">{t('victory')}</h2>
               <p className="overlay-sub">{t('youWon')}</p>
             </>
           ) : (
             <>
-              <div className="overlay-icon">🏁</div>
+              <div className="overlay-icon" style={{ display: 'flex', justifyContent: 'center', color: '#ef4444' }}><FlagIcon size={48} /></div>
               <h2 className="overlay-title">{t('gameOver')}</h2>
               <p className="overlay-sub" style={{ fontSize: '1.1rem', marginTop: '0.8rem' }}>
                 {winner ? t('winnerIs', { name: winner.name }) : t('nobodyWon')}
@@ -119,6 +120,7 @@ export function WinnerScreen() {
             </>
           )}
         </div>
+
 
         <div className="overlay-content-wrapper">
           {winner && (

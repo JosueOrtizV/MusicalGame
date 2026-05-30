@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useGameStore, selectLocalPlayer } from '@/src/stores/gameStore';
 import { getSocket } from '@/src/lib/socketClient';
 import { useTranslation } from '@/src/hooks/useTranslation';
+import { StopwatchIcon, SkullIcon, CrownIcon, AlertIcon, MusicIcon } from '../ui/Icons';
 
 interface ChatOverlayProps {
   inGame?: boolean;
@@ -38,33 +39,91 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
     return '#00f0ff';
   };
 
-  const translateSystemMessage = (text: string) => {
-    if (text.startsWith('🔵 Round ')) {
-      const roundStr = text.replace('🔵 Round ', '').replace(' started!', '');
+  const translateSystemMessage = (text: string): React.ReactNode => {
+    // 1. Round Start: "Round {round} started!"
+    if (text.startsWith('Round ') && text.endsWith(' started!')) {
+      const roundStr = text.replace('Round ', '').replace(' started!', '');
       const roundNum = parseInt(roundStr, 10);
-      return `🔵 ${t('roundNumber', { round: roundNum })} ${t('survive') || 'Survive!'}`;
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
+          <MusicIcon size={12} style={{ color: '#38bdf8' }} />
+          <span>{t('roundNumber', { round: roundNum })} {t('survive') || 'Survive!'}</span>
+        </span>
+      );
     }
-    if (text.startsWith('☠️ ') && text.endsWith(' fell into the void!')) {
-      const name = text.replace('☠️ ', '').replace(' fell into the void!', '');
-      return `☠️ ${t('playerFell', { name }) || `${name} fell into the void!`}`;
+    // 2. Player Fell: "{name} fell into the void!"
+    if (text.endsWith(' fell into the void!')) {
+      const name = text.replace(' fell into the void!', '');
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
+          <SkullIcon size={12} style={{ color: '#ef4444' }} />
+          <span>{t('playerFell', { name }) || `${name} fell into the void!`}</span>
+        </span>
+      );
     }
-    if (text.startsWith('🏆 ') && text.endsWith(' won the game!')) {
-      const name = text.replace('🏆 ', '').replace(' won the game!', '');
-      const translation = t('winnerIs', { name });
-      if (translation.startsWith('🏆')) {
-        return translation;
-      }
-      return `🏆 ${translation || `${name} won!`}`;
+    // 3. Player Won: "{name} won the game!"
+    if (text.endsWith(' won the game!')) {
+      const name = text.replace(' won the game!', '');
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
+          <CrownIcon size={12} style={{ color: '#eab308' }} />
+          <span>{t('winnerIs', { name }) || `${name} won the game!`}</span>
+        </span>
+      );
     }
-    if (text.startsWith('🚫 ') && text.endsWith(' has been kicked by the host')) {
-      const name = text.replace('🚫 ', '').replace(' has been kicked by the host', '');
-      return `🚫 ${t('playerKicked', { name }) || `${name} has been kicked by the host`}`;
+    // 4. Kicked: "{name} has been kicked by the host"
+    if (text.endsWith(' has been kicked by the host')) {
+      const name = text.replace(' has been kicked by the host', '');
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
+          <AlertIcon size={12} style={{ color: '#f59e0b' }} />
+          <span>{t('playerKicked', { name }) || `${name} has been kicked by the host`}</span>
+        </span>
+      );
     }
-    if (text === '💀 Game Over! Everyone died.') {
-      return `💀 ${t('gameOver') || 'Game Over!'} ${t('nobodyWon') || 'Everyone died.'}`;
+    // 5. Game Over: "Game Over! Everyone died."
+    if (text === 'Game Over! Everyone died.') {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
+          <SkullIcon size={12} style={{ color: '#ef4444' }} />
+          <span>{t('gameOver') || 'Game Over!'} {t('nobodyWon') || 'Everyone died.'}</span>
+        </span>
+      );
     }
+    
+    // In case there is still a message with emoji from server, parse it gracefully or just return it
+    let cleanText = text;
+    let icon: React.ReactNode = null;
+    
+    if (cleanText.includes('🔵')) {
+      cleanText = cleanText.replace('🔵', '').trim();
+      icon = <MusicIcon size={12} style={{ color: '#38bdf8' }} />;
+    } else if (cleanText.includes('☠️')) {
+      cleanText = cleanText.replace('☠️', '').trim();
+      icon = <SkullIcon size={12} style={{ color: '#ef4444' }} />;
+    } else if (cleanText.includes('🏆')) {
+      cleanText = cleanText.replace('🏆', '').trim();
+      icon = <CrownIcon size={12} style={{ color: '#eab308' }} />;
+    } else if (cleanText.includes('💀')) {
+      cleanText = cleanText.replace('💀', '').trim();
+      icon = <SkullIcon size={12} style={{ color: '#ef4444' }} />;
+    } else if (cleanText.includes('🚫')) {
+      cleanText = cleanText.replace('🚫', '').trim();
+      icon = <AlertIcon size={12} style={{ color: '#f59e0b' }} />;
+    }
+    
+    if (icon) {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
+          {icon}
+          <span>{cleanText}</span>
+        </span>
+      );
+    }
+    
     return text;
   };
+
 
   // Timer interval for fading out messages in-game without calling setState synchronously in effect body
   useEffect(() => {
