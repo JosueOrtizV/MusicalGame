@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useMemo, useEffect, useLayoutEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GameBlock, BlockColor, COLOR_HEX, GRID_SIZE, GamePhase } from '@/src/shared/types';
@@ -60,13 +60,15 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
   const isBlackoutRef = useRef(isBlackout);
   const settingsRef = useRef(settings);
 
-  // Sync refs synchronously on every render
-  blocksRef.current = blocks;
-  winnerColorRef.current = winnerColor;
-  phaseRef.current = phase;
-  roundRef.current = round;
-  isBlackoutRef.current = isBlackout;
-  settingsRef.current = settings;
+  // Sync refs synchronously on every render before paint to avoid rendering side effects
+  useLayoutEffect(() => {
+    blocksRef.current = blocks;
+    winnerColorRef.current = winnerColor;
+    phaseRef.current = phase;
+    roundRef.current = round;
+    isBlackoutRef.current = isBlackout;
+    settingsRef.current = settings;
+  });
 
   // Block geometry — slightly smaller than cell to leave visible gap
   const geometry = useMemo(

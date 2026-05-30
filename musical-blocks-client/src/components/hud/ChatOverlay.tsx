@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useGameStore, selectLocalPlayer } from '@/src/stores/gameStore';
 import { getSocket } from '@/src/lib/socketClient';
 import { useTranslation } from '@/src/hooks/useTranslation';
-import { StopwatchIcon, SkullIcon, CrownIcon, AlertIcon, MusicIcon } from '../ui/Icons';
+import { SkullIcon, CrownIcon, AlertIcon, MusicIcon } from '../ui/Icons';
 
 interface ChatOverlayProps {
   inGame?: boolean;

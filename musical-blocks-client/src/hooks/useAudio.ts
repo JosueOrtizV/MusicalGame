@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { Howl, Howler } from 'howler';
 import { useGameStore } from '@/src/stores/gameStore';
 import { Player } from '@/src/shared/types';
 
 // Increase Howler's HTML5 Audio pool size to support our 13+ dynamic tracks concurrently without warnings!
 if (typeof window !== 'undefined') {
-  Howler.html5PoolSize = 100;
+  ((Howler as unknown) as { pool: number }).pool = 100;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,7 +95,9 @@ export function useGameAudio() {
   }, [isMuted, volume]);
 
   // Dynamic recursive playlist advancement function
-  const bindOnEnd = (track: Howl) => {
+  const bindOnEndRef = useRef<(track: Howl) => void>(() => {});
+
+  const bindOnEnd = useCallback((track: Howl) => {
     track.off('end');
     track.on('end', () => {
       track.stop();
@@ -106,7 +108,7 @@ export function useGameAudio() {
       const nextTrack = DANCE_SONGS[nextIdx] || DANCE_SONGS[0];
       
       activeDanceTrack.current = nextTrack;
-      bindOnEnd(nextTrack);
+      bindOnEndRef.current(nextTrack);
       
       nextTrack.play();
       
@@ -114,10 +116,12 @@ export function useGameAudio() {
       const vol = currentPhase === 'ANNOUNCING' ? 0.30 : 0.45;
       nextTrack.volume(vol);
     });
-  };
+  }, [room]);
 
   // Main Audio Logic Effect
   useEffect(() => {
+    bindOnEndRef.current = bindOnEnd;
+
     if (screen === 'home') {
       stopAllLobbySongsExcept();
       activeDanceTrack.current?.stop();
@@ -165,7 +169,7 @@ export function useGameAudio() {
             const track = DANCE_SONGS[activeIdx] || DANCE_SONGS[0];
 
             activeDanceTrack.current = track;
-            bindOnEnd(track);
+            bindOnEndRef.current(track);
             track.play();
             track.volume(0.45);
           } else if (!activeDanceTrack.current.playing()) {
@@ -242,7 +246,7 @@ export function useGameAudio() {
     prevTimeLeft.current = timeLeft;
     prevPlayerCount.current = players.length;
 
-  }, [screen, phase, timeLeft, players.length, aliveCount, room]);
+  }, [screen, phase, timeLeft, players.length, aliveCount, room, bindOnEnd]);
 
   // Handle Visibility Change (Background/Foreground)
   useEffect(() => {

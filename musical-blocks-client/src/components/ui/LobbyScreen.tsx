@@ -77,12 +77,16 @@ export function LobbyScreen() {
     if (roomParam) {
       const code = roomParam.trim().toUpperCase();
       if (code.length === 4 && /^[A-Z0-9]{4}$/.test(code)) {
-        setPendingDirectJoinCode(code);
-        setPrivateCode(code);
+        setTimeout(() => {
+          setPendingDirectJoinCode(code);
+          setPrivateCode(code);
+        }, 0);
 
         const savedName = store.localPlayerName ? store.localPlayerName.trim() : '';
         if (savedName.length >= 2 && savedName.length <= 16) {
-          autoJoinDirect(savedName, code);
+          setTimeout(() => {
+            autoJoinDirect(savedName, code);
+          }, 0);
         } else {
           setTimeout(() => {
             const nameInput = document.getElementById('player-name') as HTMLInputElement;
@@ -96,7 +100,7 @@ export function LobbyScreen() {
 
   useEffect(() => {
     if (store.connectionError) {
-      setLoading(null);
+      setTimeout(() => setLoading(null), 0);
     }
   }, [store.connectionError]);
 

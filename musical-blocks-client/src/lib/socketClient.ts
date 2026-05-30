@@ -29,7 +29,7 @@ export function getSocket(): AppSocket {
 
     // Auto-inject HMAC Session Token into client emits for state-altering events
     const originalEmit = _socket.emit;
-    _socket.emit = function (eventName: string, ...args: any[]) {
+    _socket.emit = function (eventName: string, ...args: unknown[]) {
       const stateAlteringEvents = [
         'player:ready',
         'player:update_cosmetics',
@@ -42,19 +42,20 @@ export function getSocket(): AppSocket {
         'chat:send'
       ];
       
+      let finalArgs = [...args];
       if (stateAlteringEvents.includes(eventName)) {
         const { sessionToken } = useGameStore.getState();
         if (sessionToken) {
-          if (args.length === 0) {
-            args = [{ token: sessionToken }];
-          } else if (typeof args[0] === 'object' && args[0] !== null) {
-            args[0] = { ...args[0], token: sessionToken };
+          if (finalArgs.length === 0) {
+            finalArgs = [{ token: sessionToken }];
+          } else if (typeof finalArgs[0] === 'object' && finalArgs[0] !== null) {
+            finalArgs[0] = { ...(finalArgs[0] as Record<string, unknown>), token: sessionToken };
           }
         }
       }
       
-      return originalEmit.apply(_socket, [eventName, ...args] as any);
-    } as any;
+      return originalEmit.apply(_socket, [eventName, ...finalArgs] as unknown as Parameters<typeof originalEmit>);
+    } as unknown as typeof _socket.emit;
   }
   return _socket;
 }
