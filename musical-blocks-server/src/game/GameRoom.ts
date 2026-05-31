@@ -45,7 +45,7 @@ export class GameRoom {
   private winnerColor: BlockColor | null = null;
   private winnerId: string | null = null;
 
-  private settings: RoomSettings = { maxColors: 6, gameSpeed: 'NORMAL', maxLives: 3, suddenDeathMode: 'NORMAL', enableCollisions: false };
+  private settings: RoomSettings = { maxColors: 6, gameSpeed: 'NORMAL', maxLives: 3, suddenDeathMode: 'NORMAL', enableCollisions: false, maxPlayers: 8 };
 
   // Dynamic audio synchronization indices
   private lobbySongIndex = 0;
@@ -138,7 +138,8 @@ export class GameRoom {
   // ---- Room management -----------------------------------------------------
 
   canJoin(): boolean {
-    return this.status === 'waiting' && this.players.count() < MAX_PLAYERS;
+    const limit = this.settings.maxPlayers || 8;
+    return this.status === 'waiting' && this.players.count() < limit;
   }
 
   addPlayer(socketId: string, name: string): boolean {
@@ -270,7 +271,18 @@ export class GameRoom {
     const maxLives = [1, 2, 3, 4, 5].includes(settings.maxLives as number) ? settings.maxLives : 3;
     const sdMode = ['NORMAL', 'OFF', 'CHAOS'].includes(settings.suddenDeathMode as string) ? settings.suddenDeathMode : 'NORMAL';
     
-    this.settings = { maxColors, gameSpeed: speed, isBlindMode: !!settings.isBlindMode, maxLives, suddenDeathMode: sdMode, enableCollisions: !!settings.enableCollisions };
+    const currentCount = this.players.count();
+    const maxPlayers = Math.max(currentCount, Math.max(2, Math.min(12, settings.maxPlayers || 8)));
+    
+    this.settings = { 
+      maxColors, 
+      gameSpeed: speed, 
+      isBlindMode: !!settings.isBlindMode, 
+      maxLives, 
+      suddenDeathMode: sdMode, 
+      enableCollisions: !!settings.enableCollisions,
+      maxPlayers
+    };
     this.grid.setMaxColors(maxColors);
     this.grid.setSuddenDeathMode(sdMode as any);
     this.loop.setSpeed(speed as any);
@@ -289,6 +301,7 @@ export class GameRoom {
       return { ok: false, error: 'Game already in progress.' };
     }
     this.status = 'playing';
+    console.log(`[Game] Room ${this.id} started with ${this.players.count()} players.`);
 
     // Initialize lives for all participants
     for (const player of this.players.getAll()) {
@@ -365,7 +378,7 @@ export class GameRoom {
       visibility: this.visibility,
       status: this.status,
       playerCount: this.players.count(),
-      maxPlayers: MAX_PLAYERS,
+      maxPlayers: this.settings.maxPlayers || 8,
       hostName: this.players.get(this.hostId)?.name ?? 'Unknown',
     };
   }
@@ -376,7 +389,7 @@ export class GameRoom {
       visibility: this.visibility,
       status: this.status,
       players: this.players.getAll(),
-      maxPlayers: MAX_PLAYERS,
+      maxPlayers: this.settings.maxPlayers || 8,
       hostId: this.hostId,
       gameState: this.status === 'playing' ? this.buildState() : null,
       settings: this.settings,
@@ -480,7 +493,11 @@ export class GameRoom {
     const lives = this.settings.maxLives ?? 3;
     const livesStr = `${lives} ${lives === 1 ? 'Life' : 'Lives'}`;
 
-    let config = `${diffName} (${colors} Colors) • ${speedStr} • ${livesStr}`;
+    const playersCount = this.players.count();
+    const maxPlayers = this.settings.maxPlayers || 8;
+    const playersStr = `${playersCount}/${maxPlayers} Players`;
+
+    let config = `${playersStr} • ${diffName} (${colors} Colors) • ${speedStr} • ${livesStr}`;
     if (this.settings.isBlindMode) {
       config += ' • BLIND';
     }

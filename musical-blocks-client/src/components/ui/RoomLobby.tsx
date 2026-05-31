@@ -7,7 +7,7 @@ import { ChatOverlay } from '@/src/components/hud/ChatOverlay';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { PlayerMesh } from '../canvas/PlayerMesh';
-import { PLAYER_COLORS, PlayerCosmetics } from '@/src/shared/types';
+import { PLAYER_COLORS, PlayerCosmetics, RoomSettings } from '@/src/shared/types';
 import {
   JoystickIcon,
   ShirtIcon,
@@ -82,7 +82,8 @@ export function RoomLobby() {
   const addToast = useToastStore((s) => s.addToast);
   const prevPlayersRef = useRef(room?.players ?? []);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'difficulty' | 'speed' | 'lives' | 'modifiers'>('difficulty');
+  const [draftSettings, setDraftSettings] = useState<RoomSettings | null>(null);
+  const [activeTab, setActiveTab] = useState<'difficulty' | 'speed' | 'lives' | 'modifiers' | 'players'>('difficulty');
   const [isSdExpanded, setIsSdExpanded] = useState(false);
   const [isLockerOpen, setIsLockerOpen] = useState(false);
   const [lockerTab, setLockerTab] = useState<'equip' | 'colors'>('equip');
@@ -98,8 +99,59 @@ export function RoomLobby() {
   };
 
   const openSettings = () => {
+    if (room?.settings) {
+      setDraftSettings({ ...room.settings });
+    } else {
+      setDraftSettings({
+        maxColors: 6,
+        gameSpeed: 'NORMAL',
+        isBlindMode: false,
+        maxLives: 3,
+        suddenDeathMode: 'NORMAL',
+        enableCollisions: false,
+        maxPlayers: 8
+      });
+    }
     setIsSettingsOpen(true);
     window.dispatchEvent(new CustomEvent('chat:minimize'));
+  };
+
+  const saveSettings = () => {
+    if (draftSettings) {
+      const currentPlayers = room?.players.length ?? 0;
+      const finalMaxPlayers = Math.max(currentPlayers, draftSettings.maxPlayers || 8);
+      const finalSettings = { ...draftSettings, maxPlayers: finalMaxPlayers };
+
+      getSocket().emit('host:update_settings', { settings: finalSettings });
+      addToast(
+        lang === 'es' 
+          ? '¡Ajustes de sala guardados y sincronizados!' 
+          : 'Room settings saved and synchronized!', 
+        'success'
+      );
+    }
+    setIsSettingsOpen(false);
+    setDraftSettings(null);
+  };
+
+  const cancelSettings = () => {
+    setIsSettingsOpen(false);
+    setDraftSettings(null);
+  };
+
+  const updateDraftSettings = (newFields: Partial<RoomSettings>) => {
+    setDraftSettings((prev) => {
+      const current = prev || room?.settings || {
+        maxColors: 6,
+        gameSpeed: 'NORMAL' as const,
+        isBlindMode: false,
+        maxLives: 3,
+        suddenDeathMode: 'NORMAL' as const,
+        enableCollisions: false,
+        maxPlayers: 8
+      };
+      return { ...current, ...newFields };
+    });
   };
 
   const saveLocker = () => {
@@ -132,7 +184,7 @@ export function RoomLobby() {
         if (isLockerOpen) {
           cancelLocker();
         } else if (isSettingsOpen) {
-          setIsSettingsOpen(false);
+          cancelSettings();
         }
       }
     };
@@ -140,7 +192,7 @@ export function RoomLobby() {
       window.addEventListener('keydown', handleKeyDown);
     }
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLockerOpen, isSettingsOpen, draftCosmetics]);
+  }, [isLockerOpen, isSettingsOpen, draftCosmetics, draftSettings]);
 
   // Auto-sync saved cosmetics to server upon mounting or selection changes
   useEffect(() => {
@@ -539,434 +591,481 @@ export function RoomLobby() {
 
       {/* Modern Glassmorphic Settings Modal */}
       {isSettingsOpen && (
-        <div className="settings-modal-overlay">
-          <div className="settings-modal-card">
-            {/* HUD Corner Brackets & Scanlines for Retro-Futurism vibe */}
-            <span className="hud-corner top-left"></span>
-            <span className="hud-corner top-right"></span>
-            <span className="hud-corner bottom-left"></span>
-            <span className="hud-corner bottom-right"></span>
-            <div className="hud-scanlines"></div>
+        (() => {
+          const activeSettings = draftSettings || room?.settings || {
+            maxColors: 6,
+            gameSpeed: 'NORMAL' as const,
+            isBlindMode: false,
+            maxLives: 3,
+            suddenDeathMode: 'NORMAL' as const,
+            enableCollisions: false,
+            maxPlayers: 8
+          };
+          return (
+            <div className="settings-modal-overlay">
+              <div className="settings-modal-card">
+                {/* HUD Corner Brackets & Scanlines for Retro-Futurism vibe */}
+                <span className="hud-corner top-left"></span>
+                <span className="hud-corner top-right"></span>
+                <span className="hud-corner bottom-left"></span>
+                <span className="hud-corner bottom-right"></span>
+                <div className="hud-scanlines"></div>
 
-            <div className="settings-modal-header">
-              <h3 className="settings-modal-title">{t('roomSettingsTitle')}</h3>
-              <button
-                className="settings-modal-close"
-                onClick={() => setIsSettingsOpen(false)}
-              >
-                &times;
-              </button>
-            </div>
+                <div className="settings-modal-header">
+                  <h3 className="settings-modal-title">{t('roomSettingsTitle')}</h3>
+                  <button
+                    className="settings-modal-close"
+                    onClick={cancelSettings}
+                  >
+                    &times;
+                  </button>
+                </div>
 
-            <div className="settings-modal-body settings-modal-body--with-sidebar">
-              {/* Sidebar Navigation */}
-              <div className="settings-sidebar">
-                <button
-                  className={`settings-tab-btn ${activeTab === 'difficulty' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('difficulty')}
-                >
-                  <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><PaletteIcon size={16} /></span>
-                  <span className="tab-label">{t('tabColors')}</span>
-                </button>
-                <button
-                  className={`settings-tab-btn ${activeTab === 'speed' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('speed')}
-                >
-                  <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><StopwatchIcon size={16} /></span>
-                  <span className="tab-label">{t('tabSpeed')}</span>
-                </button>
-                <button
-                  className={`settings-tab-btn ${activeTab === 'lives' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('lives')}
-                >
-                  <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><HeartIcon size={16} style={{ fill: '#f43f5e' }} /></span>
-                  <span className="tab-label">{t('tabLives')}</span>
-                </button>
-                <button
-                  className={`settings-tab-btn ${activeTab === 'modifiers' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('modifiers')}
-                >
-                  <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><SkullIcon size={16} /></span>
-                  <span className="tab-label">{t('tabModifiers')}</span>
-                </button>
-              </div>
-
-              {/* Main Content Area */}
-              <div className="settings-content-area" style={{ maxHeight: '380px', overflowY: 'auto', minHeight: 0, paddingRight: '8px' }}>
-                {activeTab === 'difficulty' && (
-                  <div className="settings-tab-content fade-in">
-                    <h4 className="settings-modal-subtitle">{t('activeColorsLabel')}</h4>
-                    <p className="settings-modal-intro">{t('activeColorsDesc')}</p>
-
-                    <div className="difficulty-tiers-list">
-                      {/* Easy Tier Card */}
-                      <button
-                        className={`difficulty-tier-btn tier--easy ${(room.settings?.maxColors ?? 6) === 4 ? 'active' : ''}`}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, maxColors: 4 }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="voxel-color-dot" style={{ backgroundColor: '#10b981', display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px' }} />
-                          <span className="tier-name">{t('easyLabel')}</span>
-                        </div>
-                        <p className="tier-desc">{t('easyDesc')}</p>
-                      </button>
-
-                      {/* Normal Tier Card */}
-                      <button
-                        className={`difficulty-tier-btn tier--normal ${(room.settings?.maxColors ?? 6) === 6 ? 'active' : ''}`}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, maxColors: 6 }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="voxel-color-dot" style={{ backgroundColor: '#3b82f6', display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px' }} />
-                          <span className="tier-name">{t('normalLabel')}</span>
-                        </div>
-                        <p className="tier-desc">{t('normalDesc')}</p>
-                      </button>
-
-                      {/* Hard Tier Card */}
-                      <button
-                        className={`difficulty-tier-btn tier--hard ${(room.settings?.maxColors ?? 6) === 8 ? 'active' : ''}`}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, maxColors: 8 }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="voxel-color-dot" style={{ backgroundColor: '#eab308', display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px' }} />
-                          <span className="tier-name">{t('hardLabel')}</span>
-                        </div>
-                        <p className="tier-desc">{t('hardDesc')}</p>
-                      </button>
-
-                      {/* Extreme Tier Card */}
-                      <button
-                        className={`difficulty-tier-btn tier--extreme ${(room.settings?.maxColors ?? 6) === 10 ? 'active' : ''}`}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, maxColors: 10 }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="voxel-color-dot" style={{ backgroundColor: '#ef4444', display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px' }} />
-                          <span className="tier-name">{t('extremeLabel')}</span>
-                        </div>
-                        <p className="tier-desc">{t('extremeDesc')}</p>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'speed' && (
-                  <div className="settings-tab-content fade-in">
-                    <h4 className="settings-modal-subtitle">{t('speedLabel')}</h4>
-                    <p className="settings-modal-intro">{t('speedDesc')}</p>
-
-                    <div className="difficulty-tiers-list">
-                      {/* Chill Speed */}
-                      <button
-                        className={`difficulty-tier-btn tier--chill ${(room.settings?.gameSpeed === 'CHILL') ? 'active' : ''}`}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, gameSpeed: 'CHILL' }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><SnowflakeIcon size={16} /></span>
-                          <span className="tier-name">{t('speedChill')}</span>
-                        </div>
-                        <p className="tier-desc">{t('speedChillDesc')}</p>
-                      </button>
-
-                      {/* Normal Speed */}
-                      <button
-                        className={`difficulty-tier-btn tier--normal ${(room.settings?.gameSpeed === 'NORMAL' || !room.settings?.gameSpeed) ? 'active' : ''}`}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, gameSpeed: 'NORMAL' }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><StopwatchIcon size={16} /></span>
-                          <span className="tier-name">{t('speedNormal')}</span>
-                        </div>
-                        <p className="tier-desc">{t('speedNormalDesc')}</p>
-                      </button>
-
-                      {/* Turbo Speed */}
-                      <button
-                        className={`difficulty-tier-btn tier--turbo ${(room.settings?.gameSpeed === 'TURBO') ? 'active' : ''}`}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, gameSpeed: 'TURBO' }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><LightningIcon size={16} /></span>
-                          <span className="tier-name">{t('speedTurbo')}</span>
-                        </div>
-                        <p className="tier-desc">{t('speedTurboDesc')}</p>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'lives' && (
-                  <div className="settings-tab-content fade-in">
-                    <h4 className="settings-modal-subtitle">{t('livesTitle')}</h4>
-                    <p className="settings-modal-intro">{t('livesDesc')}</p>
-
-                    <div className="difficulty-tiers-list">
-                      <button
-                        className={`difficulty-tier-btn tier--hard ${(room.settings?.maxLives === 1) ? 'active' : ''}`}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, maxLives: 1 }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><SkullIcon size={16} /></span>
-                          <span className="tier-name">{t('lives1')}</span>
-                        </div>
-                        <p className="tier-desc">{t('lives1Desc')}</p>
-                      </button>
-
-                      <button
-                        className={`difficulty-tier-btn tier--normal ${(room.settings?.maxLives === 3 || !room.settings?.maxLives) ? 'active' : ''}`}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, maxLives: 3 }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><HeartIcon size={16} style={{ fill: '#f43f5e' }} /></span>
-                          <span className="tier-name">{t('lives3')}</span>
-                        </div>
-                        <p className="tier-desc">{t('lives3Desc')}</p>
-                      </button>
-
-                      <button
-                        className={`difficulty-tier-btn tier--easy ${(room.settings?.maxLives === 5) ? 'active' : ''}`}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, maxLives: 5 }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><HeartIcon size={16} style={{ fill: '#f43f5e', filter: 'drop-shadow(0 0 4px #f43f5e)' }} /></span>
-                          <span className="tier-name">{t('lives5')}</span>
-                        </div>
-                        <p className="tier-desc">{t('lives5Desc')}</p>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'modifiers' && (
-                  <div className="settings-tab-content fade-in" style={{ paddingBottom: '24px' }}>
-                    <h4 className="settings-modal-subtitle">{t('tabModifiers')}</h4>
-                    <p className="settings-modal-description">
-                      {t('modifiersDesc')}
-                    </p>
-
-                    <div className="difficulty-tiers-list">
-                      <button
-                        className={`difficulty-tier-btn tier--extreme ${room.settings?.isBlindMode ? 'active' : ''}`}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, isBlindMode: !room.settings?.isBlindMode }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><GlassesIcon size={16} /></span>
-                          <span className="tier-name">{t('blindModeLabel')}</span>
-                        </div>
-                        <p className="tier-desc">{t('blindModeDesc')}</p>
-                      </button>
-
-                      {/* Player Collisions Toggle Modifier */}
-                      <button
-                        className={`difficulty-tier-btn tier--normal ${room.settings?.enableCollisions ? 'active' : ''}`}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, enableCollisions: !room.settings?.enableCollisions }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><UsersIcon size={16} /></span>
-                          <span className="tier-name">{t('collisionsLabel')}</span>
-                        </div>
-                        <p className="tier-desc">
-                          {room.settings?.enableCollisions ? t('collisionsEnabledDesc') : t('collisionsDisabledDesc')}
-                        </p>
-                      </button>
-                    </div>
-
-                    {/* Collapsible Sudden Death Trigger Header */}
+                <div className="settings-modal-body settings-modal-body--with-sidebar">
+                  {/* Sidebar Navigation */}
+                  <div className="settings-sidebar">
                     <button
-                      className="difficulty-tier-btn"
-                      style={{
-                        width: '100%',
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '14px 18px',
-                        background: 'rgba(0, 240, 255, 0.03)',
-                        border: '1px solid rgba(0, 240, 255, 0.2)',
-                        boxShadow: '0 0 10px rgba(0, 240, 255, 0.05)',
-                        marginTop: '20px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                      }}
-                      onClick={() => setIsSdExpanded(!isSdExpanded)}
+                      className={`settings-tab-btn ${activeTab === 'difficulty' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('difficulty')}
                     >
-                      <div className="tier-header" style={{ margin: 0, gap: '10px', display: 'flex', alignItems: 'center' }}>
-                        <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}>
-                          {room.settings?.suddenDeathMode === 'CHAOS' ? (
-                            <SkullIcon size={16} />
-                          ) : room.settings?.suddenDeathMode === 'OFF' ? (
-                            <DoveIcon size={16} />
-                          ) : (
-                            <StopwatchIcon size={16} />
-                          )}
-                        </span>
-                        <span className="tier-name" style={{ fontSize: '0.9rem', color: 'var(--c-accent)' }}>
-                          {t('suddenDeathLabel')}
-                        </span>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {/* Status Badge */}
-                        <strong
-                          style={{
-                            fontSize: '0.78rem',
-                            padding: '3px 8px',
-                            borderRadius: '4px',
-                            background: room.settings?.suddenDeathMode === 'CHAOS' ? 'rgba(244, 63, 94, 0.15)' :
-                              room.settings?.suddenDeathMode === 'OFF' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                            color: room.settings?.suddenDeathMode === 'CHAOS' ? '#f43f5e' :
-                              room.settings?.suddenDeathMode === 'OFF' ? '#10b981' : '#3b82f6',
-                            border: `1px solid ${room.settings?.suddenDeathMode === 'CHAOS' ? 'rgba(244, 63, 94, 0.3)' :
-                              room.settings?.suddenDeathMode === 'OFF' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'
-                              }`,
-                            textShadow: `0 0 8px ${room.settings?.suddenDeathMode === 'CHAOS' ? 'rgba(244, 63, 94, 0.3)' :
-                              room.settings?.suddenDeathMode === 'OFF' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'
-                              }`
-                          }}
-                        >
-                          {room.settings?.suddenDeathMode === 'CHAOS' ? t('sdChaos') :
-                            room.settings?.suddenDeathMode === 'OFF' ? t('sdOff') : t('sdNormal')}
-                        </strong>
-
-                        {/* Collapse Arrow */}
-                        <span style={{
-                          fontSize: '0.9rem',
-                          color: 'var(--c-muted)',
-                          transform: isSdExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
-                        }}>
-                          ▼
-                        </span>
-                      </div>
+                      <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><PaletteIcon size={16} /></span>
+                      <span className="tab-label">{t('tabColors')}</span>
                     </button>
-
-                    {/* Collapsible Content Area */}
-                    <div style={{
-                      maxHeight: isSdExpanded ? '500px' : '0px',
-                      overflow: 'hidden',
-                      opacity: isSdExpanded ? 1 : 0,
-                      transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '12px',
-                      paddingTop: isSdExpanded ? '12px' : '0px',
-                      paddingLeft: '4px',
-                      paddingRight: '4px',
-                    }}>
-                      <p className="settings-modal-description" style={{ margin: '0 0 4px 0' }}>
-                        {t('suddenDeathDesc')}
-                      </p>
-
-                      <button
-                        className={`difficulty-tier-btn tier--easy ${(room.settings?.suddenDeathMode === 'OFF') ? 'active' : ''}`}
-                        style={{ width: '100%', textAlign: 'left' }}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, suddenDeathMode: 'OFF' }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><DoveIcon size={16} /></span>
-                          <span className="tier-name">{t('sdOff')}</span>
-                        </div>
-                        <p className="tier-desc">{t('sdOffDesc')}</p>
-                      </button>
-
-                      <button
-                        className={`difficulty-tier-btn tier--normal ${(room.settings?.suddenDeathMode === 'NORMAL' || !room.settings?.suddenDeathMode) ? 'active' : ''}`}
-                        style={{ width: '100%', textAlign: 'left' }}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, suddenDeathMode: 'NORMAL' }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><StopwatchIcon size={16} /></span>
-                          <span className="tier-name">{t('sdNormal')}</span>
-                        </div>
-                        <p className="tier-desc">{t('sdNormalDesc')}</p>
-                      </button>
-
-                      <button
-                        className={`difficulty-tier-btn tier--hard ${(room.settings?.suddenDeathMode === 'CHAOS') ? 'active' : ''}`}
-                        style={{ width: '100%', textAlign: 'left' }}
-                        onClick={() => {
-                          getSocket().emit('host:update_settings', {
-                            settings: { ...room.settings, suddenDeathMode: 'CHAOS' }
-                          });
-                        }}
-                      >
-                        <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><SkullIcon size={16} /></span>
-                          <span className="tier-name">{t('sdChaos')}</span>
-                        </div>
-                        <p className="tier-desc">{t('sdChaosDesc')}</p>
-                      </button>
-                    </div>
+                    <button
+                      className={`settings-tab-btn ${activeTab === 'speed' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('speed')}
+                    >
+                      <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><StopwatchIcon size={16} /></span>
+                      <span className="tab-label">{t('tabSpeed')}</span>
+                    </button>
+                    <button
+                      className={`settings-tab-btn ${activeTab === 'lives' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('lives')}
+                    >
+                      <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><HeartIcon size={16} style={{ fill: '#f43f5e' }} /></span>
+                      <span className="tab-label">{t('tabLives')}</span>
+                    </button>
+                    <button
+                      className={`settings-tab-btn ${activeTab === 'modifiers' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('modifiers')}
+                    >
+                      <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><SkullIcon size={16} /></span>
+                      <span className="tab-label">{t('tabModifiers')}</span>
+                    </button>
+                    <button
+                      className={`settings-tab-btn ${activeTab === 'players' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('players')}
+                    >
+                      <span className="tab-icon" style={{ display: 'flex', alignItems: 'center' }}><UsersIcon size={16} /></span>
+                      <span className="tab-label">{t('tabPlayers')}</span>
+                    </button>
                   </div>
-                )}
+
+                  {/* Main Content Area */}
+                  <div className="settings-content-area" style={{ maxHeight: '380px', overflowY: 'auto', minHeight: 0, paddingRight: '8px' }}>
+                    {activeTab === 'difficulty' && (
+                      <div className="settings-tab-content fade-in">
+                        <h4 className="settings-modal-subtitle">{t('activeColorsLabel')}</h4>
+                        <p className="settings-modal-intro">{t('activeColorsDesc')}</p>
+
+                        <div className="difficulty-tiers-list">
+                          {/* Easy Tier Card */}
+                          <button
+                            className={`difficulty-tier-btn tier--easy ${(activeSettings.maxColors ?? 6) === 4 ? 'active' : ''}`}
+                            onClick={() => updateDraftSettings({ maxColors: 4 })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="voxel-color-dot" style={{ backgroundColor: '#10b981', display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px' }} />
+                              <span className="tier-name">{t('easyLabel')}</span>
+                            </div>
+                            <p className="tier-desc">{t('easyDesc')}</p>
+                          </button>
+
+                          {/* Normal Tier Card */}
+                          <button
+                            className={`difficulty-tier-btn tier--normal ${(activeSettings.maxColors ?? 6) === 6 ? 'active' : ''}`}
+                            onClick={() => updateDraftSettings({ maxColors: 6 })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="voxel-color-dot" style={{ backgroundColor: '#3b82f6', display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px' }} />
+                              <span className="tier-name">{t('normalLabel')}</span>
+                            </div>
+                            <p className="tier-desc">{t('normalDesc')}</p>
+                          </button>
+
+                          {/* Hard Tier Card */}
+                          <button
+                            className={`difficulty-tier-btn tier--hard ${(activeSettings.maxColors ?? 6) === 8 ? 'active' : ''}`}
+                            onClick={() => updateDraftSettings({ maxColors: 8 })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="voxel-color-dot" style={{ backgroundColor: '#eab308', display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px' }} />
+                              <span className="tier-name">{t('hardLabel')}</span>
+                            </div>
+                            <p className="tier-desc">{t('hardDesc')}</p>
+                          </button>
+
+                          {/* Extreme Tier Card */}
+                          <button
+                            className={`difficulty-tier-btn tier--extreme ${(activeSettings.maxColors ?? 6) === 10 ? 'active' : ''}`}
+                            onClick={() => updateDraftSettings({ maxColors: 10 })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="voxel-color-dot" style={{ backgroundColor: '#ef4444', display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px' }} />
+                              <span className="tier-name">{t('extremeLabel')}</span>
+                            </div>
+                            <p className="tier-desc">{t('extremeDesc')}</p>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'speed' && (
+                      <div className="settings-tab-content fade-in">
+                        <h4 className="settings-modal-subtitle">{t('speedLabel')}</h4>
+                        <p className="settings-modal-intro">{t('speedDesc')}</p>
+
+                        <div className="difficulty-tiers-list">
+                          {/* Chill Speed */}
+                          <button
+                            className={`difficulty-tier-btn tier--chill ${(activeSettings.gameSpeed === 'CHILL') ? 'active' : ''}`}
+                            onClick={() => updateDraftSettings({ gameSpeed: 'CHILL' })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><SnowflakeIcon size={16} /></span>
+                              <span className="tier-name">{t('speedChill')}</span>
+                            </div>
+                            <p className="tier-desc">{t('speedChillDesc')}</p>
+                          </button>
+
+                          {/* Normal Speed */}
+                          <button
+                            className={`difficulty-tier-btn tier--normal ${(activeSettings.gameSpeed === 'NORMAL' || !activeSettings.gameSpeed) ? 'active' : ''}`}
+                            onClick={() => updateDraftSettings({ gameSpeed: 'NORMAL' })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><StopwatchIcon size={16} /></span>
+                              <span className="tier-name">{t('speedNormal')}</span>
+                            </div>
+                            <p className="tier-desc">{t('speedNormalDesc')}</p>
+                          </button>
+
+                          {/* Turbo Speed */}
+                          <button
+                            className={`difficulty-tier-btn tier--turbo ${(activeSettings.gameSpeed === 'TURBO') ? 'active' : ''}`}
+                            onClick={() => updateDraftSettings({ gameSpeed: 'TURBO' })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><LightningIcon size={16} /></span>
+                              <span className="tier-name">{t('speedTurbo')}</span>
+                            </div>
+                            <p className="tier-desc">{t('speedTurboDesc')}</p>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'lives' && (
+                      <div className="settings-tab-content fade-in">
+                        <h4 className="settings-modal-subtitle">{t('livesTitle')}</h4>
+                        <p className="settings-modal-intro">{t('livesDesc')}</p>
+
+                        <div className="difficulty-tiers-list">
+                          <button
+                            className={`difficulty-tier-btn tier--hard ${(activeSettings.maxLives === 1) ? 'active' : ''}`}
+                            onClick={() => updateDraftSettings({ maxLives: 1 })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><SkullIcon size={16} /></span>
+                              <span className="tier-name">{t('lives1')}</span>
+                            </div>
+                            <p className="tier-desc">{t('lives1Desc')}</p>
+                          </button>
+
+                          <button
+                            className={`difficulty-tier-btn tier--normal ${(activeSettings.maxLives === 3 || !activeSettings.maxLives) ? 'active' : ''}`}
+                            onClick={() => updateDraftSettings({ maxLives: 3 })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><HeartIcon size={16} style={{ fill: '#f43f5e' }} /></span>
+                              <span className="tier-name">{t('lives3')}</span>
+                            </div>
+                            <p className="tier-desc">{t('lives3Desc')}</p>
+                          </button>
+
+                          <button
+                            className={`difficulty-tier-btn tier--easy ${(activeSettings.maxLives === 5) ? 'active' : ''}`}
+                            onClick={() => updateDraftSettings({ maxLives: 5 })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><HeartIcon size={16} style={{ fill: '#f43f5e', filter: 'drop-shadow(0 0 4px #f43f5e)' }} /></span>
+                              <span className="tier-name">{t('lives5')}</span>
+                            </div>
+                            <p className="tier-desc">{t('lives5Desc')}</p>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'modifiers' && (
+                      <div className="settings-tab-content fade-in" style={{ paddingBottom: '24px' }}>
+                        <h4 className="settings-modal-subtitle">{t('tabModifiers')}</h4>
+                        <p className="settings-modal-description">
+                          {t('modifiersDesc')}
+                        </p>
+
+                        <div className="difficulty-tiers-list">
+                          <button
+                            className={`difficulty-tier-btn tier--extreme ${activeSettings.isBlindMode ? 'active' : ''}`}
+                            onClick={() => updateDraftSettings({ isBlindMode: !activeSettings.isBlindMode })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><GlassesIcon size={16} /></span>
+                              <span className="tier-name">{t('blindModeLabel')}</span>
+                            </div>
+                            <p className="tier-desc">{t('blindModeDesc')}</p>
+                          </button>
+
+                          {/* Player Collisions Toggle Modifier */}
+                          <button
+                            className={`difficulty-tier-btn tier--normal ${activeSettings.enableCollisions ? 'active' : ''}`}
+                            onClick={() => updateDraftSettings({ enableCollisions: !activeSettings.enableCollisions })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><UsersIcon size={16} /></span>
+                              <span className="tier-name">{t('collisionsLabel')}</span>
+                            </div>
+                            <p className="tier-desc">
+                              {activeSettings.enableCollisions ? t('collisionsEnabledDesc') : t('collisionsDisabledDesc')}
+                            </p>
+                          </button>
+                        </div>
+
+                        {/* Collapsible Sudden Death Trigger Header */}
+                        <button
+                          className="difficulty-tier-btn"
+                          style={{
+                            width: '100%',
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '14px 18px',
+                            background: 'rgba(0, 240, 255, 0.03)',
+                            border: '1px solid rgba(0, 240, 255, 0.2)',
+                            boxShadow: '0 0 10px rgba(0, 240, 255, 0.05)',
+                            marginTop: '20px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                          }}
+                          onClick={() => setIsSdExpanded(!isSdExpanded)}
+                        >
+                          <div className="tier-header" style={{ margin: 0, gap: '10px', display: 'flex', alignItems: 'center' }}>
+                            <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                              {activeSettings.suddenDeathMode === 'CHAOS' ? (
+                                <SkullIcon size={16} />
+                              ) : activeSettings.suddenDeathMode === 'OFF' ? (
+                                <DoveIcon size={16} />
+                              ) : (
+                                <StopwatchIcon size={16} />
+                              )}
+                            </span>
+                            <span className="tier-name" style={{ fontSize: '0.9rem', color: 'var(--c-accent)' }}>
+                              {t('suddenDeathLabel')}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {/* Status Badge */}
+                            <strong
+                              style={{
+                                fontSize: '0.78rem',
+                                padding: '3px 8px',
+                                borderRadius: '4px',
+                                background: activeSettings.suddenDeathMode === 'CHAOS' ? 'rgba(244, 63, 94, 0.15)' :
+                                  activeSettings.suddenDeathMode === 'OFF' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                                color: activeSettings.suddenDeathMode === 'CHAOS' ? '#f43f5e' :
+                                  activeSettings.suddenDeathMode === 'OFF' ? '#10b981' : '#3b82f6',
+                                border: `1px solid ${activeSettings.suddenDeathMode === 'CHAOS' ? 'rgba(244, 63, 94, 0.3)' :
+                                  activeSettings.suddenDeathMode === 'OFF' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'
+                                  }`,
+                                textShadow: `0 0 8px ${activeSettings.suddenDeathMode === 'CHAOS' ? 'rgba(244, 63, 94, 0.3)' :
+                                  activeSettings.suddenDeathMode === 'OFF' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'
+                                  }`
+                              }}
+                            >
+                              {activeSettings.suddenDeathMode === 'CHAOS' ? t('sdChaos') :
+                                activeSettings.suddenDeathMode === 'OFF' ? t('sdOff') : t('sdNormal')}
+                            </strong>
+
+                            {/* Collapse Arrow */}
+                            <span style={{
+                              fontSize: '0.9rem',
+                              color: 'var(--c-muted)',
+                              transform: isSdExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                              transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+                            }}>
+                              ▼
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* Collapsible Content Area */}
+                        <div style={{
+                          maxHeight: isSdExpanded ? '500px' : '0px',
+                          overflow: 'hidden',
+                          opacity: isSdExpanded ? 1 : 0,
+                          transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '12px',
+                          paddingTop: isSdExpanded ? '12px' : '0px',
+                          paddingLeft: '4px',
+                          paddingRight: '4px',
+                        }}>
+                          <p className="settings-modal-description" style={{ margin: '0 0 4px 0' }}>
+                            {t('suddenDeathDesc')}
+                          </p>
+
+                          <button
+                            className={`difficulty-tier-btn tier--easy ${(activeSettings.suddenDeathMode === 'OFF') ? 'active' : ''}`}
+                            style={{ width: '100%', textAlign: 'left' }}
+                            onClick={() => updateDraftSettings({ suddenDeathMode: 'OFF' })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><DoveIcon size={16} /></span>
+                              <span className="tier-name">{t('sdOff')}</span>
+                            </div>
+                            <p className="tier-desc">{t('sdOffDesc')}</p>
+                          </button>
+
+                          <button
+                            className={`difficulty-tier-btn tier--normal ${(activeSettings.suddenDeathMode === 'NORMAL' || !activeSettings.suddenDeathMode) ? 'active' : ''}`}
+                            style={{ width: '100%', textAlign: 'left' }}
+                            onClick={() => updateDraftSettings({ suddenDeathMode: 'NORMAL' })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><StopwatchIcon size={16} /></span>
+                              <span className="tier-name">{t('sdNormal')}</span>
+                            </div>
+                            <p className="tier-desc">{t('sdNormalDesc')}</p>
+                          </button>
+
+                          <button
+                            className={`difficulty-tier-btn tier--hard ${(activeSettings.suddenDeathMode === 'CHAOS') ? 'active' : ''}`}
+                            style={{ width: '100%', textAlign: 'left' }}
+                            onClick={() => updateDraftSettings({ suddenDeathMode: 'CHAOS' })}
+                          >
+                            <div className="tier-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="tier-icon" style={{ display: 'flex', alignItems: 'center' }}><SkullIcon size={16} /></span>
+                              <span className="tier-name">{t('sdChaos')}</span>
+                            </div>
+                            <p className="tier-desc">{t('sdChaosDesc')}</p>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'players' && (
+                      <div className="settings-tab-content fade-in" style={{ paddingBottom: '24px' }}>
+                        <h4 className="settings-modal-subtitle">{t('playersTitle')}</h4>
+                        <p className="settings-modal-description">
+                          {t('playersDesc')}
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '10px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '15px', fontFamily: 'var(--font-display)', fontSize: '0.8rem', color: 'var(--c-accent)' }}>
+                            {t('maxPlayersLabel')}:
+                            <select
+                              className="lobby-input"
+                              style={{
+                                width: '90px',
+                                padding: '6px',
+                                fontFamily: 'var(--font-display)',
+                                fontSize: '0.8rem',
+                                textAlign: 'center',
+                                margin: 0,
+                              }}
+                              value={activeSettings.maxPlayers || 8}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value, 10);
+                                updateDraftSettings({ maxPlayers: val });
+                              }}
+                            >
+                              {(() => {
+                                const minVal = Math.max(2, room?.players.length ?? 0);
+                                const options = [];
+                                for (let n = minVal; n <= 12; n++) {
+                                  options.push(
+                                    <option key={n} value={n} style={{ background: 'var(--c-bg)', color: '#fff' }}>
+                                      {n}
+                                    </option>
+                                  );
+                                }
+                                return options;
+                              })()}
+                            </select>
+                          </label>
+                          
+                          <p style={{ fontSize: '0.78rem', opacity: 0.7, lineHeight: '1.4' }}>
+                            {t('maxPlayersHelp')}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="settings-modal-footer" style={{ display: 'flex', gap: '15px', width: '100%' }}>
+                  <button
+                    className="settings-modal-cancel-btn"
+                    style={{
+                      flex: 1,
+                      padding: '0.75rem',
+                      borderRadius: 'var(--radius)',
+                      fontSize: '0.95rem',
+                      fontWeight: 700,
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: '#94a3b8',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      fontFamily: 'var(--font-display)',
+                    }}
+                    onClick={cancelSettings}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(244, 63, 94, 0.15)';
+                      e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.3)';
+                      e.currentTarget.style.color = '#fb7185';
+                      e.currentTarget.style.boxShadow = '0 0 15px rgba(244, 63, 94, 0.2)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.color = '#94a3b8';
+                      e.currentTarget.style.boxShadow = 'none';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                    onMouseDown={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    {t('cancel')}
+                  </button>
+                  <button
+                    className="settings-modal-save-btn"
+                    style={{ flex: 1, width: 'auto' }}
+                    onClick={saveSettings}
+                  >
+                    {t('closeBtn')}
+                  </button>
+                </div>
               </div>
             </div>
-
-            <div className="settings-modal-footer">
-              <button
-                className="settings-modal-save-btn"
-                onClick={() => setIsSettingsOpen(false)}
-              >
-                {t('closeBtn')}
-              </button>
-            </div>
-          </div>
-        </div>
+          );
+        })()
       )}
       {/* R3F Centered Glassmorphic Cosmetics Locker Modal */}
       {isLockerOpen && (

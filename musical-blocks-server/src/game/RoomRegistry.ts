@@ -55,7 +55,10 @@ export class RoomRegistry {
 
     if (!room) return { room: null, error: `Room "${normalizedCode}" not found.` };
     if (room.getStatus() !== 'waiting') return { room: null, error: 'That game has already started.' };
-    if (!room.canJoin()) return { room: null, error: 'Room is full (max 8 players).' };
+    if (!room.canJoin()) {
+      const maxPlayers = room.toRoom().maxPlayers;
+      return { room: null, error: `Room is full (max ${maxPlayers} players).` };
+    }
 
     return { room };
   }

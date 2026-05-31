@@ -117,6 +117,7 @@ export interface RoomSettings {
   maxLives?: number; // 1 to 5 lives
   suddenDeathMode?: SuddenDeathMode;
   enableCollisions?: boolean;
+  maxPlayers?: number; // 2 to 12 players
 }
 
 /** Full room details — only sent to members of that room */
