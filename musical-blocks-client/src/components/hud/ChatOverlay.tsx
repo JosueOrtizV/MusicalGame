@@ -206,7 +206,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
               className="chat-overlay-msg"
               style={{
                 background: msg.isSystem ? 'rgba(0, 0, 0, 0.55)' : 'rgba(5, 5, 20, 0.75)',
-                borderLeft: msg.isSystem ? '3px solid #f43f5e' : `3px solid ${getSenderColor(msg)}`,
+                borderLeft: msg.isSystem ? '3px solid var(--c-dynamic-accent)' : `3px solid ${getSenderColor(msg)}`,
                 padding: '6px 12px',
                 borderRadius: '0 4px 4px 0',
                 color: '#fff',
@@ -219,7 +219,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
               }}
             >
               {!msg.isSystem && <strong style={{ color: getSenderColor(msg) }}>{msg.senderName}: </strong>}
-              <span style={{ color: msg.isSystem ? '#f43f5e' : '#fff' }}>
+              <span style={{ color: msg.isSystem ? 'var(--c-dynamic-accent)' : '#fff' }}>
                 {msg.isSystem ? translateSystemMessage(msg.text) : msg.text}
               </span>
             </div>
@@ -364,7 +364,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
                   padding: '6px 10px',
                   borderRadius: '0 var(--radius) var(--radius) 0',
                   background: msg.isSystem ? 'rgba(244, 63, 94, 0.1)' : 'rgba(124, 58, 237, 0.05)',
-                  borderLeft: msg.isSystem ? '3px solid var(--c-accent-2)' : `3px solid ${getSenderColor(msg)}`,
+                  borderLeft: msg.isSystem ? '3px solid var(--c-dynamic-accent)' : `3px solid ${getSenderColor(msg)}`,
                   wordBreak: 'break-word',
                   overflowWrap: 'anywhere',
                   whiteSpace: 'pre-wrap'

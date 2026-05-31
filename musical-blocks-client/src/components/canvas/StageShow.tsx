@@ -461,6 +461,7 @@ export function StageShow() {
   // High-performance selective state selections to avoid massive unnecessary renders
   const phase = useGameStore((s) => s.gameState?.phase || 'LOBBY');
   const winnerColor = useGameStore((s) => s.gameState?.winnerColor || null);
+  const timeLeft = useGameStore((s) => s.gameState?.timeLeft ?? 0);
   const roomId = useGameStore((s) => s.room?.id) || 'DEFAULT';
   const gameSpeed = useGameStore((s) => s.room?.settings?.gameSpeed || 'NORMAL');
 
@@ -468,12 +469,17 @@ export function StageShow() {
   const stageEdge = halfGrid * 1.35; // Spotlight mounts placed slightly outside grid
   const laserEdge = halfGrid * 1.25;
 
+  const isUrgent = timeLeft <= 3 && phase === 'ANNOUNCING';
+
   const winnerColorHex = useMemo(() => {
+    if (isUrgent) {
+      return '#f43f5e'; // Red alert countdown pulse
+    }
     if (winnerColor) {
       return COLOR_HEX[winnerColor] || '#ffffff';
     }
     return null;
-  }, [winnerColor]);
+  }, [winnerColor, isUrgent]);
 
   // Point light for localized beat sync flashes
   const flashColor = useMemo(() => {

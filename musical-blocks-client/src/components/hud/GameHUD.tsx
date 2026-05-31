@@ -54,11 +54,26 @@ export function GameHUD() {
 
   if (!gameState) return null;
 
-  const { timeLeft, winnerColor, players } = gameState;
+  const { timeLeft, winnerColor, players, round } = gameState;
   const playersWithLives = players.filter((p) => p.lives > 0);
   
   // Perfectly sync visual danger color with audio beeps at exactly 3 seconds!
   const isUrgent = timeLeft <= 3 && phase === 'ANNOUNCING';
+
+  // Dynamic round and difficulty color mapping helper
+  const GET_ROUND_COLOR = (r: number): string => {
+    if (r <= 2) return '#00f0ff'; // Cian (Fácil)
+    if (r <= 4) return '#39ff14'; // Verde Neón (Normal)
+    if (r <= 6) return '#ffff00'; // Amarillo (Difícil)
+    return '#f43f5e'; // Rojo/Rosa Neón (Extremo/Caos)
+  };
+
+  // Determine active dynamic accent
+  const activeAccent = isUrgent
+    ? '#f43f5e'
+    : (phase === 'ANNOUNCING' && winnerColor)
+      ? COLOR_HEX[winnerColor]
+      : GET_ROUND_COLOR(round);
 
   let phaseTitle = '';
   if (phase === 'STARTING') phaseTitle = t('phaseStarting');
@@ -69,7 +84,12 @@ export function GameHUD() {
 
   return (
     <>
-      <div className="hud-overlay">
+      <div 
+        className="hud-overlay"
+        style={{
+          '--c-dynamic-accent': activeAccent,
+        } as React.CSSProperties}
+      >
         {/* ---- Round banner ------------------------------------------------- */}
         {showBanner && (
           <div className="hud-banner animate-banner" data-text={bannerText}>

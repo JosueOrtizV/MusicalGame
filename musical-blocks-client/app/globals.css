@@ -16,6 +16,8 @@
   /* Neon purple — primary */
   --c-accent-2: #f43f5e;
   /* Neon fuchsia/rose — secondary (CTA) */
+  --c-dynamic-accent: #f43f5e;
+  /* Neon dynamic accent — default is fuchsia/rose */
   --c-accent-3: #a78bfa;
   /* Synth purple light — tertiary */
   --c-gold: #ff9900;
@@ -34,6 +36,7 @@
   --glow-cyan: 0 0 15px rgba(0, 240, 255, 0.5), 0 0 45px rgba(0, 240, 255, 0.2);
   --glow-purple: 0 0 15px rgba(124, 58, 237, 0.6), 0 0 45px rgba(124, 58, 237, 0.3);
   --glow-rose: 0 0 15px rgba(244, 63, 94, 0.6), 0 0 45px rgba(244, 63, 94, 0.3);
+  --glow-dynamic: 0 0 15px var(--c-dynamic-accent), 0 0 45px rgba(244, 63, 94, 0.15);
 
   /* ---- Typography ---- */
   --font-display: 'Press Start 2P', monospace;
@@ -1710,21 +1713,21 @@ input {
   font-size: 3rem;
   font-weight: 900;
   letter-spacing: 0.05em;
-  color: var(--c-accent);
+  color: var(--c-dynamic-accent);
   text-shadow:
-    0 0 10px var(--c-accent),
+    0 0 10px var(--c-dynamic-accent),
     0 0 30px rgba(0, 240, 255, 0.5),
     0 2px 4px rgba(0, 0, 0, 0.8);
   min-width: 80px;
   text-align: center;
-  transition: color 0.3s, text-shadow 0.3s;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
 }
 
 .hud-timer--urgent {
-  color: var(--c-accent-2);
+  color: var(--c-dynamic-accent);
   animation: timer-pulse-urgent 0.4s ease-in-out infinite;
   text-shadow:
-    0 0 10px var(--c-accent-2),
+    0 0 10px var(--c-dynamic-accent),
     0 0 30px rgba(255, 0, 255, 0.6),
     0 0 60px rgba(255, 0, 255, 0.3);
 }
@@ -1769,10 +1772,10 @@ input {
   border-radius: var(--radius);
   text-align: center;
   border: 1px solid var(--c-border);
-  border-top: 2px solid var(--c-accent-2);
+  border-top: 2px solid var(--c-dynamic-accent);
   box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.7),
-    var(--glow-purple),
+    var(--glow-dynamic),
     inset 0 0 20px rgba(255, 255, 255, 0.02);
   z-index: 100;
   display: inline-flex;
@@ -1781,6 +1784,7 @@ input {
   width: max-content;
   max-width: 90vw;
   white-space: nowrap;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
 .hud-banner {
@@ -1788,12 +1792,13 @@ input {
   font-size: clamp(1.5rem, 5vw, 2.5rem);
   font-weight: 900;
   letter-spacing: 0.12em;
-  color: var(--c-accent-2);
+  color: var(--c-dynamic-accent);
   text-shadow:
-    0 0 15px var(--c-accent-2),
+    0 0 15px var(--c-dynamic-accent),
     0 0 30px rgba(244, 63, 94, 0.3);
   position: relative;
   text-transform: uppercase;
+  transition: color 0.4s ease, text-shadow 0.4s ease;
 }
 
 /* Glitch pseudo-layer */
@@ -1804,10 +1809,11 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--c-accent-2);
+  color: var(--c-dynamic-accent);
   animation: glitch 2s steps(1) infinite;
   opacity: 0.4;
   pointer-events: none;
+  transition: color 0.4s ease;
 }
 
 .hud-banner-sub {
