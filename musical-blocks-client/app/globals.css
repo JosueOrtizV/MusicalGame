@@ -810,7 +810,8 @@ input {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--c-border);
   transition: background 0.2s;
-  position: relative; /* support absolute kick button placement */
+  position: relative;
+  /* support absolute kick button placement */
 }
 
 .room-player-empty {
@@ -838,6 +839,29 @@ input {
 .room-player-name {
   flex: 1;
   font-weight: 600;
+}
+
+.room-player-meta-container {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.room-player-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.room-player-display-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
 }
 
 .room-name-empty {
@@ -874,34 +898,27 @@ input {
 }
 
 .room-kick-btn {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: #ef4444;
-  color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.3);
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
+  background: transparent;
+  color: var(--c-danger);
+  border: none;
+  font-size: 1.4rem;
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
-  transition: all 0.2s;
-  z-index: 10;
-  margin: 0;
-  padding: 0;
-  padding-bottom: 2px; /* visual center for times symbol */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0 0.25rem;
+  margin-left: 0.5rem;
   line-height: 1;
+  opacity: 0.7;
 }
 
 .room-kick-btn:hover {
-  background: #f43f5e;
-  transform: scale(1.15);
-  box-shadow: 0 4px 10px rgba(244, 63, 94, 0.6);
+  color: #ff3366;
+  transform: scale(1.2);
+  opacity: 1;
+  text-shadow: 0 0 8px rgba(255, 51, 102, 0.6);
 }
 
 .room-actions {
@@ -1090,6 +1107,18 @@ input {
   justify-content: center;
   z-index: 1000;
   animation: modal-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Prevent active modals from overlapping/colliding with floating UI on mobile (portrait and landscape) */
+@media (max-width: 768px),
+(max-height: 500px) and (orientation: landscape) {
+
+  body:has(.settings-modal-overlay) .settings-menu-container,
+  body:has(.locker-modal-overlay) .settings-menu-container,
+  body:has(.settings-modal-overlay) .chat-tab-btn-lobby,
+  body:has(.locker-modal-overlay) .chat-tab-btn-lobby {
+    display: none !important;
+  }
 }
 
 .settings-modal-card {
@@ -1992,6 +2021,10 @@ input {
 .hud-player-name {
   flex: 1;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
 }
 
 .hud-player-skull {
@@ -2159,6 +2192,10 @@ input {
     0 0 20px rgba(251, 191, 36, 0.2),
     inset 0 0 10px rgba(251, 191, 36, 0.05);
   pointer-events: none;
+  max-width: 90vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   animation: banner-appear 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -2222,13 +2259,15 @@ input {
 
 .overlay-title {
   font-family: var(--font-display);
-  font-size: clamp(1.8rem, 6vw, 2.5rem);
+  font-size: clamp(1.3rem, 4vw, 1.8rem);
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   margin-top: 0.5rem;
   color: #fff;
   text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  max-width: 100%;
+  word-wrap: break-word;
 }
 
 .overlay-title--winner {
@@ -2826,9 +2865,25 @@ input {
 
   .room-player-name {
     font-size: 0.7rem !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  }
+
+  .room-player-meta-container {
+    flex-direction: column !important;
+    /* Stack vertically (badges on top, name below) */
+    align-items: flex-start !important;
+    gap: 0.1rem !important;
+  }
+
+  .room-player-display-name {
+    max-width: 80px !important;
+    /* Strict max-width in landscape to prevent pushing ready badge */
+    font-size: 0.68rem !important;
+    line-height: 1 !important;
+  }
+
+  .room-kick-btn {
+    margin-left: 0.15rem !important;
+    /* Minimize gap between status badge and X */
   }
 
   /* Hide status text, show only emoji */
@@ -3022,6 +3077,183 @@ input {
     top: 0.3rem !important;
     right: 0.3rem !important;
     transform: scale(0.75) !important;
+  }
+
+  /* Group settings and locker buttons on the right in landscape */
+  .lobby-settings-btn {
+    right: 0.8rem !important;
+    left: auto !important;
+    top: 0.8rem !important;
+  }
+
+  .lobby-cosmetics-btn {
+    right: 0.8rem !important;
+    left: auto !important;
+    top: 0.8rem !important;
+  }
+
+  .lobby-settings-btn~.lobby-cosmetics-btn {
+    right: 3.3rem !important;
+  }
+
+  /* --- MATCH SETTINGS MODAL LANDSCAPE --- */
+  .settings-modal-overlay {
+    padding: 0.4rem !important;
+    align-items: center !important;
+  }
+
+  .settings-modal-card {
+    padding: 0.75rem 1.25rem !important;
+    width: 95vw !important;
+    max-height: 95dvh !important;
+  }
+
+  .settings-modal-header {
+    margin-bottom: 0.6rem !important;
+    padding-bottom: 0.4rem !important;
+  }
+
+  .settings-modal-body--with-sidebar {
+    display: grid !important;
+    grid-template-columns: 180px 1fr !important;
+    gap: 0.75rem !important;
+    max-height: 52vh !important;
+    overflow: hidden !important;
+  }
+
+  .settings-sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.3rem !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-bottom: none !important;
+    padding-right: 0.6rem !important;
+    padding-bottom: 0 !important;
+    overflow-y: auto !important;
+  }
+
+  .settings-tab-btn {
+    padding: 0.35rem 0.6rem !important;
+    font-size: 0.62rem !important;
+    gap: 0.4rem !important;
+  }
+
+  .settings-content-area {
+    max-height: 52vh !important;
+    overflow-y: auto !important;
+    padding-right: 4px !important;
+  }
+
+  .settings-modal-subtitle {
+    font-size: 0.85rem !important;
+    margin-bottom: 0.2rem !important;
+  }
+
+  .settings-modal-intro,
+  .settings-modal-description {
+    font-size: 0.65rem !important;
+    margin-bottom: 0.4rem !important;
+  }
+
+  .difficulty-tiers-list {
+    gap: 0.4rem !important;
+  }
+
+  .difficulty-tier-btn {
+    padding: 0.4rem 0.6rem !important;
+  }
+
+  .tier-name {
+    font-size: 0.58rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .tier-desc {
+    font-size: 0.65rem !important;
+  }
+
+  .settings-modal-footer {
+    margin-top: 0.6rem !important;
+    padding-top: 0.4rem !important;
+  }
+
+  /* --- AVATAR LOCKER MODAL LANDSCAPE --- */
+  .locker-modal-overlay {
+    padding: 0.4rem !important;
+    align-items: center !important;
+    overflow-y: hidden !important;
+  }
+
+  .locker-modal-card {
+    height: 95dvh !important;
+    width: 95vw !important;
+    padding: 0.75rem 1.25rem !important;
+    max-height: 95dvh !important;
+    overflow: hidden !important;
+  }
+
+  .locker-modal-header {
+    margin-bottom: 0.6rem !important;
+    padding-bottom: 0.4rem !important;
+  }
+
+  .locker-modal-body {
+    display: grid !important;
+    grid-template-columns: 1fr 1.2fr !important;
+    gap: 1rem !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .locker-modal-preview-panel {
+    height: 100% !important;
+    min-height: 0 !important;
+    flex: 1 !important;
+  }
+
+  .locker-modal-tabs-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .locker-modal-tabs-headers {
+    margin-bottom: 0.4rem !important;
+    gap: 0.4rem !important;
+  }
+
+  .locker-tab-header-btn {
+    padding: 0.35rem 0.8rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .locker-tab-content-scroll {
+    overflow-y: auto !important;
+    max-height: 48vh !important;
+    padding-right: 4px !important;
+  }
+
+  .locker-modal-toggles-grid,
+  .locker-modal-options-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.4rem !important;
+  }
+
+  .locker-modal-skin-btn {
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .locker-color-swatches-grid {
+    gap: 0.3rem !important;
+  }
+
+  .locker-modal-footer {
+    margin-top: 0.6rem !important;
+    padding-top: 0.4rem !important;
   }
 }
 
@@ -4031,6 +4263,29 @@ input {
 
   .room-players {
     margin-bottom: 0.5rem;
+  }
+
+  .room-player-row {
+    padding: 0.45rem 0.6rem !important;
+    gap: 0.45rem !important;
+  }
+
+  .room-player-meta-container {
+    flex-direction: column !important;
+    /* Stack vertically (badges on top, name below) */
+    align-items: flex-start !important;
+    gap: 0.15rem !important;
+  }
+
+  .room-player-display-name {
+    max-width: 90px !important;
+    /* Extremely strict max-width to prevent pushing ready badge */
+    font-size: 0.82rem !important;
+  }
+
+  .room-kick-btn {
+    margin-left: 0.15rem !important;
+    /* Minimize gap between status badge and X */
   }
 
   .lobby-settings-btn {

@@ -245,7 +245,14 @@ export function LobbyScreen() {
                   placeholder={t('namePlaceholder')}
                   maxLength={16}
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val.length <= 16) {
+                      setName(val);
+                    } else {
+                      setName(val.slice(0, 16));
+                    }
+                  }}
                   onKeyDown={(e) =>
                     e.key === 'Enter' &&
                     (pendingDirectJoinCode ? handleDirectJoinSubmit() : joinPublic())

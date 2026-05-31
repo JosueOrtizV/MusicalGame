@@ -15,7 +15,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
   const room = useGameStore((s) => s.room);
   const gameState = useGameStore((s) => s.gameState);
   const [inputText, setInputText] = useState('');
-  
+
   // Safe responsive initial state check: collapsed in-game, dynamic in lobby
   const [isOpen, setIsOpen] = useState(() => {
     if (inGame) return false;
@@ -90,11 +90,11 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
         </span>
       );
     }
-    
+
     // In case there is still a message with emoji from server, parse it gracefully or just return it
     let cleanText = text;
     let icon: React.ReactNode = null;
-    
+
     if (cleanText.includes('🔵')) {
       cleanText = cleanText.replace('🔵', '').trim();
       icon = <MusicIcon size={12} style={{ color: '#38bdf8' }} />;
@@ -111,7 +111,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
       cleanText = cleanText.replace('🚫', '').trim();
       icon = <AlertIcon size={12} style={{ color: '#f59e0b' }} />;
     }
-    
+
     if (icon) {
       return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
@@ -120,7 +120,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
         </span>
       );
     }
-    
+
     return text;
   };
 
@@ -160,7 +160,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
-    
+
     getSocket().emit('chat:send', { text: inputText });
     setInputText('');
   };
@@ -186,8 +186,8 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
     <>
       {/* 1. Floating In-Game HUD overlay (for both alive and spectators when panel is closed) */}
       {inGame && !isOpen && floatingMessages.length > 0 && (
-        <div 
-          className="chat-overlay" 
+        <div
+          className="chat-overlay"
           style={{
             position: 'fixed',
             bottom: '20px',
@@ -201,8 +201,8 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
           }}
         >
           {floatingMessages.map((msg) => (
-            <div 
-              key={msg.id} 
+            <div
+              key={msg.id}
               className="chat-overlay-msg"
               style={{
                 background: msg.isSystem ? 'rgba(0, 0, 0, 0.55)' : 'rgba(5, 5, 20, 0.75)',
@@ -229,9 +229,9 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
 
       {/* 2. Collapsed Chat Tab (Docked Tab at bottom screen) - only shown in Lobby or to In-game Spectators */}
       {isSpectator && !isOpen && (
-        <button 
+        <button
           onClick={toggleOpen}
-          className={inGame ? "chat-tab-btn-ingame" : ""}
+          className={inGame ? "chat-tab-btn-ingame" : "chat-tab-btn-lobby"}
           style={{
             position: 'fixed',
             bottom: '0px',
@@ -283,7 +283,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
 
       {/* 3. Expanded Floating Chat Panel - only shown when open (spectators or lobby) */}
       {isSpectator && isOpen && (
-        <div 
+        <div
           className="lobby-chat-container"
           style={{
             position: 'fixed',
@@ -333,8 +333,8 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
                 textShadow: '0 0 10px var(--c-accent)'
               }}>CHAT</span>
             </div>
-            
-            <button 
+
+            <button
               onClick={toggleOpen}
               style={{
                 background: 'transparent',
@@ -356,8 +356,8 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
           {/* Messages */}
           <div className="lobby-chat-messages" style={{ flex: 1, padding: '12px', overflowY: 'auto', zIndex: 6 }}>
             {chatMessages.map((msg) => (
-              <div 
-                key={msg.id} 
+              <div
+                key={msg.id}
                 className={`lobby-chat-msg ${msg.isSystem ? 'system-msg' : ''}`}
                 style={{
                   margin: '4px 0',
@@ -409,8 +409,8 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
               onFocus={(e) => e.target.style.borderColor = 'var(--c-accent-2)'}
               onBlur={(e) => e.target.style.borderColor = 'var(--c-border)'}
             />
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="lobby-chat-submit"
               style={{
                 background: 'rgba(124, 58, 237, 0.1)',

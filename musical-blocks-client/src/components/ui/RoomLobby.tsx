@@ -450,16 +450,18 @@ export function RoomLobby() {
                   >
                     {p.name[0].toUpperCase()}
                   </span>
-                  <span className="room-player-name" style={{ display: 'flex', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      {p.name}
-                      {p.isHost && (
-                        <span className="room-host-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-                          <CrownIcon size={10} style={{ color: '#eab308' }} />
-                          {t('hostBadge')}
-                        </span>
-                      )}
-                      {p.id === localPlayerId && <span className="room-you-badge"> {t('youBadge')}</span>}
+                  <span className="room-player-name">
+                    <div className="room-player-meta-container">
+                      <div className="room-player-badges">
+                        {p.isHost && (
+                          <span className="room-host-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                            <CrownIcon size={10} style={{ color: '#eab308' }} />
+                            {t('hostBadge')}
+                          </span>
+                        )}
+                        {p.id === localPlayerId && <span className="room-you-badge"> {t('youBadge')}</span>}
+                      </div>
+                      <span className="room-player-display-name">{p.name}</span>
                     </div>
                   </span>
                   <span className={`room-ready-badge ${p.isReady ? 'ready' : 'not-ready'}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

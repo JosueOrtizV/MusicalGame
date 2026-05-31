@@ -125,7 +125,7 @@ export function WinnerScreen() {
             <>
               <div className="overlay-icon" style={{ display: 'flex', justifyContent: 'center', color: '#ef4444' }}><FlagIcon size={48} /></div>
               <h2 className="overlay-title">{t('gameOver')}</h2>
-              <p className="overlay-sub" style={{ fontSize: '1.1rem', marginTop: '0.8rem' }}>
+              <p className="overlay-sub" style={{ fontSize: '1.1rem', marginTop: '0.8rem', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                 {winner ? t('winnerIs', { name: winner.name }) : t('nobodyWon')}
               </p>
             </>
@@ -135,9 +135,11 @@ export function WinnerScreen() {
 
         <div className="overlay-content-wrapper">
           {winner && (
-            <div className="overlay-winner-display">
+            <div className="overlay-winner-display" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
                <div className="winner-name-badge" style={{ 
-                 display: 'inline-block',
+                 display: 'inline-flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
                  padding: '0.6rem 2.2rem',
                  background: `linear-gradient(135deg, rgba(20, 20, 47, 0.9) 0%, ${hexToRgba(winner.color, 0.15)} 100%)`,
                  borderRadius: 'var(--radius)',
@@ -150,14 +152,25 @@ export function WinnerScreen() {
                  color: '#fff',
                  fontFamily: 'var(--font-display)',
                  transition: 'all 0.3s ease',
+                 maxWidth: '100%',
+                 boxSizing: 'border-box',
                }}>
                  <span style={{ 
                    color: winner.color, 
                    marginRight: '0.6rem', 
                    fontSize: '1.6rem',
-                   textShadow: `0 0 8px ${winner.color}` 
+                   textShadow: `0 0 8px ${winner.color}`,
+                   flexShrink: 0,
                  }}>★</span>
-                 {winner.name}
+                 <span style={{
+                   overflow: 'hidden',
+                   textOverflow: 'ellipsis',
+                   whiteSpace: 'nowrap',
+                   display: 'block',
+                   minWidth: 0,
+                 }}>
+                   {winner.name}
+                 </span>
                </div>
             </div>
           )}
