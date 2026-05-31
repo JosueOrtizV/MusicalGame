@@ -20,12 +20,6 @@ import {
   UsersIcon,
   SkullIcon,
   DoveIcon,
-  HeadphonesIcon,
-  BackpackIcon,
-  CassetteIcon,
-  FloppyIcon,
-  OrbIcon,
-  DiamondIcon,
   CheckIcon,
   HourglassIcon,
   EyeIcon,
@@ -449,14 +443,14 @@ export function RoomLobby() {
             {room.players.map((p) => {
               const isViewingResults = room.status === 'finished' && !p.hasReturnedToLobby;
               return (
-                <div key={p.id} className="room-player-row" style={{ opacity: isViewingResults ? 0.6 : 1, transition: 'opacity 0.3s' }}>
+                <div key={p.id} className="room-player-row" style={{ position: 'relative', opacity: isViewingResults ? 0.6 : 1, transition: 'opacity 0.3s' }}>
                   <span
                     className="room-player-avatar"
                     style={{ backgroundColor: p.color }}
                   >
                     {p.name[0].toUpperCase()}
                   </span>
-                  <span className="room-player-name">
+                  <span className="room-player-name" style={{ display: 'flex', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                       {p.name}
                       {p.isHost && (
@@ -467,44 +461,6 @@ export function RoomLobby() {
                       )}
                       {p.id === localPlayerId && <span className="room-you-badge"> {t('youBadge')}</span>}
                     </div>
-                    {/* Cosméticos activos */}
-                    {p.cosmetics && (
-                      <div className="lobby-player-cosmetics-badges" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        {p.cosmetics.headphonesEnabled && (
-                          <span title={lang === 'es' ? 'Auriculares Beat-Sync' : 'Beat-Sync Headphones'} style={{ display: 'flex', alignItems: 'center' }}>
-                            <HeadphonesIcon size={14} />
-                          </span>
-                        )}
-                        {p.cosmetics.backpackEnabled && (
-                          <span title={lang === 'es' ? 'Cyber-Backpack Jet' : 'Cyber-Backpack Jet'} style={{ display: 'flex', alignItems: 'center' }}>
-                            <BackpackIcon size={14} />
-                          </span>
-                        )}
-                        {p.cosmetics.companionType && p.cosmetics.companionType !== 'none' && (
-                          <span 
-                            title={lang === 'es' ? `Cyber-Mascota: ${p.cosmetics.companionType}` : `Companion: ${p.cosmetics.companionType}`}
-                            style={{ display: 'flex', alignItems: 'center' }}
-                          >
-                            {p.cosmetics.companionType === 'cassette' && <CassetteIcon size={14} />}
-                            {p.cosmetics.companionType === 'floppy' && <FloppyIcon size={14} />}
-                            {p.cosmetics.companionType === 'orb' && <OrbIcon size={14} />}
-                          </span>
-                        )}
-                        {p.cosmetics.skinMaterial && p.cosmetics.skinMaterial !== 'matte' && (
-                          <span
-                            className={`lobby-skin-badge lobby-skin-badge--${p.cosmetics.skinMaterial}`}
-                            title={lang === 'es' ? `Material: ${p.cosmetics.skinMaterial}` : `Skin: ${p.cosmetics.skinMaterial}`}
-                            style={{ display: 'flex', alignItems: 'center' }}
-                          >
-                            {p.cosmetics.skinMaterial === 'chrome' ? (
-                              <DiamondIcon size={12} style={{ fill: 'var(--c-accent-2)' }} />
-                            ) : (
-                              <LightningIcon size={12} style={{ fill: 'var(--c-accent)' }} />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    )}
                   </span>
                   <span className={`room-ready-badge ${p.isReady ? 'ready' : 'not-ready'}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     {isViewingResults ? (

@@ -810,6 +810,7 @@ input {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--c-border);
   transition: background 0.2s;
+  position: relative; /* support absolute kick button placement */
 }
 
 .room-player-empty {
@@ -873,29 +874,34 @@ input {
 }
 
 .room-kick-btn {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius);
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #ef4444;
+  color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
-  line-height: 1;
+  font-size: 0.85rem;
+  font-weight: bold;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
   transition: all 0.2s;
+  z-index: 10;
+  margin: 0;
   padding: 0;
-  padding-bottom: 2px;
-  /* visual center for X */
-  margin-left: 0.5rem;
+  padding-bottom: 2px; /* visual center for times symbol */
+  line-height: 1;
 }
 
 .room-kick-btn:hover {
-  background: rgba(239, 68, 68, 0.3);
-  border-color: rgba(239, 68, 68, 0.5);
-  transform: scale(1.1);
+  background: #f43f5e;
+  transform: scale(1.15);
+  box-shadow: 0 4px 10px rgba(244, 63, 94, 0.6);
 }
 
 .room-actions {
