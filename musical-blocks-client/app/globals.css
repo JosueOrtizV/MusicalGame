@@ -473,10 +473,13 @@ input {
 }
 
 @keyframes gold-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     border-color: rgba(255, 170, 0, 0.45);
     box-shadow: 0 0 12px rgba(255, 170, 0, 0.12);
   }
+
   50% {
     border-color: rgba(255, 170, 0, 0.8);
     box-shadow: 0 0 22px rgba(255, 170, 0, 0.4);
@@ -1975,7 +1978,8 @@ input {
 .hud-player-dot {
   width: 10px;
   height: 10px;
-  border-radius: 0px; /* Pure Voxel-cube style player dot */
+  border-radius: 0px;
+  /* Pure Voxel-cube style player dot */
   flex-shrink: 0;
 }
 
@@ -2390,7 +2394,7 @@ input {
 
   .room-lobby-card {
     height: 80dvh;
-    padding-top: 3.5rem !important;
+    padding-top: 2.5rem !important;
     position: relative;
   }
 
@@ -3404,13 +3408,17 @@ input {
 
 @media (max-width: 680px) {
   .locker-modal-overlay {
-    padding: 2.25rem 1rem !important; /* Spacing top/bottom to avoid chat/config overlap */
-    align-items: flex-start !important; /* Start from top of screen */
-    overflow-y: auto !important; /* Whole modal scrolling happens here! */
+    padding: 2.25rem 1rem !important;
+    /* Spacing top/bottom to avoid chat/config overlap */
+    align-items: flex-start !important;
+    /* Start from top of screen */
+    overflow-y: auto !important;
+    /* Whole modal scrolling happens here! */
   }
 
   .locker-modal-card {
-    height: auto !important; /* Grow card to fit contents */
+    height: auto !important;
+    /* Grow card to fit contents */
     max-height: none !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
@@ -3419,7 +3427,8 @@ input {
   }
 
   .locker-modal-body {
-    grid-template-columns: 1fr !important; /* Stack vertically */
+    grid-template-columns: 1fr !important;
+    /* Stack vertically */
     height: auto !important;
     overflow: visible !important;
     flex: none !important;
@@ -3442,13 +3451,15 @@ input {
 
   .locker-modal-controls-panel {
     height: auto !important;
-    overflow: visible !important; /* Disable double scroll, overlay handles it */
+    overflow: visible !important;
+    /* Disable double scroll, overlay handles it */
     padding-right: 0 !important;
   }
 
   .locker-tab-content-scroll {
     height: auto !important;
-    overflow-y: visible !important; /* Disable inner scroll on mobile */
+    overflow-y: visible !important;
+    /* Disable inner scroll on mobile */
     padding-right: 0 !important;
   }
 }
@@ -3497,7 +3508,8 @@ input {
   height: 100%;
   min-height: 0;
   max-height: 100%;
-  overflow: hidden; /* FIXED PANEL, TABS REMAIN PINNED AT THE TOP */
+  overflow: hidden;
+  /* FIXED PANEL, TABS REMAIN PINNED AT THE TOP */
 }
 
 /* Scrollable Container for active Tab contents */
@@ -3513,14 +3525,17 @@ input {
 .locker-tab-content-scroll::-webkit-scrollbar {
   width: 4px;
 }
+
 .locker-tab-content-scroll::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
 }
+
 .locker-tab-content-scroll::-webkit-scrollbar-thumb {
   background: rgba(217, 70, 239, 0.4);
   border-radius: 4px;
 }
+
 .locker-tab-content-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(217, 70, 239, 0.7);
 }
@@ -3809,8 +3824,9 @@ input {
 .locker-modal-card.hud-card {
   position: relative;
   background: rgba(6, 6, 20, 0.9) !important;
-  border: 1px solid rgba(0, 243, 255, 0.2) !important; /* Cyber Cyan border */
-  box-shadow: 
+  border: 1px solid rgba(0, 243, 255, 0.2) !important;
+  /* Cyber Cyan border */
+  box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.9),
     0 0 35px rgba(0, 243, 255, 0.12),
     inset 0 0 15px rgba(0, 243, 255, 0.05) !important;
@@ -3831,8 +3847,15 @@ input {
 }
 
 @keyframes blink {
-  from, to { opacity: 0 }
-  50% { opacity: 1 }
+
+  from,
+  to {
+    opacity: 0
+  }
+
+  50% {
+    opacity: 1
+  }
 }
 
 /* Corner Bracket Accents */
@@ -3890,15 +3913,11 @@ input {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: repeating-linear-gradient(
-    rgba(18, 16, 16, 0) 50%,
-    rgba(0, 0, 0, 0.25) 50%
-  ), repeating-linear-gradient(
-    90deg,
-    rgba(255, 0, 0, 0.03),
-    rgba(0, 255, 0, 0.01),
-    rgba(0, 0, 255, 0.03)
-  );
+  background: repeating-linear-gradient(rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.25) 50%), repeating-linear-gradient(90deg,
+      rgba(255, 0, 0, 0.03),
+      rgba(0, 255, 0, 0.01),
+      rgba(0, 0, 255, 0.03));
   background-size: 100% 4px, 6px 100%;
   opacity: 0.4;
   z-index: 2;
@@ -3913,10 +3932,33 @@ input {
   z-index: 3;
 }
 
-.hud-border-bracket.top-left { top: 6px; left: 6px; border-right: none; border-bottom: none; }
-.hud-border-bracket.top-right { top: 6px; right: 6px; border-left: none; border-bottom: none; }
-.hud-border-bracket.bottom-left { bottom: 6px; left: 6px; border-right: none; border-top: none; }
-.hud-border-bracket.bottom-right { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+.hud-border-bracket.top-left {
+  top: 6px;
+  left: 6px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.hud-border-bracket.top-right {
+  top: 6px;
+  right: 6px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.hud-border-bracket.bottom-left {
+  bottom: 6px;
+  left: 6px;
+  border-right: none;
+  border-top: none;
+}
+
+.hud-border-bracket.bottom-right {
+  bottom: 6px;
+  right: 6px;
+  border-left: none;
+  border-top: none;
+}
 
 /* Animated Scanning Hologram Beam */
 .hud-scanner-beam {
@@ -3935,9 +3977,11 @@ input {
   0% {
     top: 0%;
   }
+
   50% {
     top: 100%;
   }
+
   100% {
     top: 0%;
   }
@@ -3946,33 +3990,50 @@ input {
 /* Mobile adjustments to avoid horizontal scroll and stack grids */
 @media (max-width: 480px) {
   .locker-modal-overlay {
-    padding: 2.5rem 0.5rem !important; /* Extra safety margin on tiny screens */
+    padding: 2.5rem 0.5rem !important;
+    /* Extra safety margin on tiny screens */
   }
+
   .locker-modal-card {
     padding: 1rem !important;
   }
+
   .locker-modal-toggles-grid,
   .locker-modal-options-grid {
     grid-template-columns: 1fr !important;
   }
+
   .locker-modal-skin-btn {
     padding: 0.55rem 0.75rem !important;
     font-size: 0.75rem !important;
   }
+
   .locker-color-swatches-grid {
     gap: 0.3rem !important;
   }
 
   /* Prevent settings and avatar locker buttons from overlapping the Room title on mobile */
   .room-header {
-    padding-top: 2.4rem !important;
+    padding-top: 0.4rem !important;
+    margin-bottom: 0.5rem;
   }
+
+  .room-content-wrapper {
+    gap: 0.5rem;
+    margin-top: 0.5rem
+  }
+
+  .room-players {
+    margin-bottom: 0.5rem;
+  }
+
   .lobby-settings-btn {
     top: 0.8rem !important;
     right: 0.8rem !important;
     font-size: 1rem !important;
     padding: 0.35rem !important;
   }
+
   .lobby-cosmetics-btn {
     top: 0.8rem !important;
     left: 0.8rem !important;
@@ -3998,7 +4059,8 @@ input {
   left: 50%;
   width: 100%;
   height: 2.5px;
-  background: #ff0055; /* Cyberpunk neon pink slash */
+  background: #ff0055;
+  /* Cyberpunk neon pink slash */
   box-shadow: 0 0 6px rgba(255, 0, 85, 0.8);
   transform: translate(-50%, -50%) rotate(45deg);
   pointer-events: none;

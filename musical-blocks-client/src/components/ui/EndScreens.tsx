@@ -34,6 +34,18 @@ export function GameOverScreen() {
   );
 }
 
+// Helper to convert hex color to rgba for dynamic neón shadows
+function hexToRgba(hex: string, alpha: number): string {
+  if (!hex || !hex.startsWith('#') || hex.length < 7) {
+    return `rgba(244, 63, 94, ${alpha})`; // fallback to rose
+  }
+  const cleanHex = hex.replace('#', '');
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 // ---------------------------------------------------------------------------
 //  WinnerScreen — shown when game ends
 // ---------------------------------------------------------------------------
@@ -126,17 +138,25 @@ export function WinnerScreen() {
             <div className="overlay-winner-display">
                <div className="winner-name-badge" style={{ 
                  display: 'inline-block',
-                 padding: '0.5rem 1.5rem',
-                 background: 'rgba(20, 20, 47, 0.85)',
+                 padding: '0.6rem 2.2rem',
+                 background: `linear-gradient(135deg, rgba(20, 20, 47, 0.9) 0%, ${hexToRgba(winner.color, 0.15)} 100%)`,
                  borderRadius: 'var(--radius)',
-                 border: '1px solid var(--c-accent-2)',
-                 boxShadow: 'var(--glow-rose)',
-                 fontSize: '1.4rem',
+                 border: `2px solid ${winner.color}`,
+                 boxShadow: `0 0 20px ${hexToRgba(winner.color, 0.55)}, inset 0 0 10px ${hexToRgba(winner.color, 0.25)}`,
+                 fontSize: '1.5rem',
                  fontWeight: 800,
                  margin: '1.5rem 0',
-                 textShadow: '0 0 10px var(--c-accent-2)'
+                 textShadow: `0 0 10px ${winner.color}`,
+                 color: '#fff',
+                 fontFamily: 'var(--font-display)',
+                 transition: 'all 0.3s ease',
                }}>
-                 <span style={{ color: winner.color, marginRight: '0.5rem' }}>★</span>
+                 <span style={{ 
+                   color: winner.color, 
+                   marginRight: '0.6rem', 
+                   fontSize: '1.6rem',
+                   textShadow: `0 0 8px ${winner.color}` 
+                 }}>★</span>
                  {winner.name}
                </div>
             </div>
