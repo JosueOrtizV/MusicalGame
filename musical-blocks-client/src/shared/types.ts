@@ -56,6 +56,9 @@ export interface PlayerCosmetics {
   headphonesColor?: string;
   backpackColor?: string;
   companionColor?: string;
+  danceStyle?: 'random' | 'dance' | 'dance2' | 'dance3' | 'dance4';
+  idleStyle?: 'random' | 'idle' | 'idle2';
+  celebrateStyle?: 'random' | 'celebrate' | 'celebrate2';
 }
 
 /** A single player in the game */

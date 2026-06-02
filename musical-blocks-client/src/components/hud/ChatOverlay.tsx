@@ -4,6 +4,18 @@ import { getSocket } from '@/src/lib/socketClient';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { SkullIcon, CrownIcon, AlertIcon, MusicIcon } from '../ui/Icons';
 
+// Helper to convert hex color to rgba for dynamic neón shadows
+function hexToRgba(hex: string, alpha: number): string {
+  if (!hex || !hex.startsWith('#') || hex.length < 7) {
+    return `rgba(244, 63, 94, ${alpha})`; // fallback to rose
+  }
+  const cleanHex = hex.replace('#', '');
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 interface ChatOverlayProps {
   inGame?: boolean;
 }
@@ -39,14 +51,65 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
     return '#00f0ff';
   };
 
+  const getSystemMessageColor = (text: string): string => {
+    if (text.startsWith('Round ') && text.endsWith(' started!')) {
+      const roundStr = text.replace('Round ', '').replace(' started!', '');
+      const roundNum = parseInt(roundStr, 10) || 1;
+      if (roundNum <= 2) return '#00f0ff'; // Cian (Fácil)
+      if (roundNum <= 4) return '#39ff14'; // Neon Green (Normal)
+      if (roundNum <= 6) return '#ffff00'; // Yellow (Hard)
+      return '#f43f5e'; // Neon Red/Pink (Extreme/Chaos)
+    }
+    if (text.endsWith(' fell into the void!')) {
+      const name = text.replace(' fell into the void!', '');
+      const pColor = gameState?.players.find(p => p.name === name)?.color || room?.players.find(p => p.name === name)?.color;
+      return pColor || '#ef4444'; // Red/custom
+    }
+    if (text.endsWith(' won the game!')) {
+      const name = text.replace(' won the game!', '');
+      const pColor = gameState?.players.find(p => p.name === name)?.color || room?.players.find(p => p.name === name)?.color;
+      return pColor || '#eab308'; // Gold/custom
+    }
+    if (text.endsWith(' has been kicked by the host')) {
+      const name = text.replace(' has been kicked by the host', '');
+      const pColor = gameState?.players.find(p => p.name === name)?.color || room?.players.find(p => p.name === name)?.color;
+      return pColor || '#f59e0b'; // Amber warning/custom
+    }
+    if (text === 'Game Over! Everyone died.') {
+      return '#ef4444'; // Red
+    }
+
+    // Emoji-based fallbacks (parsing server messages directly)
+    if (cleanEmojiContains(text, '🏆')) {
+      const p = findNameInText(text);
+      return p?.color || '#eab308';
+    }
+    if (cleanEmojiContains(text, '☠️') || cleanEmojiContains(text, '💀')) {
+      const p = findNameInText(text);
+      return p?.color || '#ef4444';
+    }
+
+    return '#f43f5e'; // default rose system color
+  };
+
+  const findNameInText = (text: string) => {
+    const list = [...(gameState?.players || []), ...(room?.players || [])];
+    return list.find(p => text.toLowerCase().includes(p.name.toLowerCase()));
+  };
+
+  const cleanEmojiContains = (text: string, emoji: string) => {
+    return text.includes(emoji);
+  };
+
   const translateSystemMessage = (text: string): React.ReactNode => {
     // 1. Round Start: "Round {round} started!"
     if (text.startsWith('Round ') && text.endsWith(' started!')) {
       const roundStr = text.replace('Round ', '').replace(' started!', '');
       const roundNum = parseInt(roundStr, 10);
+      const color = getSystemMessageColor(text);
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
-          <MusicIcon size={12} style={{ color: '#38bdf8' }} />
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle', color }}>
+          <MusicIcon size={12} style={{ color }} />
           <span>{t('roundNumber', { round: roundNum })} {t('survive') || 'Survive!'}</span>
         </span>
       );
@@ -54,9 +117,10 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
     // 2. Player Fell: "{name} fell into the void!"
     if (text.endsWith(' fell into the void!')) {
       const name = text.replace(' fell into the void!', '');
+      const color = getSystemMessageColor(text);
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
-          <SkullIcon size={12} style={{ color: '#ef4444' }} />
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle', color }}>
+          <SkullIcon size={12} style={{ color }} />
           <span>{t('playerFell', { name }) || `${name} fell into the void!`}</span>
         </span>
       );
@@ -64,28 +128,33 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
     // 3. Player Won: "{name} won the game!"
     if (text.endsWith(' won the game!')) {
       const name = text.replace(' won the game!', '');
+      const color = getSystemMessageColor(text);
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
-          <CrownIcon size={12} style={{ color: '#eab308' }} />
-          <span>{t('winnerIs', { name }) || `${name} won the game!`}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle', color }}>
+          <CrownIcon size={12} style={{ color }} />
+          <strong style={{ textShadow: `0 0 8px ${hexToRgba(color, 0.45)}` }}>
+            {t('winnerIs', { name }) || `${name} won the game!`}
+          </strong>
         </span>
       );
     }
     // 4. Kicked: "{name} has been kicked by the host"
     if (text.endsWith(' has been kicked by the host')) {
       const name = text.replace(' has been kicked by the host', '');
+      const color = getSystemMessageColor(text);
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
-          <AlertIcon size={12} style={{ color: '#f59e0b' }} />
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle', color }}>
+          <AlertIcon size={12} style={{ color }} />
           <span>{t('playerKicked', { name }) || `${name} has been kicked by the host`}</span>
         </span>
       );
     }
     // 5. Game Over: "Game Over! Everyone died."
     if (text === 'Game Over! Everyone died.') {
+      const color = getSystemMessageColor(text);
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
-          <SkullIcon size={12} style={{ color: '#ef4444' }} />
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle', color }}>
+          <SkullIcon size={12} style={{ color }} />
           <span>{t('gameOver') || 'Game Over!'} {t('nobodyWon') || 'Everyone died.'}</span>
         </span>
       );
@@ -94,27 +163,28 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
     // In case there is still a message with emoji from server, parse it gracefully or just return it
     let cleanText = text;
     let icon: React.ReactNode = null;
+    const color = getSystemMessageColor(text);
 
     if (cleanText.includes('🔵')) {
       cleanText = cleanText.replace('🔵', '').trim();
-      icon = <MusicIcon size={12} style={{ color: '#38bdf8' }} />;
+      icon = <MusicIcon size={12} style={{ color }} />;
     } else if (cleanText.includes('☠️')) {
       cleanText = cleanText.replace('☠️', '').trim();
-      icon = <SkullIcon size={12} style={{ color: '#ef4444' }} />;
+      icon = <SkullIcon size={12} style={{ color }} />;
     } else if (cleanText.includes('🏆')) {
       cleanText = cleanText.replace('🏆', '').trim();
-      icon = <CrownIcon size={12} style={{ color: '#eab308' }} />;
+      icon = <CrownIcon size={12} style={{ color }} />;
     } else if (cleanText.includes('💀')) {
       cleanText = cleanText.replace('💀', '').trim();
-      icon = <SkullIcon size={12} style={{ color: '#ef4444' }} />;
+      icon = <SkullIcon size={12} style={{ color }} />;
     } else if (cleanText.includes('🚫')) {
       cleanText = cleanText.replace('🚫', '').trim();
-      icon = <AlertIcon size={12} style={{ color: '#f59e0b' }} />;
+      icon = <AlertIcon size={12} style={{ color }} />;
     }
 
     if (icon) {
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle', color }}>
           {icon}
           <span>{cleanText}</span>
         </span>
@@ -206,7 +276,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
               className="chat-overlay-msg"
               style={{
                 background: msg.isSystem ? 'rgba(0, 0, 0, 0.55)' : 'rgba(5, 5, 20, 0.75)',
-                borderLeft: msg.isSystem ? '3px solid var(--c-dynamic-accent)' : `3px solid ${getSenderColor(msg)}`,
+                borderLeft: msg.isSystem ? `3px solid ${getSystemMessageColor(msg.text)}` : `3px solid ${getSenderColor(msg)}`,
                 padding: '6px 12px',
                 borderRadius: '0 4px 4px 0',
                 color: '#fff',
@@ -219,7 +289,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
               }}
             >
               {!msg.isSystem && <strong style={{ color: getSenderColor(msg) }}>{msg.senderName}: </strong>}
-              <span style={{ color: msg.isSystem ? 'var(--c-dynamic-accent)' : '#fff' }}>
+              <span style={{ color: msg.isSystem ? getSystemMessageColor(msg.text) : '#fff' }}>
                 {msg.isSystem ? translateSystemMessage(msg.text) : msg.text}
               </span>
             </div>
@@ -363,15 +433,15 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
                   margin: '4px 0',
                   padding: '6px 10px',
                   borderRadius: '0 var(--radius) var(--radius) 0',
-                  background: msg.isSystem ? 'rgba(244, 63, 94, 0.1)' : 'rgba(124, 58, 237, 0.05)',
-                  borderLeft: msg.isSystem ? '3px solid var(--c-dynamic-accent)' : `3px solid ${getSenderColor(msg)}`,
+                  background: msg.isSystem ? hexToRgba(getSystemMessageColor(msg.text), 0.1) : 'rgba(124, 58, 237, 0.05)',
+                  borderLeft: msg.isSystem ? `3px solid ${getSystemMessageColor(msg.text)}` : `3px solid ${getSenderColor(msg)}`,
                   wordBreak: 'break-word',
                   overflowWrap: 'anywhere',
                   whiteSpace: 'pre-wrap'
                 }}
               >
                 {!msg.isSystem && <span className="msg-author" style={{ color: getSenderColor(msg), fontWeight: 'bold' }}>{msg.senderName}: </span>}
-                <span className="msg-text">
+                <span className="msg-text" style={{ color: msg.isSystem ? getSystemMessageColor(msg.text) : '#fff' }}>
                   {msg.isSystem ? translateSystemMessage(msg.text) : msg.text}
                 </span>
               </div>

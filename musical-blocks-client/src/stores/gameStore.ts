@@ -108,6 +108,9 @@ export const useGameStore = create<GameStore>()(
           headphonesColor: randomColor,
           backpackColor: randomColor,
           companionColor: randomColor,
+          danceStyle: 'random',
+          idleStyle: 'random',
+          celebrateStyle: 'random',
         };
       })(),
 

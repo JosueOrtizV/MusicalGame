@@ -15,6 +15,7 @@ interface PlayerMeshProps {
   player: Player;
   isLocal: boolean;
   isPreview?: boolean;
+  previewAnimType?: 'dance' | 'idle' | 'celebrate' | null;
 }
 
 const PLAYER_Y_OFFSET = 0.45; // sits on top of block
@@ -22,7 +23,7 @@ const PLAYER_Y_OFFSET = 0.45; // sits on top of block
 // ---------------------------------------------------------------------------
 //  PlayerMesh — voxel character loading 3D GLB with 6 custom animations
 // ---------------------------------------------------------------------------
-export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshProps) {
+export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType = null }: PlayerMeshProps) {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Group>(null);
   const companionRef = useRef<THREE.Group>(null);
@@ -75,15 +76,6 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
   // Timing reference to throttle dynamic canvas textures upload to GPU (30 FPS)
   const lastTexUpdateRef = useRef(0);
 
-  // Stably assign a dance animation (dance or dance2) based on player ID
-  const danceAnimName = useMemo(() => {
-    let hash = 0;
-    for (let i = 0; i < player.id.length; i++) {
-      hash += player.id.charCodeAt(i);
-    }
-    return hash % 2 === 0 ? 'dance' : 'dance2';
-  }, [player.id]);
-
   // Extract and default player cosmetics
   const cosmetics = useMemo(() => {
     return player.cosmetics || {
@@ -101,6 +93,50 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     playerRef.current = player;
     cosmeticsRef.current = cosmetics;
   }, [player, cosmetics]);
+
+  // Generate a stable seed for the current match to allow randomization per game
+  const gameSongIndicesStr = useGameStore((s) => s.room?.gameSongIndices?.join(',') ?? '');
+
+  // Assign a dance animation (dance, dance2, dance3, or dance4) based on custom cosmetics selection or match seed
+  const danceAnimName = useMemo(() => {
+    if (cosmetics.danceStyle && cosmetics.danceStyle !== 'random') {
+      return cosmetics.danceStyle;
+    }
+    let hash = 0;
+    const seed = player.id + gameSongIndicesStr;
+    for (let i = 0; i < seed.length; i++) {
+      hash += seed.charCodeAt(i);
+    }
+    const dances = ['dance', 'dance2', 'dance3', 'dance4'];
+    return dances[hash % dances.length];
+  }, [player.id, gameSongIndicesStr, cosmetics.danceStyle]);
+
+  // Assign an idle animation (idle or idle2) based on custom cosmetics selection or match seed
+  const idleAnimName = useMemo(() => {
+    if (cosmetics.idleStyle && cosmetics.idleStyle !== 'random') {
+      return cosmetics.idleStyle;
+    }
+    let hash = 0;
+    const seed = player.id + gameSongIndicesStr;
+    for (let i = 0; i < seed.length; i++) {
+      hash += seed.charCodeAt(i);
+    }
+    return hash % 2 === 0 ? 'idle' : 'idle2';
+  }, [player.id, gameSongIndicesStr, cosmetics.idleStyle]);
+
+  // Assign a victory/celebrate animation (celebrate or celebrate2) based on custom cosmetics selection or match seed
+  const celebrateAnimName = useMemo(() => {
+    if (cosmetics.celebrateStyle && cosmetics.celebrateStyle !== 'random') {
+      return cosmetics.celebrateStyle;
+    }
+    let hash = 0;
+    const seed = player.id + gameSongIndicesStr;
+    for (let i = 0; i < seed.length; i++) {
+      hash += seed.charCodeAt(i);
+    }
+    return hash % 2 === 0 ? 'celebrate' : 'celebrate2';
+  }, [player.id, gameSongIndicesStr, cosmetics.celebrateStyle]);
+
 
   // Read companionType from dynamic player cosmetics
   const companionType = useMemo(() => {
@@ -749,33 +785,39 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
     }
 
     // Phase-specific animation selector
-    let nextAnim = 'idle';
+    let nextAnim: string = idleAnimName;
     let loopType: THREE.AnimationActionLoopStyles = THREE.LoopRepeat;
 
     if (isDead) {
       nextAnim = 'death';
       loopType = THREE.LoopOnce;
     } else if (isPreview) {
-      nextAnim = danceAnimName; // always dance in premium cosmetics preview!
+      if (previewAnimType === 'idle') {
+        nextAnim = idleAnimName;
+      } else if (previewAnimType === 'celebrate') {
+        nextAnim = celebrateAnimName;
+      } else {
+        nextAnim = danceAnimName;
+      }
     } else if (phase === 'GAME_OVER') {
       const winnerId = useGameStore.getState().gameState?.winnerId;
       if (activePl.id === winnerId) {
-        nextAnim = 'celebrate';
+        nextAnim = celebrateAnimName;
       } else {
-        nextAnim = 'idle';
+        nextAnim = idleAnimName;
       }
     } else if (phase === 'LOBBY') {
-      nextAnim = activePl.isReady ? danceAnimName : 'idle';
+      nextAnim = activePl.isReady ? danceAnimName : idleAnimName;
     } else if (phase === 'STARTING' || phase === 'DANCING' || phase === 'ANNOUNCING') {
       if (isMoving) {
         nextAnim = 'walk';
       } else if (idleTimer.current < 0.7) {
-        nextAnim = 'idle';
+        nextAnim = idleAnimName;
       } else {
         nextAnim = danceAnimName;
       }
     } else {
-      nextAnim = 'idle';
+      nextAnim = idleAnimName;
     }
 
     transitionTo(nextAnim, 0.15, loopType);
@@ -901,7 +943,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
         eCtx.fillRect(4, 3, 1, 1);
         eCtx.fillRect(7, 3, 1, 1);
       } 
-      else if (nextAnim === 'celebrate' || phase === 'GAME_OVER') {
+      else if (nextAnim.startsWith('celebrate') || phase === 'GAME_OVER') {
         // Heart symbol <3 pulsing
         ctx.fillStyle = heartColor;
         eCtx.fillStyle = heartColor;
@@ -922,7 +964,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
           eCtx.fillRect(5, 2, 2, 2);
         }
       } 
-      else if (nextAnim === 'dance' || nextAnim === 'dance2') {
+      else if (nextAnim.startsWith('dance')) {
         // Audio Equalizer bars
         ctx.fillStyle = visorColor;
         eCtx.fillStyle = visorColor;
@@ -1145,7 +1187,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false }: PlayerMeshPro
       });
 
       // 4. Interactive Retro Wireframe Holo-Wings Deployment (dance & move states)
-      const isHighEnergy = isMoving || nextAnim.startsWith('dance') || nextAnim === 'celebrate';
+      const isHighEnergy = isMoving || nextAnim.startsWith('dance') || nextAnim.startsWith('celebrate');
       const targetWingScale = isHighEnergy ? 1.0 : 0.0;
       const targetLeftWingRot = isHighEnergy ? 0.35 : 1.35; // folding angles
       const targetRightWingRot = isHighEnergy ? -0.35 : -1.35;

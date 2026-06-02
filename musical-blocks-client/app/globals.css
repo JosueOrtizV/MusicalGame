@@ -431,6 +431,11 @@ input {
   color: var(--c-muted);
 }
 
+select.lobby-input option {
+  background-color: #0c0c16;
+  color: #ffffff;
+}
+
 .lobby-input--code {
   width: 160px;
   text-align: center;

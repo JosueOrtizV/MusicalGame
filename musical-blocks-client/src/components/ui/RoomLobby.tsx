@@ -80,8 +80,9 @@ export function RoomLobby() {
   const [activeTab, setActiveTab] = useState<'difficulty' | 'speed' | 'lives' | 'modifiers' | 'players'>('difficulty');
   const [isSdExpanded, setIsSdExpanded] = useState(false);
   const [isLockerOpen, setIsLockerOpen] = useState(false);
-  const [lockerTab, setLockerTab] = useState<'equip' | 'colors'>('equip');
+  const [lockerTab, setLockerTab] = useState<'equip' | 'colors' | 'anims'>('equip');
   const [draftCosmetics, setDraftCosmetics] = useState<PlayerCosmetics | null>(null);
+  const [previewAnimType, setPreviewAnimType] = useState<'dance' | 'idle' | 'celebrate' | null>(null);
 
   const localCosmetics = useGameStore((s) => s.localCosmetics);
   const updateLocalCosmetics = useGameStore((s) => s.updateLocalCosmetics);
@@ -89,6 +90,7 @@ export function RoomLobby() {
   const openLocker = () => {
     setDraftCosmetics(localCosmetics);
     setIsLockerOpen(true);
+    setPreviewAnimType(null);
     window.dispatchEvent(new CustomEvent('chat:minimize'));
   };
 
@@ -1078,7 +1080,7 @@ export function RoomLobby() {
                           <directionalLight position={[2, 5, 2]} intensity={1.5} castShadow />
                           <pointLight position={[-3, 3, -3]} intensity={0.5} />
                           <group position={[0, -0.35, 0]}>
-                            <PlayerMesh player={previewPlayer} isLocal={true} isPreview={true} />
+                            <PlayerMesh player={previewPlayer} isLocal={true} isPreview={true} previewAnimType={previewAnimType} />
                           </group>
                           <OrbitControls
                             enableZoom={true}
@@ -1106,13 +1108,13 @@ export function RoomLobby() {
                             ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]' 
                             : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
                         }`}
-                        onClick={() => setLockerTab('equip')}
+                        onClick={() => { setLockerTab('equip'); setPreviewAnimType(null); }}
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                           <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span>{lang === 'es' ? 'Equipamiento' : 'Equipment'}</span>
+                        <span>{lang === 'es' ? 'Equipar' : 'Equip'}</span>
                       </button>
                       <button 
                         className={`flex-1 py-3 px-4 font-mono text-xs font-extrabold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 rounded-md ${
@@ -1120,17 +1122,31 @@ export function RoomLobby() {
                             ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]' 
                             : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
                         }`}
-                        onClick={() => setLockerTab('colors')}
+                        onClick={() => { setLockerTab('colors'); setPreviewAnimType(null); }}
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                         </svg>
                         <span>{lang === 'es' ? 'Colores' : 'Colors'}</span>
                       </button>
+                      <button 
+                        className={`flex-1 py-3 px-4 font-mono text-xs font-extrabold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 rounded-md ${
+                          lockerTab === 'anims' 
+                            ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]' 
+                            : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
+                        }`}
+                        onClick={() => { setLockerTab('anims'); setPreviewAnimType('dance'); }}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{lang === 'es' ? 'Animaciones' : 'Animations'}</span>
+                      </button>
                     </div>
 
                     <div className="locker-tab-content-scroll">
-                      {lockerTab === 'equip' ? (
+                      {lockerTab === 'equip' && (
                         <div className="flex flex-col gap-5 fade-in">
                           {/* Accessories */}
                           <div className="locker-modal-section">
@@ -1256,7 +1272,8 @@ export function RoomLobby() {
                             </div>
                           </div>
                         </div>
-                      ) : (
+                      )}
+                      {lockerTab === 'colors' && (
                         <div className="flex flex-col gap-4 fade-in">
                           {/* Colors Customization Section */}
                           <div className="locker-modal-section">
@@ -1345,6 +1362,84 @@ export function RoomLobby() {
                                     );
                                   });
                               })()}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {lockerTab === 'anims' && (
+                        <div className="flex flex-col gap-5 fade-in">
+                          {/* Animations Customization Section */}
+                          <div className="locker-modal-section">
+                            <h3 className="locker-modal-section-title flex items-center gap-2">
+                              <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span>{lang === 'es' ? 'Seleccionar Estilos de Animación' : 'Select Animation Styles'}</span>
+                            </h3>
+                            
+                            <div className="flex flex-col gap-4 mt-2">
+                              {/* Dance selector */}
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[10px] font-mono font-bold tracking-wider text-cyan-400 uppercase">
+                                  {lang === 'es' ? 'Estilo de Baile' : 'Dance Style'}
+                                </label>
+                                <select
+                                  className="lobby-input font-mono text-xs w-full cursor-pointer focus:outline-none focus:border-cyan-400"
+                                  value={activeCosmetics.danceStyle || 'random'}
+                                  onChange={(e) => {
+                                    updateDraftCosmetics({ danceStyle: e.target.value as PlayerCosmetics['danceStyle'] });
+                                    setPreviewAnimType('dance');
+                                  }}
+                                  onFocus={() => setPreviewAnimType('dance')}
+                                >
+                                  <option value="random">{lang === 'es' ? '🎲 Al Azar por Partida' : '🎲 Random per Match'}</option>
+                                  <option value="dance">{lang === 'es' ? '🕺 Baile 1 (Classic Shuffle)' : '🕺 Dance 1 (Classic Shuffle)'}</option>
+                                  <option value="dance2">{lang === 'es' ? '🌀 Baile 2 (Spin-Out Spin)' : '🌀 Dance 2 (Spin-Out Spin)'}</option>
+                                  <option value="dance3">{lang === 'es' ? '🌊 Baile 3 (Side-Step Wave)' : '🌊 Dance 3 (Side-Step Wave)'}</option>
+                                  <option value="dance4">{lang === 'es' ? '🤖 Baile 4 (Robot Twist)' : '🤖 Dance 4 (Robot Twist)'}</option>
+                                </select>
+                              </div>
+
+                              {/* Idle selector */}
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[10px] font-mono font-bold tracking-wider text-cyan-400 uppercase">
+                                  {lang === 'es' ? 'Estilo de Espera (Idle)' : 'Waiting Style (Idle)'}
+                                </label>
+                                <select
+                                  className="lobby-input font-mono text-xs w-full cursor-pointer focus:outline-none focus:border-cyan-400"
+                                  value={activeCosmetics.idleStyle || 'random'}
+                                  onChange={(e) => {
+                                    updateDraftCosmetics({ idleStyle: e.target.value as PlayerCosmetics['idleStyle'] });
+                                    setPreviewAnimType('idle');
+                                  }}
+                                  onFocus={() => setPreviewAnimType('idle')}
+                                >
+                                  <option value="random">{lang === 'es' ? '🎲 Al Azar por Partida' : '🎲 Random per Match'}</option>
+                                  <option value="idle">{lang === 'es' ? '🧍 Clásico (Respiración Normal)' : '🧍 Classic (Normal Breathing)'}</option>
+                                  <option value="idle2">{lang === 'es' ? '⏱️ Impaciente (Zapateo Rápido)' : '⏱️ Impatient (Foot Tapping)'}</option>
+                                </select>
+                              </div>
+
+                              {/* Celebrate selector */}
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[10px] font-mono font-bold tracking-wider text-cyan-400 uppercase">
+                                  {lang === 'es' ? 'Estilo de Victoria' : 'Victory Style'}
+                                </label>
+                                <select
+                                  className="lobby-input font-mono text-xs w-full cursor-pointer focus:outline-none focus:border-cyan-400"
+                                  value={activeCosmetics.celebrateStyle || 'random'}
+                                  onChange={(e) => {
+                                    updateDraftCosmetics({ celebrateStyle: e.target.value as PlayerCosmetics['celebrateStyle'] });
+                                    setPreviewAnimType('celebrate');
+                                  }}
+                                  onFocus={() => setPreviewAnimType('celebrate')}
+                                >
+                                  <option value="random">{lang === 'es' ? '🎲 Al Azar por Partida' : '🎲 Random per Match'}</option>
+                                  <option value="celebrate">{lang === 'es' ? '🙌 Clásico (Manos Arriba & Aplauso)' : '🙌 Classic (Arms Up & Clap)'}</option>
+                                  <option value="celebrate2">{lang === 'es' ? '🤸 Acrobático (Salto Mortal Backflip)' : '🤸 Acrobatic (Leap Backflip)'}</option>
+                                </select>
+                              </div>
                             </div>
                           </div>
                         </div>
