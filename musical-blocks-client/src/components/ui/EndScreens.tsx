@@ -6,6 +6,7 @@ import { spawnParticles } from '../canvas/ParticleSystem';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { GhostIcon, CrownIcon, FlagIcon } from './Icons';
+import { hexToRgba } from '@/src/lib/colorUtils';
 
 // ---------------------------------------------------------------------------
 //  GameOverScreen — shown when local player dies (spectating)
@@ -34,17 +35,7 @@ export function GameOverScreen() {
   );
 }
 
-// Helper to convert hex color to rgba for dynamic neón shadows
-function hexToRgba(hex: string, alpha: number): string {
-  if (!hex || !hex.startsWith('#') || hex.length < 7) {
-    return `rgba(244, 63, 94, ${alpha})`; // fallback to rose
-  }
-  const cleanHex = hex.replace('#', '');
-  const r = parseInt(cleanHex.substring(0, 2), 16);
-  const g = parseInt(cleanHex.substring(2, 4), 16);
-  const b = parseInt(cleanHex.substring(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
+
 
 // ---------------------------------------------------------------------------
 //  WinnerScreen — shown when game ends

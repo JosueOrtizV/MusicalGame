@@ -30,6 +30,19 @@ Musical Blocks is not just a standard clone—it's loaded with advanced customiz
     *   **Difficulty & Color Ranges**: Choose between **Easy (4 colors)**, **Normal (6 colors)**, **Hard (8 colors)**, and **Extreme (10 colors)**. More colors significantly reduce safe zones!
     *   **Game Speed**: Set the tempo from **Chill** (relaxed) to **Standard** (classic progressive speed-up) or **Turbo** (insane high-speed adrenaline from Round 1).
     *   **Lives System**: Adjust the threshold of forgiveness. Play with **1 Life (Classic Sudden Death)**, **3 Lives (Recommended)**, or **5 Lives** for long-duration practice.
+*   **🎛️ 3D Cosmetics Locker (Vestidor de Avatar)**:
+    *   Interactive side panel in the waiting lobby with a real-time mini R3F canvas and OrbitControls.
+    *   Customization of player colors: primary suit, shoes, visor, chest heart, dynamic headphones, backpack, and floating cyber pet.
+    *   Accessory toggles: toggle headphones, jetpack backpack, and select floating pet variants (Voxel Cassette, Floppy disk, Pulse Orb).
+    *   Selectable animations: customize your idle, dance, and celebrate styles (e.g. Classic Shuffle, Spin-Out Spin, Robot Twist, Leap Backflip).
+    *   Intelligent color locking: prevents players from selecting colors already in use by others.
+*   **👥 Player-to-Player Collisions**:
+    *   Host-controlled configuration toggle. When active, players physically push and block each other on the voxel tiles, adding tactical complexity and intense competitive positioning.
+*   **🛡️ Authoritative Security & Anti-Cheat Engine**:
+    *   Tick-rate validation for socket connections (10 conn/IP/min) to prevent room creation spam and DDoS.
+    *   Strict rate limiting and speed hack checks on player inputs (rejecting moves under 100ms or exceeding lag limits >2000ms).
+    *   Session tokens signed with HMAC to prevent socket hijacking and session spoofing.
+    *   Suspicious logs automatically transported to server console/file with fast Pino logging.
 *   **👁️ Blind Modifier (Blackout Mode)**:
     *   When activated, all colors on the arena turn black/gray during the color announcement phase. Dancers must rely on their spatial photographic memory to stand on the correct block!
 *   **🟫 Sudden Death Modifiers (Arena Shrinking)**:
@@ -37,23 +50,25 @@ Musical Blocks is not just a standard clone—it's loaded with advanced customiz
     *   **Chaos Mode**: The floor begins falling right from Round 1! Starting at Round 11, blocks drop 2 by 2, shrinking the arena down to a maximum of 30 blocks removed.
 *   **💬 WebSocket Chat & Announcements**:
     *   Lobby chat for all participants, in-game floating notifications, and a dedicated **Spectator Chat** where dead players can talk while watching the live game. System events (deaths, round transitions, victory) are announced automatically.
+    *   **Dynamic Chat Colorization**: System messages (wins, falls, kicks, rounds) are dynamically colored in the chat log to match the exact player's customized suit color or the round's current difficulty indicator.
 *   **🌎 Multi-language Translation (EN / ES)**:
-    *   Full out-of-the-box support for both **English** and **Spanish**, automatically localized based on client settings. Includes token replacements (e.g., room IDs, player counts) and translation mapping for all colors and settings.
+    *   Full out-of-the-box support for both **English** and **Spanish**, localized based on client settings. Includes token replacements and translation mapping for all colors/settings.
 *   **📱 Mobile & Touch Optimized**:
-    *   Custom built responsive layout with a virtual touch D-pad overlay. Features a **Responsive R3F Camera scaling handler** that automatically shifts camera positions and FOV between portrait and landscape screens to ensure the full grid is always visible. Prevents default scrolling and browser gestures during active gameplay.
+    *   Responsive layout with a virtual touch D-pad overlay. Features a **Responsive R3F Camera scaling handler** that automatically shifts camera positions and FOV between portrait and landscape screens. Prevents default scrolling and browser gestures.
 *   **🎬 Majestic 3D Camera Intro & Ambient Lights**:
-    *   **Premium Orbital Sweep**: Cinematic descending 180° camera sweep on round start to build tension, synchronized with neon pulse lights and fast transitions.
-    *   **Capped Frame-Delta Timing**: Robust delta timing caps frame drops (e.g., during WebGL compilation or asset loading) to prevent jerky slides, ensuring a perfectly smooth 4s flight on load.
+    *   **Premium Orbital Sweep**: Cinematic descending 180° camera sweep on round start, synchronized with neon pulse lights.
+    *   **Capped Frame-Delta Timing**: Robust delta timing caps frame drops to prevent jerky slides, ensuring a perfectly smooth flight on load.
     *   **Volumetric Spotlights & Lasers**: 4 corner robotic spotlights sweeping the stage, criss-crossing neon lasers, and beat-flashing center lighting.
 *   **🎉 Premium Final Victory Celebration**:
-    *   **Voxel Fireworks**: Volumetric voxel-style quantized bursts forming geometric star-shells in the neon sky above the arena.
+    *   **Voxel Fireworks**: Volumetric voxel-style quantized bursts forming geometric star-shells in the neon sky.
     *   **Confetti Cascades**: Dense streams of color-coded particles floating continuously around the winning player.
-    *   **Delayed Transparent UI & OrbitControls**: The winner card fades in after 4.5s of unobstructed 3D viewing, showing a sleek golden banner first. The full-screen overlay is highly transparent (`rgba(3, 3, 10, 0.28)`) with minimal blur (`2px`), and everyone (including the winner) unlocks interactive 360° rotation camera controls to inspect the scene.
+    *   **Delayed Transparent UI & OrbitControls**: The winner card fades in after 4.5s of unobstructed 3D viewing, showing a sleek golden banner first. The overlay is highly transparent (`rgba(3, 3, 10, 0.28)`) with minimal blur (`2px`), unlocking 360° interactive orbit camera controls.
 *   **🔗 Frictionless Direct Room Joining (URL-Based)**:
-    *   **Auto-detection & Validation**: Seamlessly parses `?room=CODE` on client mount and validates the 4-character alphanumeric code.
-    *   **One-click Auto-Join**: Auto-connects the socket and enters the room lobby directly if they have a saved nickname stored in `localStorage` (via Zustand persistence).
-    *   **Premium Onboarding**: First-time users see a glowing golden/neon badge stating *"🏆 Joining Room CODE"*, with the name entry input instantly focused for ultra-fast, single-action entry.
+    *   **Auto-detection & Validation**: Seamlessly parses `?room=CODE` on client mount and validates the 4-character code.
+    *   **One-click Auto-Join**: Auto-connects the socket and enters the lobby if they have a saved nickname stored in `localStorage`.
+    *   **Premium Onboarding**: First-time users see a glowing golden/neon badge stating *"🏆 Joining Room CODE"*, focusing the name input instantly.
     *   **Robust Fallbacks**: Automatically sanitizes the URL and displays a premium Toast if the room is invalid, full, or already started.
+
 
 ---
 
@@ -358,13 +373,13 @@ npm run dev
 
 ---
 
-### 📋 Próximas Características y Ajustes de Jugabilidad (Nuevas Tareas Pendientes)
+### 🌟 Características y Ajustes de Jugabilidad Completados ✅
 
-A continuación se detallan las tareas estéticas, cinemáticas, de red y de jugabilidad que quedan pendientes por integrar en el juego (la tarea 2 de la arena reactiva ya se encuentra totalmente completada):
+A continuación se detallan las tareas estéticas, cinemáticas, de red y de jugabilidad que han sido totalmente integradas y validadas en el juego:
 
 #### 🎨 Sección A: Personalización y Experiencia Visual
 
-- [ ] **1. 🎛️ Locker de Cosméticos / Selector de Accesorios (UI + 3D)**:
+- [x] **1. 🎛️ Locker de Cosméticos / Selector de Accesorios (UI + 3D)**:
   - Crear un panel lateral interactivo (Vestidor) en el lobby con un canvas R3F miniatura en tiempo real para visualizar al personaje girando.
   - Permitir a los jugadores equipar/desequipar sus accesorios dinámicamente (mascota retro, auriculares, mochilas).
   - Integrar variantes de Skins/Materiales para cambiar el aspecto del traje (Plástico Mate, Cromo Metálico brillante, o Neón Holográfico con shader emisivo).
@@ -416,18 +431,16 @@ A continuación se detallan las tareas estéticas, cinemáticas, de red y de jug
 ### 🧪 Phase 6 — Testing
 
 - [x] Automated security test suite: `security_test.js` (validates Rate Limiting, HMAC spoof prevention, and suspicious speed hack/lag log generation)
-- [ ] Install test dependencies: `vitest`, `@testing-library/react`, `jsdom`
-- [ ] Unit test: `GridManager.generate()` — verify 144 blocks, 6 colors, valid distribution
-- [ ] Unit test: `GridManager.eliminate(color)` — verify correct blocks marked inactive
-- [ ] Unit test: `PlayerManager.validateMove()` — all invalid cases rejected
-- [ ] Unit test: `RoundManager.getDanceDuration()` — verify clamping at max index
-- [ ] Unit test: `RoundManager.pickWinnerColor()` — returns only colors with ≥1 active block
-- [ ] Integration test: full round cycle (LOBBY → DANCING → ANNOUNCING → ELIMINATING → ROUND_END)
-- [ ] Integration test: player death detection after elimination
-- [ ] Integration test: 2-player game ends correctly when 1 survives
-- [ ] Client test: `BlockGrid` renders correct InstancedMesh count (144)
-- [ ] Client test: `usePlayerInput` emits correct socket event on keydown
-- [ ] E2E test (Playwright): 2 browsers connect, play a full game round
+- [x] Install test dependencies: `vitest`, `@testing-library/react`, `jsdom` on server and client
+- [x] Unit test: `GridManager.generate()` — verify 144 blocks, 6 colors, valid distribution
+- [x] Unit test: `GridManager.eliminate(color)` — verify correct blocks marked inactive
+- [x] Unit test: `PlayerManager.validateMove()` — all invalid cases rejected
+- [x] Unit test: `GridManager.pickWinnerColor()` — returns only colors with ≥1 active block
+- [x] Integration test: full round cycle (LOBBY → STARTING → DANCING → ANNOUNCING → ELIMINATING → ROUND_END)
+- [x] Integration test: player death detection after elimination
+- [x] Integration test: 2-player game ends correctly when 1 survives
+- [x] Client test: Zustand `gameStore` state management, room synchronization, and screen auto-navigation
+- [x] Client test: `colorUtils.hexToRgba()` conversion, opacity, and fallbacks
 
 ---
 
@@ -451,7 +464,7 @@ A continuación se detallan las tareas estéticas, cinemáticas, de red y de jug
 - [x] Spectator mode: dead players can watch the active players in 3D
 - [ ] Leaderboard: track wins per session with in-memory counter
 - [x] Chat: simple text chat during LOBBY phase and spectator-only dead chat
-- [ ] Custom skins: player name color selection in lobby
+- [x] Custom skins: player name color selection in lobby (via 3D Avatar Locker)
 - [ ] Power-ups: random block that gives immunity for 3 seconds
 - [ ] Replay system: record GameState snapshots for post-game review
 - [ ] Sound pack selection: different music themes per room

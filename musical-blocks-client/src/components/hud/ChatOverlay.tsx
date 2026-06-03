@@ -3,18 +3,7 @@ import { useGameStore, selectLocalPlayer } from '@/src/stores/gameStore';
 import { getSocket } from '@/src/lib/socketClient';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { SkullIcon, CrownIcon, AlertIcon, MusicIcon } from '../ui/Icons';
-
-// Helper to convert hex color to rgba for dynamic neón shadows
-function hexToRgba(hex: string, alpha: number): string {
-  if (!hex || !hex.startsWith('#') || hex.length < 7) {
-    return `rgba(244, 63, 94, ${alpha})`; // fallback to rose
-  }
-  const cleanHex = hex.replace('#', '');
-  const r = parseInt(cleanHex.substring(0, 2), 16);
-  const g = parseInt(cleanHex.substring(2, 4), 16);
-  const b = parseInt(cleanHex.substring(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
+import { hexToRgba } from '@/src/lib/colorUtils';
 
 interface ChatOverlayProps {
   inGame?: boolean;
