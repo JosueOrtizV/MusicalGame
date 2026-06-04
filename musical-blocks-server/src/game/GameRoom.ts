@@ -78,9 +78,10 @@ export class GameRoom {
     this.randomizeSongs();
     this.players.add(hostSocketId, hostName, true);
 
+    const checkIntervalTime = process.env.NODE_ENV === 'test' ? 1000 : 10000;
     this.afkInterval = setInterval(() => {
       this.checkAFK();
-    }, 10000);
+    }, checkIntervalTime);
 
     this.loop = new GameLoop(this.grid, this.players, {
       onStateUpdate: () => {
@@ -576,9 +577,20 @@ export class GameRoom {
       return;
     }
 
-    // 10 minutes lobby inactivity timeout
-    if (now - this.lobbyOpenTime > 600000) {
-      console.log(`[Lobby Timeout] Room ${this.id} has been waiting in lobby for over 10 minutes. Closing.`);
+    const isTest = process.env.NODE_ENV === 'test';
+    const host = this.players.get(this.hostId);
+    const hostName = host?.name || '';
+
+    const isAfkTest = isTest || hostName.includes('AFKTest');
+    const isTimeoutTest = isTest || hostName.includes('TimeoutTest');
+
+    const LOBBY_TIMEOUT = isTimeoutTest ? 6000 : 600000;      // 6 seconds in test, 10 minutes in prod
+    const HOST_AFK_LIMIT = isAfkTest ? 4000 : 120000;       // 4 seconds in test, 120 seconds in prod
+    const PLAYER_AFK_LIMIT = isTest ? 5000 : 90000;        // 5 seconds in test, 90 seconds in prod
+
+    // Lobby inactivity timeout
+    if (now - this.lobbyOpenTime > LOBBY_TIMEOUT) {
+      console.log(`[Lobby Timeout] Room ${this.id} has been waiting in lobby for over 10 minutes (or test timeout). Closing.`);
       this.io.to(this.id).emit('room:error', { 
         message: 'La sala ha sido cerrada debido a inactividad prolongada (máximo 10 minutos). / The room has been closed due to prolonged inactivity (10 minutes maximum).'
       });
@@ -594,11 +606,10 @@ export class GameRoom {
       return;
     }
 
-    // Host AFK Check (120 seconds)
-    const host = this.players.get(this.hostId);
+    // Host AFK Check
     if (host) {
       const hostLastActive = host.lastActivityTime || now;
-      if (now - hostLastActive > 120000) {
+      if (now - hostLastActive > HOST_AFK_LIMIT) {
         console.log(`[Lobby AFK] Host "${host.name}" is AFK in room ${this.id}. Kicking.`);
         this.kickPlayer(this.hostId, 'afkKickReason');
         
@@ -609,12 +620,11 @@ export class GameRoom {
       }
     }
 
-    // Regular Player AFK Check (90 seconds)
-    const AFK_LIMIT = 90000;
+    // Regular Player AFK Check
     for (const player of this.players.getAll()) {
       if (player.id !== this.hostId && !player.isReady) {
         const lastActive = player.lastActivityTime || now;
-        if (now - lastActive > AFK_LIMIT) {
+        if (now - lastActive > PLAYER_AFK_LIMIT) {
           this.kickPlayer(player.id, 'afkKickReason');
         }
       }

@@ -56,6 +56,9 @@ function getClientIp(socket: any): string {
 }
 
 io.use((socket, next) => {
+  if (process.env.NODE_ENV === 'test') {
+    return next();
+  }
   const ip = getClientIp(socket);
   const now = Date.now();
   
