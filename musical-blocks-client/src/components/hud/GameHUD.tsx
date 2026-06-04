@@ -22,7 +22,17 @@ export function GameHUD() {
 
   const [showBanner, setShowBanner] = useState(false);
   const [bannerText, setBannerText] = useState('');
-  const [isPlayersExpanded, setIsPlayersExpanded] = useState(false);
+  const [isPlayersExpanded, setIsPlayersExpanded] = useState(true);
+
+  // Collapse player list by default on mobile screens
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      const t = setTimeout(() => {
+        setIsPlayersExpanded(false);
+      }, 0);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   // Show round banner on phase change
   useEffect(() => {

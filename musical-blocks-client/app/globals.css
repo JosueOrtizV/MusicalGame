@@ -1988,13 +1988,34 @@ select.lobby-input option {
 .hud-players-title {
   font-size: 0.75rem;
   color: var(--c-muted);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.hud-players.expanded .hud-players-title {
+  margin-bottom: 0.5rem;
 }
 
 .hud-players-toggle-icon {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: var(--c-muted);
+  transition: transform 0.2s ease-in-out;
+}
+
+.hud-players.expanded .hud-players-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.hud-players:not(.expanded) .hud-player-row {
   display: none;
 }
 
@@ -2569,33 +2590,6 @@ select.lobby-input option {
     min-width: 140px;
     pointer-events: auto !important;
     cursor: pointer;
-  }
-
-  .hud-players-title {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 0.5rem !important;
-    margin-bottom: 0 !important;
-  }
-
-  .hud-players.expanded .hud-players-title {
-    margin-bottom: 0.5rem !important;
-  }
-
-  .hud-players-toggle-icon {
-    display: inline-block !important;
-    font-size: 0.7rem;
-    color: var(--c-muted);
-    transition: transform 0.2s ease-in-out;
-  }
-
-  .hud-players:not(.expanded) .hud-player-row {
-    display: none !important;
-  }
-
-  .hud-players.expanded .hud-players-toggle-icon {
-    transform: rotate(180deg);
   }
 
   .hud-players.expanded {
