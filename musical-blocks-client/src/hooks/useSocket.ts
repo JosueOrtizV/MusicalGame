@@ -72,6 +72,8 @@ export function useSocket() {
       let message = '';
       if (reason === 'afkKickReason') {
         message = dict.youKickedAfk || 'You have been kicked for inactivity';
+      } else if (reason === 'lobbyTimeoutReason') {
+        message = dict.youKickedLobbyTimeout || 'The room has been closed due to prolonged inactivity (10 minutes maximum).';
       } else {
         message = dict.youKickedByHost || 'You have been kicked by the host';
       }

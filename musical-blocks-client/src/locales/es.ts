@@ -83,6 +83,7 @@ export const es: Translations = {
   playerKickedAfk: '{name} fue expulsado por inactividad',
   youKickedByHost: 'Fuiste expulsado por el Anfitrion',
   youKickedAfk: 'Fuiste expulsado por Inactividad',
+  youKickedLobbyTimeout: 'La sala ha sido cerrada debido a inactividad prolongada (máximo 10 minutos).',
   hostWillStart: 'El anfitrión iniciará la partida',
   suddenDeath: '¡MUERTE SÚBITA!',
   roomSettingsTitle: 'Ajustes de Partida',

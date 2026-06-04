@@ -81,6 +81,7 @@ export const en = {
   playerKickedAfk: '{name} was kicked for inactivity',
   youKickedByHost: 'You have been kicked by the host',
   youKickedAfk: 'You have been kicked for inactivity',
+  youKickedLobbyTimeout: 'The room has been closed due to prolonged inactivity (10 minutes maximum).',
   hostWillStart: 'The host will start the game',
   suddenDeath: 'SUDDEN DEATH!',
   roomSettingsTitle: 'Match Settings',

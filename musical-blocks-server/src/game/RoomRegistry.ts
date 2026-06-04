@@ -24,9 +24,18 @@ export class RoomRegistry {
     hostName: string,
     visibility: RoomVisibility,
   ): GameRoom {
-    let room = new GameRoom(this.io, hostSocketId, hostName, visibility);
+    const onCloseCallback = (roomId: string) => {
+      const room = this.rooms.get(roomId);
+      if (room) {
+        room.destroy();
+        this.rooms.delete(roomId);
+        console.log(`[Registry] Room ${roomId} closed via onClose callback.`);
+      }
+    };
+
+    let room = new GameRoom(this.io, hostSocketId, hostName, visibility, onCloseCallback);
     while (this.rooms.has(room.id)) {
-      room = new GameRoom(this.io, hostSocketId, hostName, visibility);
+      room = new GameRoom(this.io, hostSocketId, hostName, visibility, onCloseCallback);
     }
     this.rooms.set(room.id, room);
     return room;

@@ -140,6 +140,8 @@ export interface Room {
   lobbySongIndex: number;
   gameSongIndices: number[]; // Shuffled playlist indices
   victorySongIndex: number;
+
+  cancellationCount: number;
 }
 
 // ---------------------------------------------------------------------------

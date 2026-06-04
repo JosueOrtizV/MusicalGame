@@ -206,6 +206,7 @@ export function registerHandlers(
       socket.emit('room:error', { message: 'You are not in a room.' });
       return;
     }
+    room.updateHostActivity(sid);
     const result = room.startGame(sid);
     if (!result.ok) {
       socket.emit('room:error', { message: result.error ?? 'Could not start game.' });
@@ -218,7 +219,14 @@ export function registerHandlers(
   socket.on('host:cancel_start', ({ token }: { token?: string } = {}) => {
     const room = registry.getRoomBySocketId(sid);
     if (room && room.toRoom().hostId === sid) {
-      room.cancelCountdown();
+      if (room.toRoom().cancellationCount >= 3) {
+        socket.emit('room:error', { 
+          message: 'Has alcanzado el límite de cancelaciones. El inicio es inevitable. / Cancellation limit reached. Starting is inevitable.' 
+        });
+        return;
+      }
+      room.updateHostActivity(sid);
+      room.cancelCountdown(true);
       console.log(`[Game] Room ${room.id} start countdown cancelled by host.`);
     }
   });
@@ -270,6 +278,7 @@ export function registerHandlers(
     // Only host can do this
     if (room.toRoom().hostId !== sid) return;
 
+    room.updateHostActivity(sid);
     room.updateSettings(settings);
   });
 

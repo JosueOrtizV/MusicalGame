@@ -60,11 +60,16 @@ export class GameRoom {
   private countdownSeconds: number = 0;
   private countdownType: 'auto' | 'manual' | null = null;
 
+  // Safety & Lobby Maintenance properties
+  private cancellationCount = 0;
+  private lobbyOpenTime: number = Date.now();
+
   constructor(
     private readonly io: SocketServer<ClientEvents, ServerEvents>,
     hostSocketId: string,
     hostName: string,
     visibility: RoomVisibility,
+    private readonly onClose?: (roomId: string) => void,
   ) {
     this.id = GameRoom.generateCode();
     this.visibility = visibility;
@@ -181,6 +186,7 @@ export class GameRoom {
         remaining[0].isHost = true;
         remaining[0].isReady = true;
         this.hostId = remaining[0].id;
+        this.cancellationCount = 0; // Reset cancellation count for the new host
         console.log(`[Room] Host transferred to "${remaining[0].name}" in room ${this.id}`);
       }
     }
@@ -241,14 +247,23 @@ export class GameRoom {
   kickPlayer(playerId: string, reason: string): void {
     const targetSocket = this.io.sockets.sockets.get(playerId);
     const player = this.players.get(playerId);
-    if (targetSocket && player) {
+    if (player) {
       console.log(`[Room] "${player.name}" was kicked from room ${this.id} (${reason})`);
       
-      const isAfk = reason === 'afkKickReason';
-      const msg = isAfk ? `${player.name} has been kicked for inactivity` : `${player.name} has been kicked by the host`;
+      let msg = '';
+      if (reason === 'afkKickReason') {
+        msg = `${player.name} has been kicked for inactivity`;
+      } else if (reason === 'lobbyTimeoutReason') {
+        msg = `${player.name} was disconnected (lobby timeout)`;
+      } else {
+        msg = `${player.name} has been kicked by the host`;
+      }
       
       this.broadcastSystemMessage(msg);
-      targetSocket.emit('room:kicked', { reason });
+      if (targetSocket) {
+        targetSocket.emit('room:kicked', { reason });
+        targetSocket.leave(this.id);
+      }
       this.removePlayer(playerId);
     }
   }
@@ -313,6 +328,12 @@ export class GameRoom {
     this.loop.setSpeed(speed as any);
     this.loop.setBlindMode(!!settings.isBlindMode);
     this.broadcastRoomUpdate();
+  }
+
+  updateHostActivity(socketId: string): void {
+    if (socketId === this.hostId) {
+      this.players.updateActivity(socketId);
+    }
   }
 
   startGame(requesterId: string): { ok: boolean; error?: string } {
@@ -419,6 +440,7 @@ export class GameRoom {
       lobbySongIndex: this.lobbySongIndex,
       gameSongIndices: this.gameSongIndices,
       victorySongIndex: this.victorySongIndex,
+      cancellationCount: this.cancellationCount,
     };
   }
 
@@ -464,6 +486,8 @@ export class GameRoom {
       this.round = 0;
       this.players.resetAlive();
       this.randomizeSongs(); // Randomize tracks for the next match!
+      this.cancellationCount = 0;
+      this.lobbyOpenTime = Date.now();
       this.checkAutoStart(); // In case people remained ready
     }
     this.broadcastRoomUpdate();
@@ -544,9 +568,51 @@ export class GameRoom {
   private checkAFK() {
     if (this.status !== 'waiting') return;
     const now = Date.now();
-    const AFK_LIMIT = 90000; // 90 seconds
+
+    // Safety check for empty rooms
+    if (this.players.count() === 0) {
+      console.log(`[Safety Cleanup] Room ${this.id} is empty but still registered. Closing.`);
+      this.onClose?.(this.id);
+      return;
+    }
+
+    // 10 minutes lobby inactivity timeout
+    if (now - this.lobbyOpenTime > 600000) {
+      console.log(`[Lobby Timeout] Room ${this.id} has been waiting in lobby for over 10 minutes. Closing.`);
+      this.io.to(this.id).emit('room:error', { 
+        message: 'La sala ha sido cerrada debido a inactividad prolongada (máximo 10 minutos). / The room has been closed due to prolonged inactivity (10 minutes maximum).'
+      });
+      
+      // Kick all players to trigger automatic cleanup
+      const allPlayers = this.players.getAll();
+      for (const player of allPlayers) {
+        this.kickPlayer(player.id, 'lobbyTimeoutReason');
+      }
+      
+      // Notify registry to close and destroy this room
+      this.onClose?.(this.id);
+      return;
+    }
+
+    // Host AFK Check (120 seconds)
+    const host = this.players.get(this.hostId);
+    if (host) {
+      const hostLastActive = host.lastActivityTime || now;
+      if (now - hostLastActive > 120000) {
+        console.log(`[Lobby AFK] Host "${host.name}" is AFK in room ${this.id}. Kicking.`);
+        this.kickPlayer(this.hostId, 'afkKickReason');
+        
+        if (this.players.count() === 0) {
+          this.onClose?.(this.id);
+          return;
+        }
+      }
+    }
+
+    // Regular Player AFK Check (90 seconds)
+    const AFK_LIMIT = 90000;
     for (const player of this.players.getAll()) {
-      if (!player.isReady) {
+      if (player.id !== this.hostId && !player.isReady) {
         const lastActive = player.lastActivityTime || now;
         if (now - lastActive > AFK_LIMIT) {
           this.kickPlayer(player.id, 'afkKickReason');
@@ -620,7 +686,7 @@ export class GameRoom {
     }, seconds * 1000);
   }
 
-  cancelCountdown() {
+  cancelCountdown(isManual = false) {
     if (this.countdownTimeout) {
       clearTimeout(this.countdownTimeout);
       this.countdownTimeout = null;
@@ -635,6 +701,12 @@ export class GameRoom {
     }
     this.countdownSeconds = 0;
     this.countdownType = null;
+
+    if (isManual) {
+      this.cancellationCount++;
+    }
+
     this.io.to(this.id).emit('room:auto_start_countdown', { seconds: null });
+    this.broadcastRoomUpdate();
   }
 }

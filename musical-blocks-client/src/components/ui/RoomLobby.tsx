@@ -287,6 +287,95 @@ export function RoomLobby() {
         <span className="hud-corner bottom-right"></span>
         <div className="hud-scanlines"></div>
 
+        {autoStartSeconds !== null && (
+          <div 
+            className="lobby-floating-banner"
+            style={{
+              position: 'absolute',
+              top: '-1.4rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 99,
+              pointerEvents: 'none',
+              width: '90%',
+              maxWidth: 'max-content',
+            }}
+          >
+            <div 
+              className={`banner-content ${autoStartSeconds <= 3 ? 'critical' : ''}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                background: 'rgba(10, 10, 25, 0.95)',
+                backdropFilter: 'blur(12px) saturate(1.5)',
+                border: autoStartSeconds <= 3 ? '1.5px solid rgba(244, 63, 94, 0.7)' : '1px solid rgba(0, 240, 255, 0.4)',
+                boxShadow: autoStartSeconds <= 3 
+                  ? '0 4px 20px rgba(0, 0, 0, 0.6), 0 0 20px rgba(244, 63, 94, 0.4)' 
+                  : '0 4px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 240, 255, 0.2)',
+                padding: '0.45rem 1.25rem',
+                borderRadius: '9999px',
+                color: '#fff',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              <span 
+                className="banner-pulse-dot" 
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: autoStartSeconds <= 3 ? '#f43f5e' : '#00f0ff',
+                  boxShadow: autoStartSeconds <= 3 ? '0 0 8px #f43f5e' : '0 0 8px #00f0ff',
+                }}
+              />
+              <span 
+                className="banner-text"
+                style={{
+                  fontFamily: 'var(--font-display), "Inter", sans-serif',
+                  fontSize: 'clamp(0.75rem, 3.2vw, 0.85rem)',
+                  fontWeight: 700,
+                  letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {countdownIsAuto 
+                  ? (lang === 'es' ? 'Auto-iniciando en ' : 'Auto starting in ')
+                  : (lang === 'es' ? 'Iniciando en ' : 'Starting in ')}
+                <strong
+                  style={{
+                    color: autoStartSeconds <= 3 ? '#f43f5e' : '#00f0ff',
+                    fontWeight: 900,
+                    fontSize: 'clamp(0.95rem, 4vw, 1.05rem)',
+                    textShadow: autoStartSeconds <= 3 ? '0 0 8px rgba(244, 63, 94, 0.7)' : '0 0 8px rgba(0, 240, 255, 0.7)',
+                    marginLeft: '4px',
+                  }}
+                >
+                  {autoStartSeconds}s
+                </strong>
+                {isHost && (
+                  <span 
+                    style={{ 
+                      fontSize: '0.7rem', 
+                      color: room.cancellationCount >= 3 ? '#f43f5e' : 'rgba(255, 255, 255, 0.6)', 
+                      marginLeft: '8px', 
+                      borderLeft: '1px solid rgba(255,255,255,0.2)', 
+                      paddingLeft: '8px',
+                      fontFamily: 'var(--font-mono), monospace'
+                    }}
+                  >
+                    {room.cancellationCount >= 3
+                      ? (lang === 'es' ? 'INICIO INEVITABLE' : 'START INEVITABLE')
+                      : (lang === 'es' ? `CANCELA: ${room.cancellationCount}/3` : `CANCELS: ${room.cancellationCount}/3`)}
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Host Settings Trigger Button */}
         {isHost && (
           <button
@@ -549,12 +638,14 @@ export function RoomLobby() {
             {isHost && (
               <button
                 id="btn-start"
-                className={`room-btn ${autoStartSeconds ? 'room-btn--leave' : 'room-btn--start'} ${!canStart && !autoStartSeconds ? 'disabled' : ''}`}
-                onClick={autoStartSeconds ? cancelStart : startGame}
-                disabled={!canStart && !autoStartSeconds}
+                className={`room-btn ${autoStartSeconds !== null ? 'room-btn--leave' : 'room-btn--start'} ${(!canStart && autoStartSeconds === null) || (autoStartSeconds !== null && room.cancellationCount >= 3) ? 'disabled' : ''}`}
+                onClick={autoStartSeconds !== null ? cancelStart : startGame}
+                disabled={(!canStart && autoStartSeconds === null) || (autoStartSeconds !== null && room.cancellationCount >= 3)}
               >
-                {autoStartSeconds 
-                  ? (lang === 'es' ? 'Cancelar' : 'Cancel') 
+                {autoStartSeconds !== null 
+                  ? room.cancellationCount >= 3
+                    ? (lang === 'es' ? 'Inicio Inevitable' : 'Starting Soon')
+                    : (lang === 'es' ? 'Cancelar' : 'Cancel') 
                   : t('startGame')}
               </button>
             )}
@@ -579,78 +670,7 @@ export function RoomLobby() {
 
       </div>
 
-      {autoStartSeconds !== null && (
-        <div 
-          className="lobby-floating-banner"
-          style={{
-            position: 'fixed',
-            top: '1rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 9999,
-            pointerEvents: 'none',
-            width: '90%',
-            maxWidth: 'max-content',
-          }}
-        >
-          <div 
-            className={`banner-content ${autoStartSeconds <= 3 ? 'critical' : ''}`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              background: 'rgba(10, 10, 25, 0.92)',
-              backdropFilter: 'blur(12px) saturate(1.5)',
-              border: autoStartSeconds <= 3 ? '1.5px solid rgba(244, 63, 94, 0.7)' : '1px solid rgba(0, 240, 255, 0.4)',
-              boxShadow: autoStartSeconds <= 3 
-                ? '0 4px 20px rgba(0, 0, 0, 0.6), 0 0 20px rgba(244, 63, 94, 0.4)' 
-                : '0 4px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 240, 255, 0.2)',
-              padding: '0.45rem 1.25rem',
-              borderRadius: '9999px',
-              color: '#fff',
-              transition: 'all 0.3s ease',
-            }}
-          >
-            <span 
-              className="banner-pulse-dot" 
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: autoStartSeconds <= 3 ? '#f43f5e' : '#00f0ff',
-                boxShadow: autoStartSeconds <= 3 ? '0 0 8px #f43f5e' : '0 0 8px #00f0ff',
-              }}
-            />
-            <span 
-              className="banner-text"
-              style={{
-                fontFamily: 'var(--font-display), "Inter", sans-serif',
-                fontSize: 'clamp(0.75rem, 3.2vw, 0.85rem)',
-                fontWeight: 700,
-                letterSpacing: '0.05em',
-                whiteSpace: 'nowrap',
-                textTransform: 'uppercase',
-              }}
-            >
-              {countdownIsAuto 
-                ? (lang === 'es' ? 'Auto-iniciando en ' : 'Auto starting in ')
-                : (lang === 'es' ? 'Iniciando en ' : 'Starting in ')}
-              <strong
-                style={{
-                  color: autoStartSeconds <= 3 ? '#f43f5e' : '#00f0ff',
-                  fontWeight: 900,
-                  fontSize: 'clamp(0.95rem, 4vw, 1.05rem)',
-                  textShadow: autoStartSeconds <= 3 ? '0 0 8px rgba(244, 63, 94, 0.7)' : '0 0 8px rgba(0, 240, 255, 0.7)',
-                  marginLeft: '4px',
-                }}
-              >
-                {autoStartSeconds}s
-              </strong>
-            </span>
-          </div>
-        </div>
-      )}
+
 
       {/* Global Floating Chat Widget */}
       <ChatOverlay inGame={false} />
