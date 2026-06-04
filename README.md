@@ -43,6 +43,10 @@ VoxelRave is not just a standard clone—it's loaded with advanced customizable 
     *   Strict rate limiting and speed hack checks on player inputs (rejecting moves under 100ms or exceeding lag limits >2000ms).
     *   Session tokens signed with HMAC to prevent socket hijacking and session spoofing.
     *   Suspicious logs automatically transported to server console/file with fast Pino logging.
+*   **🔒 Lobby Safety & Anti-Hijacking Protections**:
+    *   **Start Cancellation Limit**: Limits the host to a maximum of 3 manual cancellations. The 4th countdown (auto or manual) becomes inevitable; the Cancel button is disabled/hidden in the client, and the server strictly rejects cancellation requests.
+    *   **Host AFK Kick (120s)**: Tracks host active interactions (chat, settings, cosmetics). If the host is inactive for 120 seconds in the lobby, they are kicked and host privileges are automatically transferred.
+    *   **Lobby Timeout (10m)**: Rooms remaining in the lobby state (`waiting`) for over 10 minutes are automatically destroyed, kicking all remaining players to release server memory.
 *   **👁️ Blind Modifier (Blackout Mode)**:
     *   When activated, all colors on the arena turn black/gray during the color announcement phase. Dancers must rely on their spatial photographic memory to stand on the correct block!
 *   **🟫 Sudden Death Modifiers (Arena Shrinking)**:
@@ -462,6 +466,10 @@ A continuación se detallan las tareas estéticas, cinemáticas, de red y de jug
 - [x] Add server-side AFK check: kick unready players inactive for 90s
 - [x] Update RoomLobby UI to display required ready counts dynamically
 - [x] Update English and Spanish locales for AFK kicks and auto-start
+- [x] Phase 7.7: Implement countdown cancellation limit (3 max) server and client side
+- [x] Phase 7.7: Implement host AFK detection (120s limit) in lobby state
+- [x] Phase 7.7: Implement 10-minute lobby timeout auto-cleanup for inactive rooms
+- [x] Phase 7.7: Optimize kickPlayer Socket.io channel release (`targetSocket.leave`)
 
 ---
 
