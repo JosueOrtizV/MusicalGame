@@ -241,7 +241,7 @@ export function RoomLobby() {
   const isPrivate = room.visibility === 'private';
   const readyCount = room.players.filter((p) => p.isReady).length;
   const requiredCount = Math.max(2, Math.ceil(room.players.length / 2));
-  const canStart = isHost && room.players.length >= 2 && readyCount >= requiredCount;
+
 
   const toggleReady = () => {
     const me = room.players.find((p) => p.id === localPlayerId);
@@ -249,6 +249,15 @@ export function RoomLobby() {
   };
 
   const startGame = () => {
+    if (room.players.length < 2) {
+      addToast(t('needMorePlayers'), 'error');
+      return;
+    }
+    if (readyCount < requiredCount) {
+      const missingCount = requiredCount - readyCount;
+      addToast(t('waitingForReady', { count: missingCount }), 'error');
+      return;
+    }
     getSocket().emit('host:start_game');
   };
 
@@ -638,9 +647,9 @@ export function RoomLobby() {
             {isHost && (
               <button
                 id="btn-start"
-                className={`room-btn ${autoStartSeconds !== null ? 'room-btn--leave' : 'room-btn--start'} ${(!canStart && autoStartSeconds === null) || (autoStartSeconds !== null && room.cancellationCount >= 3) ? 'disabled' : ''}`}
+                className={`room-btn ${autoStartSeconds !== null ? 'room-btn--leave' : 'room-btn--start'} ${(autoStartSeconds !== null && room.cancellationCount >= 3) ? 'disabled' : ''}`}
                 onClick={autoStartSeconds !== null ? cancelStart : startGame}
-                disabled={(!canStart && autoStartSeconds === null) || (autoStartSeconds !== null && room.cancellationCount >= 3)}
+                disabled={autoStartSeconds !== null && room.cancellationCount >= 3}
               >
                 {autoStartSeconds !== null 
                   ? room.cancellationCount >= 3
