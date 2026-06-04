@@ -1,7 +1,7 @@
 {
-  "name": "@musical-blocks/shared",
+  "name": "@voxelrave/shared",
   "version": "1.0.0",
-  "description": "Shared types for Musical Blocks",
+  "description": "Shared types for VoxelRave",
   "main": "types.js",
   "types": "types.d.ts",
   "private": true

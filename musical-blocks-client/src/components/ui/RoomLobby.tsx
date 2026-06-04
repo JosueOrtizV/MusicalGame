@@ -272,6 +272,8 @@ export function RoomLobby() {
             className="lobby-settings-btn"
             onClick={openSettings}
             title={t('roomSettingsTitle')}
+            aria-label={t('roomSettingsTitle')}
+            aria-expanded={isSettingsOpen}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <JoystickIcon size={18} />
@@ -283,6 +285,8 @@ export function RoomLobby() {
           className="lobby-cosmetics-btn"
           onClick={openLocker}
           title={lang === 'es' ? 'Locker de Cosméticos' : 'Cosmetic Locker'}
+          aria-label={lang === 'es' ? 'Locker de Cosméticos' : 'Cosmetic Locker'}
+          aria-expanded={isLockerOpen}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <ShirtIcon size={18} />
@@ -294,7 +298,7 @@ export function RoomLobby() {
             {isPrivate ? t('privateRoom', { id: room.id }) : t('publicRoom')}
           </h2>
           {isPrivate && (
-            <button className="room-code-badge" onClick={copyCode} title="Click to copy" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <button className="room-code-badge" onClick={copyCode} title="Click to copy" aria-label={lang === 'es' ? `Copiar código de sala ${room.id}` : `Copy room code ${room.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span className="room-code-text">{room.id}</span>
               <span className="room-code-copy" style={{ display: 'flex', alignItems: 'center' }}><CopyIcon size={12} /></span>
             </button>
@@ -489,6 +493,7 @@ export function RoomLobby() {
                       className="room-kick-btn"
                       onClick={() => getSocket().emit('host:kick_player', { playerId: p.id })}
                       title={t('kickPlayer') || 'Kick Player'}
+                      aria-label={`${t('kickPlayer') || 'Kick Player'} ${p.name}`}
                     >
                       &times;
                     </button>
@@ -562,20 +567,21 @@ export function RoomLobby() {
             maxPlayers: 8
           };
           return (
-            <div className="settings-modal-overlay">
+            <div className="settings-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
               <div className="settings-modal-card">
                 {/* HUD Corner Brackets & Scanlines for Retro-Futurism vibe */}
-                <span className="hud-corner top-left"></span>
-                <span className="hud-corner top-right"></span>
-                <span className="hud-corner bottom-left"></span>
-                <span className="hud-corner bottom-right"></span>
-                <div className="hud-scanlines"></div>
+                <span className="hud-corner top-left" aria-hidden="true"></span>
+                <span className="hud-corner top-right" aria-hidden="true"></span>
+                <span className="hud-corner bottom-left" aria-hidden="true"></span>
+                <span className="hud-corner bottom-right" aria-hidden="true"></span>
+                <div className="hud-scanlines" aria-hidden="true"></div>
 
                 <div className="settings-modal-header">
-                  <h3 className="settings-modal-title">{t('roomSettingsTitle')}</h3>
+                  <h3 className="settings-modal-title" id="settings-title">{t('roomSettingsTitle')}</h3>
                   <button
                     className="settings-modal-close"
                     onClick={cancelSettings}
+                    aria-label={lang === 'es' ? 'Cerrar ajustes' : 'Close settings'}
                   >
                     &times;
                   </button>
@@ -1032,13 +1038,13 @@ export function RoomLobby() {
         (() => {
           const activeCosmetics = draftCosmetics || localCosmetics;
           return (
-            <div className="locker-modal-overlay">
+            <div className="locker-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="locker-title">
               <div className="locker-modal-card hud-card">
                 {/* HUD Corner Brackets */}
-                <span className="hud-corner top-left"></span>
-                <span className="hud-corner top-right"></span>
-                <span className="hud-corner bottom-left"></span>
-                <span className="hud-corner bottom-right"></span>
+                <span className="hud-corner top-left" aria-hidden="true"></span>
+                <span className="hud-corner top-right" aria-hidden="true"></span>
+                <span className="hud-corner bottom-left" aria-hidden="true"></span>
+                <span className="hud-corner bottom-right" aria-hidden="true"></span>
 
                 <div className="locker-modal-header">
                   <div className="flex items-center gap-3">
@@ -1047,7 +1053,7 @@ export function RoomLobby() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                     </svg>
                     <div>
-                      <h2 className="locker-modal-title">{lang === 'es' ? 'Locker de Avatar' : 'Avatar Locker'}</h2>
+                      <h2 className="locker-modal-title" id="locker-title">{lang === 'es' ? 'Locker de Avatar' : 'Avatar Locker'}</h2>
                       <p className="hud-terminal-sub">SYSTEM // CALIBRATING_DNA_STREAM... <span className="blinking-cursor">_</span></p>
                     </div>
                   </div>
@@ -1055,6 +1061,7 @@ export function RoomLobby() {
                     className="flex items-center justify-center w-8 h-8 rounded-full border border-white/10 bg-white/3 hover:bg-rose-500/20 hover:border-rose-500/40 transition-all duration-200 cursor-pointer" 
                     onClick={cancelLocker}
                     title={lang === 'es' ? 'Cerrar' : 'Close'}
+                    aria-label={lang === 'es' ? 'Cerrar locker' : 'Close locker'}
                   >
                     <svg className="w-4 h-4 text-white/70 hover:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

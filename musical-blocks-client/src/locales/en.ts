@@ -21,7 +21,7 @@ export const en = {
   CYAN: 'Cyan',
 
   // Lobby
-  gameTitle: 'Musical Blocks',
+  gameTitle: 'VoxelRave',
   gameSubtitle: 'Party Game',
   yourName: 'Your Name',
   namePlaceholder: 'Enter your alias...',

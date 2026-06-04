@@ -103,6 +103,8 @@ export function GameHUD() {
           className="hud-mute-btn" 
           onClick={toggleMute} 
           title="Toggle Audio"
+          aria-label={isMuted ? "Unmute audio" : "Mute audio"}
+          aria-pressed={isMuted}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           {isMuted ? <VolumeMuteIcon size={18} /> : <VolumeUpIcon size={18} />}
@@ -207,22 +209,26 @@ function MobileDPad() {
   };
 
   return (
-    <div className="hud-dpad">
+    <div className="hud-dpad" role="group" aria-label="Directional controls">
       <button
         className={`dpad-btn dpad-up ${pressed.UP ? 'dpad-btn--active' : ''}`}
         onPointerDown={(e) => handleInteraction(e, 'UP')}
+        aria-label="Move Up"
       >▲</button>
       <button
         className={`dpad-btn dpad-left ${pressed.LEFT ? 'dpad-btn--active' : ''}`}
         onPointerDown={(e) => handleInteraction(e, 'LEFT')}
+        aria-label="Move Left"
       >◀</button>
       <button
         className={`dpad-btn dpad-right ${pressed.RIGHT ? 'dpad-btn--active' : ''}`}
         onPointerDown={(e) => handleInteraction(e, 'RIGHT')}
+        aria-label="Move Right"
       >▶</button>
       <button
         className={`dpad-btn dpad-down ${pressed.DOWN ? 'dpad-btn--active' : ''}`}
         onPointerDown={(e) => handleInteraction(e, 'DOWN')}
+        aria-label="Move Down"
       >▼</button>
     </div>
   );

@@ -200,20 +200,20 @@ export function LobbyScreen() {
 
   return (
     <div className="lobby-bg">
-      <div className="lobby-particles" aria-hidden />
+      <div className="lobby-particles" aria-hidden="true" />
 
       <div className="lobby-card">
         {/* HUD Corner Brackets & Scanlines for the authentic retro-arcade cockpit feel */}
-        <span className="hud-corner top-left"></span>
-        <span className="hud-corner top-right"></span>
-        <span className="hud-corner bottom-left"></span>
-        <span className="hud-corner bottom-right"></span>
-        <div className="hud-scanlines"></div>
+        <span className="hud-corner top-left" aria-hidden="true"></span>
+        <span className="hud-corner top-right" aria-hidden="true"></span>
+        <span className="hud-corner bottom-left" aria-hidden="true"></span>
+        <span className="hud-corner bottom-right" aria-hidden="true"></span>
+        <div className="hud-scanlines" aria-hidden="true"></div>
 
         {loading === 'direct' ? (
           <div className="lobby-logo" style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
             <span className="logo-emoji" style={{ color: 'var(--c-accent)' }}><SpinnerIcon size={48} /></span>
-            <h1 className="logo-title">{t('loading')}</h1>
+            <h2 className="logo-title">{t('loading')}</h2>
             <p className="logo-sub">{t('joiningRoomSpinner', { code: pendingDirectJoinCode || '' })}</p>
           </div>
         ) : step === 'main' ? (
@@ -323,15 +323,16 @@ export function LobbyScreen() {
             {/* Join Private Step */}
             <div className="lobby-logo">
               <span className="logo-emoji" style={{ color: 'var(--c-accent-2)' }}><LockIcon size={48} /></span>
-              <h1 className="logo-title">{t('joinRoomTitle')}</h1>
+              <h2 className="logo-title">{t('joinRoomTitle')}</h2>
               <p className="logo-sub">{t('joinRoomSub')}</p>
             </div>
 
             {/* Join Private Step Content Wrapper */}
             <div className="lobby-content-wrapper">
               <div className="lobby-section lobby-section--centered">
-                <label className="lobby-label">{t('roomCode')}</label>
+                <label className="lobby-label" htmlFor="private-room-code">{t('roomCode')}</label>
                 <input
+                  id="private-room-code"
                   className="lobby-input lobby-input--code"
                   type="text"
                   placeholder={t('codePlaceholder')}
@@ -348,6 +349,7 @@ export function LobbyScreen() {
                 className="lobby-btn lobby-btn--primary"
                 onClick={joinPrivate}
                 disabled={privateCode.length !== 4 || !!loading}
+                aria-label="Confirm private room code and join"
               >
                 {loading === 'private' ? t('connecting') : t('join')}
               </button>
@@ -356,6 +358,7 @@ export function LobbyScreen() {
                 className="lobby-btn lobby-btn--secondary"
                 onClick={() => setStep('main')}
                 disabled={!!loading}
+                aria-label="Back to main lobby screen"
               >
                 {t('back')}
               </button>
@@ -366,7 +369,7 @@ export function LobbyScreen() {
             {/* Public Rooms Step */}
             <div className="lobby-logo">
               <span className="logo-emoji" style={{ color: 'var(--c-accent)' }}><GlobeIcon size={48} /></span>
-              <h1 className="logo-title">{t('activeRooms')}</h1>
+              <h2 className="logo-title">{t('activeRooms')}</h2>
               <p className="logo-sub">{publicRooms.length > 0 ? t('gameSubtitle') : t('noPublicRooms')}</p>
             </div>
 
@@ -381,6 +384,7 @@ export function LobbyScreen() {
                     <button
                       className="room-join-btn"
                       disabled={r.status !== 'waiting' || r.playerCount >= r.maxPlayers}
+                      aria-label={`Join room hosted by ${r.hostName}`}
                       onClick={() => {
                         store.setPlayerName(name.trim());
                         const socket = getSocket();
@@ -404,6 +408,7 @@ export function LobbyScreen() {
               <button
                 className="lobby-btn lobby-btn--secondary"
                 onClick={() => setStep('main')}
+                aria-label="Back to main lobby screen"
               >
                 {t('back')}
               </button>

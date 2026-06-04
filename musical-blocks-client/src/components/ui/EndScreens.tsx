@@ -25,7 +25,7 @@ export function GameOverScreen() {
   if (!visible) return null;
 
   return (
-    <div className="spectator-banner" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <div className="spectator-banner" role="alert" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
       <div className="spectator-banner-icon" style={{ display: 'flex', alignItems: 'center' }}><GhostIcon size={32} /></div>
       <div className="spectator-banner-text">
         <h3 className="spectator-title">{t('youFell')}</h3>
@@ -86,36 +86,36 @@ export function WinnerScreen() {
   // While the card is not yet visible, render an unobstructed view with a premium top banner
   if (!isCardVisible) {
     return (
-      <div className="victory-top-banner">
+      <div className="victory-top-banner" role="alert">
         {winner ? t('victoryBanner', { name: winner.name }) : t('gameOverBanner')}
       </div>
     );
   }
 
   return (
-    <div className="overlay overlay--winner">
+    <div className="overlay overlay--winner" role="dialog" aria-modal="true" aria-labelledby="winner-dialog-title">
       {/* Confetti-like background */}
-      <div className="confetti-bg" aria-hidden />
+      <div className="confetti-bg" aria-hidden="true" />
 
       <div className="overlay-card overlay-card--winner">
         {/* HUD Corner Brackets & Scanlines for the authentic arcade victory screen */}
-        <span className="hud-corner top-left"></span>
-        <span className="hud-corner top-right"></span>
-        <span className="hud-corner bottom-left"></span>
-        <span className="hud-corner bottom-right"></span>
-        <div className="hud-scanlines"></div>
+        <span className="hud-corner top-left" aria-hidden="true"></span>
+        <span className="hud-corner top-right" aria-hidden="true"></span>
+        <span className="hud-corner bottom-left" aria-hidden="true"></span>
+        <span className="hud-corner bottom-right" aria-hidden="true"></span>
+        <div className="hud-scanlines" aria-hidden="true"></div>
 
         <div className="overlay-header">
           {isLocalWinner ? (
             <>
               <div className="overlay-icon" style={{ display: 'flex', justifyContent: 'center', color: '#eab308' }}><CrownIcon size={48} /></div>
-              <h2 className="overlay-title">{t('victory')}</h2>
+              <h2 className="overlay-title" id="winner-dialog-title">{t('victory')}</h2>
               <p className="overlay-sub">{t('youWon')}</p>
             </>
           ) : (
             <>
               <div className="overlay-icon" style={{ display: 'flex', justifyContent: 'center', color: '#ef4444' }}><FlagIcon size={48} /></div>
-              <h2 className="overlay-title">{t('gameOver')}</h2>
+              <h2 className="overlay-title" id="winner-dialog-title">{t('gameOver')}</h2>
               <p className="overlay-sub" style={{ fontSize: '1.1rem', marginTop: '0.8rem', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                 {winner ? t('winnerIs', { name: winner.name }) : t('nobodyWon')}
               </p>

@@ -279,7 +279,7 @@ export const useGameStore = create<GameStore>()(
       clearChat: () => set((s) => { s.chatMessages = []; }),
     })),
     {
-      name: 'musical-blocks-settings',
+      name: 'voxelrave-settings',
       partialize: (state) => ({
         language: state.language,
         volume: state.volume,

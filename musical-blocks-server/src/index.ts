@@ -94,6 +94,6 @@ app.listen({ port: PORT, host: '0.0.0.0' }, (err) => {
     app.log.error(err);
     process.exit(1);
   }
-  console.log(`\n🎵 Musical Blocks Server → http://localhost:${PORT}`);
+  console.log(`\n🎵 VoxelRave Server → http://localhost:${PORT}`);
   console.log(`   WebSocket origin: ${CLIENT}\n`);
 });

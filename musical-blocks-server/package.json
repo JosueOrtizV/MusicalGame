@@ -1,7 +1,7 @@
 {
-  "name": "musical-blocks-server",
+  "name": "voxelrave-server",
   "version": "1.0.0",
-  "description": "Musical Blocks authoritative game server",
+  "description": "VoxelRave authoritative game server",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node -r tsconfig-paths/register src/index.ts",

@@ -61,7 +61,7 @@ export default function Home() {
   const screen = useGameStore((s) => s.screen);
 
   return (
-    <>
+    <main id="game-app">
       <SettingsMenu />
       {/* ---- Lobby: home / name entry ------------------------------------ */}
       {screen === 'home' && <LobbyScreen />}
@@ -71,13 +71,13 @@ export default function Home() {
 
       {/* ---- Game: 3D canvas always mounted when in-game ---------------- */}
       {(screen === 'game' || screen === 'dead' || screen === 'winner') && (
-        <div className="game-screen">
+        <div className="game-screen" aria-label="3D game arena">
           <GameCanvas />
           <GameHUD />
           {screen === 'dead'   && <GameOverScreen />}
           {screen === 'winner' && <WinnerScreen />}
         </div>
       )}
-    </>
+    </main>
   );
 }

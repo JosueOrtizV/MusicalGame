@@ -1,4 +1,4 @@
-# 🎵 Musical Blocks
+# ⚡ VoxelRave
 
 > A multiplayer voxel rhythm game — Block Party clone built with Next.js, React Three Fiber, and Socket.io.
 
@@ -24,7 +24,7 @@
 
 ## 🌟 Key Features & Modifiers
 
-Musical Blocks is not just a standard clone—it's loaded with advanced customizable systems:
+VoxelRave is not just a standard clone—it's loaded with advanced customizable systems:
 
 *   **👑 Full Host Control & Match Settings**:
     *   **Difficulty & Color Ranges**: Choose between **Easy (4 colors)**, **Normal (6 colors)**, **Hard (8 colors)**, and **Extreme (10 colors)**. More colors significantly reduce safe zones!
@@ -441,6 +441,19 @@ A continuación se detallan las tareas estéticas, cinemáticas, de red y de jug
 - [x] Integration test: 2-player game ends correctly when 1 survives
 - [x] Client test: Zustand `gameStore` state management, room synchronization, and screen auto-navigation
 - [x] Client test: `colorUtils.hexToRgba()` conversion, opacity, and fallbacks
+
+---
+
+### 🎨 Phase 6.5 — Rebrand, SEO & Accessibility
+
+- [x] Rebrand from "Musical Blocks" to "VoxelRave" across server and client configuration
+- [x] Generate premium voxel neon cube brand assets (`app/icon.png`, `app/apple-icon.png`, `public/og-image.png`)
+- [x] Implement complete Next.js metadata objects for SEO (Spanish defaults, custom keywords, OG, Twitter tags)
+- [x] Create PWA web manifest file (`app/manifest.ts`)
+- [x] Create crawlers configuration (`app/robots.ts` and `app/sitemap.ts`)
+- [x] Add dynamic client-side HTML lang sync based on Zustand store language state
+- [x] Standardize semantic HTML (`<main>`, headings structure) and accessibility `aria-labels` in all screens
+- [ ] Verify production compilation and passes test suite
 
 ---
 

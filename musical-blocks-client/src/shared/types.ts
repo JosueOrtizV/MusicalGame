@@ -1,5 +1,5 @@
 // =============================================================================
-//  Musical Blocks — Shared Types
+//  VoxelRave — Shared Types
 //  Single source of truth for client and server.
 //  Both packages import from this directory.
 // =============================================================================

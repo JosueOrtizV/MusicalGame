@@ -23,7 +23,7 @@ export const es: Translations = {
   CYAN: 'Cian',
 
   // Lobby
-  gameTitle: 'Musical Blocks',
+  gameTitle: 'VoxelRave',
   gameSubtitle: '¡A bailar!',
   yourName: 'Tu Apodo',
   namePlaceholder: 'Escribe tu nombre...',

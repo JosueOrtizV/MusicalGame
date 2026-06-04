@@ -66,18 +66,26 @@ export function SettingsMenu() {
         className="settings-menu-btn" 
         onClick={() => setIsOpen(!isOpen)}
         title={t('settings')}
+        aria-label={t('settings')}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         <GearIcon size={18} />
       </button>
 
       {isOpen && (
-        <div className="settings-dropdown">
+        <div className="settings-dropdown" role="dialog" aria-label={t('settings')}>
           <div className="settings-option">
             <span className="settings-label">
               {t('language')}
             </span>
-            <button className="settings-toggle" onClick={toggleLanguage} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button 
+              className="settings-toggle" 
+              onClick={toggleLanguage} 
+              aria-label={language === 'es' ? 'Cambiar idioma a Inglés' : 'Change language to Spanish'}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
               <GlobeIcon size={12} />
               <span>{language === 'es' ? 'ESP' : 'ENG'}</span>
             </button>
@@ -91,6 +99,8 @@ export function SettingsMenu() {
               <button 
                 className={`settings-mute-btn ${isMuted ? 'muted' : ''}`}
                 onClick={toggleMute}
+                aria-label={isMuted ? "Unmute audio" : "Mute audio"}
+                aria-pressed={isMuted}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 {isMuted ? <VolumeMuteIcon size={16} /> : <VolumeUpIcon size={16} />}
@@ -103,6 +113,7 @@ export function SettingsMenu() {
                 value={volume}
                 onChange={(e) => setVolume(parseFloat(e.target.value))}
                 className="settings-slider"
+                aria-label={t('volume')}
               />
               <span className="settings-value">{Math.round(volume * 100)}%</span>
             </div>
