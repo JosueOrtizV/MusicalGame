@@ -214,6 +214,15 @@ export function registerHandlers(
     }
   });
 
+  // ---- Host cancels game start countdown -----------------------------------
+  socket.on('host:cancel_start', ({ token }: { token?: string } = {}) => {
+    const room = registry.getRoomBySocketId(sid);
+    if (room && room.toRoom().hostId === sid) {
+      room.cancelCountdown();
+      console.log(`[Game] Room ${room.id} start countdown cancelled by host.`);
+    }
+  });
+
   // ---- Host goes back to lobby ---------------------------------------------
   socket.on('host:back_to_lobby', ({ token }: { token?: string } = {}) => {
     const room = registry.getRoomBySocketId(sid);
@@ -250,7 +259,7 @@ export function registerHandlers(
     // Cannot kick yourself
     if (playerId === sid) return;
 
-    room.kickPlayer(playerId, 'You have been kicked by the host');
+    room.kickPlayer(playerId, 'kickedByHost');
   });
 
   // ---- Host updates settings -----------------------------------------------

@@ -64,6 +64,11 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
       const pColor = gameState?.players.find(p => p.name === name)?.color || room?.players.find(p => p.name === name)?.color;
       return pColor || '#f59e0b'; // Amber warning/custom
     }
+    if (text.endsWith(' has been kicked for inactivity')) {
+      const name = text.replace(' has been kicked for inactivity', '');
+      const pColor = gameState?.players.find(p => p.name === name)?.color || room?.players.find(p => p.name === name)?.color;
+      return pColor || '#f59e0b'; // Amber warning/custom
+    }
     if (text === 'Game Over! Everyone died.') {
       return '#ef4444'; // Red
     }
@@ -135,6 +140,17 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle', color }}>
           <AlertIcon size={12} style={{ color }} />
           <span>{t('playerKicked', { name }) || `${name} has been kicked by the host`}</span>
+        </span>
+      );
+    }
+    // 4b. Kicked AFK: "{name} has been kicked for inactivity"
+    if (text.endsWith(' has been kicked for inactivity')) {
+      const name = text.replace(' has been kicked for inactivity', '');
+      const color = getSystemMessageColor(text);
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle', color }}>
+          <AlertIcon size={12} style={{ color }} />
+          <span>{t('playerKickedAfk', { name }) || `${name} has been kicked for inactivity`}</span>
         </span>
       );
     }

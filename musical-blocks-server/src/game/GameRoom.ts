@@ -52,6 +52,14 @@ export class GameRoom {
   private gameSongIndices: number[] = [];
   private victorySongIndex = 0;
 
+  // Timers for lobby logic
+  private afkInterval: NodeJS.Timeout | null = null;
+  private countdownTimeout: NodeJS.Timeout | null = null;
+  private countdownInterval: NodeJS.Timeout | null = null;
+  private autoStartSilentTimeout: NodeJS.Timeout | null = null;
+  private countdownSeconds: number = 0;
+  private countdownType: 'auto' | 'manual' | null = null;
+
   constructor(
     private readonly io: SocketServer<ClientEvents, ServerEvents>,
     hostSocketId: string,
@@ -64,6 +72,10 @@ export class GameRoom {
 
     this.randomizeSongs();
     this.players.add(hostSocketId, hostName, true);
+
+    this.afkInterval = setInterval(() => {
+      this.checkAFK();
+    }, 10000);
 
     this.loop = new GameLoop(this.grid, this.players, {
       onStateUpdate: () => {
@@ -167,6 +179,7 @@ export class GameRoom {
       const remaining = this.players.getAll();
       if (remaining.length > 0) {
         remaining[0].isHost = true;
+        remaining[0].isReady = true;
         this.hostId = remaining[0].id;
         console.log(`[Room] Host transferred to "${remaining[0].name}" in room ${this.id}`);
       }
@@ -208,6 +221,11 @@ export class GameRoom {
     }
 
     if (this.players.count() > 0) {
+      if (this.players.count() < 2) {
+        this.cancelCountdown();
+      } else {
+        this.checkAutoStart();
+      }
       this.broadcastRoomUpdate();
     }
   }
@@ -225,7 +243,11 @@ export class GameRoom {
     const player = this.players.get(playerId);
     if (targetSocket && player) {
       console.log(`[Room] "${player.name}" was kicked from room ${this.id} (${reason})`);
-      this.broadcastSystemMessage(`${player.name} has been kicked by the host`);
+      
+      const isAfk = reason === 'afkKickReason';
+      const msg = isAfk ? `${player.name} has been kicked for inactivity` : `${player.name} has been kicked by the host`;
+      
+      this.broadcastSystemMessage(msg);
       targetSocket.emit('room:kicked', { reason });
       this.removePlayer(playerId);
     }
@@ -233,12 +255,15 @@ export class GameRoom {
 
   setPlayerReady(socketId: string, ready: boolean): void {
     this.players.setReady(socketId, ready);
+    this.players.updateActivity(socketId);
     this.broadcastRoomUpdate();
+    this.checkAutoStart();
   }
 
   setPlayerCosmetics(socketId: string, cosmetics: PlayerCosmetics): void {
     const player = this.players.get(socketId);
     if (player) {
+      this.players.updateActivity(socketId);
       // Get colors currently used by other players in the room
       const otherPlayers = this.players.getAll().filter((p) => p.id !== socketId);
       const takenColors = new Set(otherPlayers.map((p) => (p.color || '').toLowerCase()));
@@ -294,21 +319,18 @@ export class GameRoom {
     if (requesterId !== this.hostId) {
       return { ok: false, error: 'Only the host can start the game.' };
     }
-    if (this.players.count() < 2) {
-      return { ok: false, error: 'Need at least 2 players to start.' };
+    const { meetsThreshold } = this.players.getReadyStatus();
+    if (!meetsThreshold) {
+      return { ok: false, error: 'Need more ready players to start.' };
     }
     if (this.loop.isRunning()) {
       return { ok: false, error: 'Game already in progress.' };
     }
-    this.status = 'playing';
-    console.log(`[Game] Room ${this.id} started with ${this.players.count()} players.`);
-
-    // Initialize lives for all participants
-    for (const player of this.players.getAll()) {
-      player.lives = this.settings.maxLives ?? 3;
+    if (this.countdownType === 'manual') {
+      return { ok: false, error: 'Countdown already in progress.' };
     }
-
-    this.loop.start();
+    
+    this.startCountdown(5, false);
     return { ok: true };
   }
 
@@ -328,6 +350,7 @@ export class GameRoom {
   handleChat(sid: string, text: string) {
     const player = this.players.get(sid);
     if (!player) return;
+    this.players.updateActivity(sid);
 
     // Validate: if game is playing, only dead players can chat
     if (this.status === 'playing' && player.isAlive) {
@@ -413,6 +436,8 @@ export class GameRoom {
 
   destroy(): void {
     this.loop.stop();
+    if (this.afkInterval) clearInterval(this.afkInterval);
+    this.cancelCountdown();
   }
 
   private gameOverTimeout: NodeJS.Timeout | null = null;
@@ -439,6 +464,7 @@ export class GameRoom {
       this.round = 0;
       this.players.resetAlive();
       this.randomizeSongs(); // Randomize tracks for the next match!
+      this.checkAutoStart(); // In case people remained ready
     }
     this.broadcastRoomUpdate();
   }
@@ -513,5 +539,102 @@ export class GameRoom {
       code += chars[Math.floor(Math.random() * chars.length)];
     }
     return code;
+  }
+
+  private checkAFK() {
+    if (this.status !== 'waiting') return;
+    const now = Date.now();
+    const AFK_LIMIT = 90000; // 90 seconds
+    for (const player of this.players.getAll()) {
+      if (!player.isReady) {
+        const lastActive = player.lastActivityTime || now;
+        if (now - lastActive > AFK_LIMIT) {
+          this.kickPlayer(player.id, 'afkKickReason');
+        }
+      }
+    }
+  }
+
+  private checkAutoStart() {
+    if (this.status !== 'waiting') return;
+    const { meetsThreshold } = this.players.getReadyStatus();
+    
+    if (meetsThreshold) {
+      if (this.countdownType === null && this.autoStartSilentTimeout === null) {
+        console.log(`[Lobby] Ready threshold met in room ${this.id}. Starting 20s silent auto-start timer...`);
+        this.autoStartSilentTimeout = setTimeout(() => {
+          this.autoStartSilentTimeout = null;
+          console.log(`[Lobby] 20s silent timer expired in room ${this.id}. Starting 10s visible countdown...`);
+          this.startCountdown(10, true);
+        }, 20000);
+      }
+    } else {
+      if (this.autoStartSilentTimeout) {
+        console.log(`[Lobby] Ready threshold lost in room ${this.id}. Cancelling 20s silent timer.`);
+        clearTimeout(this.autoStartSilentTimeout);
+        this.autoStartSilentTimeout = null;
+      }
+      if (this.countdownType === 'auto') {
+        this.cancelCountdown();
+      }
+    }
+  }
+
+  private startCountdown(seconds: number, isAuto: boolean) {
+    this.cancelCountdown();
+
+    this.countdownSeconds = seconds;
+    this.countdownType = isAuto ? 'auto' : 'manual';
+
+    // Broadcast the initial tick
+    this.io.to(this.id).emit('room:auto_start_countdown', { 
+      seconds: this.countdownSeconds, 
+      isAuto 
+    });
+
+    this.countdownInterval = setInterval(() => {
+      this.countdownSeconds--;
+      if (this.countdownSeconds > 0) {
+        this.io.to(this.id).emit('room:auto_start_countdown', { 
+          seconds: this.countdownSeconds, 
+          isAuto 
+        });
+      }
+    }, 1000);
+
+    this.countdownTimeout = setTimeout(() => {
+      this.cancelCountdown();
+
+      // Check if we still have enough players to start the game
+      const { meetsThreshold } = this.players.getReadyStatus();
+      if (this.players.count() >= 2 && (meetsThreshold || !isAuto)) {
+        this.status = 'playing';
+        console.log(`[Game] Room ${this.id} started automatically/manually with ${this.players.count()} players.`);
+        
+        for (const player of this.players.getAll()) {
+          player.lives = this.settings.maxLives ?? 3;
+        }
+
+        this.loop.start();
+      }
+    }, seconds * 1000);
+  }
+
+  cancelCountdown() {
+    if (this.countdownTimeout) {
+      clearTimeout(this.countdownTimeout);
+      this.countdownTimeout = null;
+    }
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+      this.countdownInterval = null;
+    }
+    if (this.autoStartSilentTimeout) {
+      clearTimeout(this.autoStartSilentTimeout);
+      this.autoStartSilentTimeout = null;
+    }
+    this.countdownSeconds = 0;
+    this.countdownType = null;
+    this.io.to(this.id).emit('room:auto_start_countdown', { seconds: null });
   }
 }

@@ -72,6 +72,7 @@ export interface Player {
   isHost: boolean;     // only relevant for private rooms
   color: string;       // hex avatar color, assigned on join
   hasReturnedToLobby: boolean; // true if player is waiting in lobby, false if viewing results
+  lastActivityTime?: number;   // timestamp of last activity (for AFK kick)
   cosmetics: PlayerCosmetics;
 }
 
@@ -155,6 +156,7 @@ export interface ServerEvents {
   'room:list':         (rooms: RoomSummary[]) => void;
   'room:error':        (payload: { message: string }) => void;
   'room:kicked':       (payload: { reason: string }) => void;
+  'room:auto_start_countdown': (payload: { seconds: number | null; isAuto?: boolean }) => void;
 
   // Game lifecycle
   'game:countdown':    (payload: { seconds: number }) => void;       // 3-2-1 before DANCING
@@ -188,6 +190,7 @@ export interface ClientEvents {
   'player:return_lobby': (payload?: { token?: string }) => void; // player returns to lobby while game is finished
   'host:kick_player':  (payload: { playerId: string; token?: string }) => void; // host-only: kick player
   'host:update_settings': (payload: { settings: RoomSettings; token?: string }) => void;
+  'host:cancel_start': (payload?: { token?: string }) => void;
 
   // In-game actions
   'player:move':       (payload: { direction: Direction; timestamp: number; token?: string }) => void;

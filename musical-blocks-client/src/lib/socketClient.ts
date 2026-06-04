@@ -39,7 +39,8 @@ export function getSocket(): AppSocket {
         'host:kick_player',
         'host:update_settings',
         'player:move',
-        'chat:send'
+        'chat:send',
+        'host:cancel_start'
       ];
       
       let finalArgs = [...args];

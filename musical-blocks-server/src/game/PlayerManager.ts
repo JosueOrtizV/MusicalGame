@@ -33,10 +33,11 @@ export class PlayerManager {
       position: this.randomSpawnPosition(),
       isAlive: true,
       lives: 0,
-      isReady: false,
+      isReady: isHost,
       isHost,
       color: chosenColor,
       hasReturnedToLobby: true,
+      lastActivityTime: Date.now(),
       cosmetics: {
         companionType: 'none',
         headphonesEnabled: true,
@@ -65,7 +66,15 @@ export class PlayerManager {
 
   setReady(socketId: string, ready: boolean): void {
     const p = this.players.get(socketId);
-    if (p) p.isReady = ready;
+    if (p) {
+      p.isReady = ready;
+      p.lastActivityTime = Date.now();
+    }
+  }
+
+  updateActivity(socketId: string): void {
+    const p = this.players.get(socketId);
+    if (p) p.lastActivityTime = Date.now();
   }
 
   getAll(): Player[] {
@@ -85,9 +94,16 @@ export class PlayerManager {
     return withLives.length === 1 ? withLives[0] : null;
   }
 
-  allReady(): boolean {
+  getReadyStatus(): { meetsThreshold: boolean; readyCount: number; requiredCount: number } {
     const all = this.getAll();
-    return all.length >= 2 && all.every(p => p.isReady);
+    const readyCount = all.filter(p => p.isReady).length;
+    const requiredCount = Math.max(2, Math.ceil(all.length / 2));
+    
+    return {
+      meetsThreshold: all.length >= 2 && readyCount >= requiredCount,
+      readyCount,
+      requiredCount,
+    };
   }
 
   count(): number {
@@ -195,8 +211,9 @@ export class PlayerManager {
   resetAlive(): void {
     for (const player of this.players.values()) {
       player.isAlive = true;
-      player.isReady = false;
+      player.isReady = player.isHost;
       player.hasReturnedToLobby = true;
+      player.lastActivityTime = Date.now();
     }
     this.lastMoveTime.clear();
   }

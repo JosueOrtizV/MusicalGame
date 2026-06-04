@@ -7,4 +7,7 @@ export default defineConfig({
       '@shared/types': path.resolve(__dirname, '../shared/types.ts'),
     },
   },
+  test: {
+    exclude: ['**/node_modules/**', '**/dist/**'],
+  },
 });

@@ -83,6 +83,8 @@ export function RoomLobby() {
   const [lockerTab, setLockerTab] = useState<'equip' | 'colors' | 'anims'>('equip');
   const [draftCosmetics, setDraftCosmetics] = useState<PlayerCosmetics | null>(null);
   const [previewAnimType, setPreviewAnimType] = useState<'dance' | 'idle' | 'celebrate' | null>(null);
+  const [autoStartSeconds, setAutoStartSeconds] = useState<number | null>(null);
+  const [countdownIsAuto, setCountdownIsAuto] = useState<boolean>(true);
 
   const localCosmetics = useGameStore((s) => s.localCosmetics);
   const updateLocalCosmetics = useGameStore((s) => s.updateLocalCosmetics);
@@ -221,10 +223,25 @@ export function RoomLobby() {
     prevPlayersRef.current = currentPlayers;
   }, [room, localPlayerId, t, addToast]);
 
+  useEffect(() => {
+    const handleCountdown = ({ seconds, isAuto }: { seconds: number | null; isAuto?: boolean }) => {
+      setAutoStartSeconds(seconds);
+      if (isAuto !== undefined) {
+        setCountdownIsAuto(isAuto);
+      }
+    };
+    getSocket().on('room:auto_start_countdown', handleCountdown);
+    return () => {
+      getSocket().off('room:auto_start_countdown', handleCountdown);
+    };
+  }, []);
+
   if (!room) return null;
 
   const isPrivate = room.visibility === 'private';
-  const canStart = isHost && room.players.length >= 2;
+  const readyCount = room.players.filter((p) => p.isReady).length;
+  const requiredCount = Math.max(2, Math.ceil(room.players.length / 2));
+  const canStart = isHost && room.players.length >= 2 && readyCount >= requiredCount;
 
   const toggleReady = () => {
     const me = room.players.find((p) => p.id === localPlayerId);
@@ -233,6 +250,10 @@ export function RoomLobby() {
 
   const startGame = () => {
     getSocket().emit('host:start_game');
+  };
+
+  const cancelStart = () => {
+    getSocket().emit('host:cancel_start');
   };
 
   const leaveRoom = () => {
@@ -528,11 +549,13 @@ export function RoomLobby() {
             {isHost && (
               <button
                 id="btn-start"
-                className={`room-btn room-btn--start ${!canStart ? 'disabled' : ''}`}
-                onClick={startGame}
-                disabled={!canStart}
+                className={`room-btn ${autoStartSeconds ? 'room-btn--leave' : 'room-btn--start'} ${!canStart && !autoStartSeconds ? 'disabled' : ''}`}
+                onClick={autoStartSeconds ? cancelStart : startGame}
+                disabled={!canStart && !autoStartSeconds}
               >
-                {t('startGame')}
+                {autoStartSeconds 
+                  ? (lang === 'es' ? 'Cancelar' : 'Cancel') 
+                  : t('startGame')}
               </button>
             )}
 
@@ -540,16 +563,94 @@ export function RoomLobby() {
               {t('leaveRoom')}
             </button>
 
-            <p className="room-footer-note">
-              {isHost
-                ? room.players.length < 2
-                  ? t('waitingPlayersHint')
-                  : t('everyoneReady')
-                : t('hostWillStart')}
+            <p className={`room-footer-note ${autoStartSeconds ? 'auto-starting-note' : ''}`}>
+              {autoStartSeconds
+                ? t('autoStartingIn', { seconds: autoStartSeconds })
+                : isHost
+                  ? room.players.length < 2
+                    ? t('waitingPlayersHint')
+                    : readyCount >= requiredCount
+                      ? t('everyoneReady')
+                      : t('waitingForReady', { count: requiredCount - readyCount })
+                  : t('hostWillStart')}
             </p>
           </div>
         </div>
+
       </div>
+
+      {autoStartSeconds !== null && (
+        <div 
+          className="lobby-floating-banner"
+          style={{
+            position: 'fixed',
+            top: '1rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            pointerEvents: 'none',
+            width: '90%',
+            maxWidth: 'max-content',
+          }}
+        >
+          <div 
+            className={`banner-content ${autoStartSeconds <= 3 ? 'critical' : ''}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              background: 'rgba(10, 10, 25, 0.92)',
+              backdropFilter: 'blur(12px) saturate(1.5)',
+              border: autoStartSeconds <= 3 ? '1.5px solid rgba(244, 63, 94, 0.7)' : '1px solid rgba(0, 240, 255, 0.4)',
+              boxShadow: autoStartSeconds <= 3 
+                ? '0 4px 20px rgba(0, 0, 0, 0.6), 0 0 20px rgba(244, 63, 94, 0.4)' 
+                : '0 4px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 240, 255, 0.2)',
+              padding: '0.45rem 1.25rem',
+              borderRadius: '9999px',
+              color: '#fff',
+              transition: 'all 0.3s ease',
+            }}
+          >
+            <span 
+              className="banner-pulse-dot" 
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: autoStartSeconds <= 3 ? '#f43f5e' : '#00f0ff',
+                boxShadow: autoStartSeconds <= 3 ? '0 0 8px #f43f5e' : '0 0 8px #00f0ff',
+              }}
+            />
+            <span 
+              className="banner-text"
+              style={{
+                fontFamily: 'var(--font-display), "Inter", sans-serif',
+                fontSize: 'clamp(0.75rem, 3.2vw, 0.85rem)',
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                whiteSpace: 'nowrap',
+                textTransform: 'uppercase',
+              }}
+            >
+              {countdownIsAuto 
+                ? (lang === 'es' ? 'Auto-iniciando en ' : 'Auto starting in ')
+                : (lang === 'es' ? 'Iniciando en ' : 'Starting in ')}
+              <strong
+                style={{
+                  color: autoStartSeconds <= 3 ? '#f43f5e' : '#00f0ff',
+                  fontWeight: 900,
+                  fontSize: 'clamp(0.95rem, 4vw, 1.05rem)',
+                  textShadow: autoStartSeconds <= 3 ? '0 0 8px rgba(244, 63, 94, 0.7)' : '0 0 8px rgba(0, 240, 255, 0.7)',
+                  marginLeft: '4px',
+                }}
+              >
+                {autoStartSeconds}s
+              </strong>
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Global Floating Chat Widget */}
       <ChatOverlay inGame={false} />

@@ -6,12 +6,14 @@ import { useGameStore } from '@/src/stores/gameStore';
 import { useToastStore } from '@/src/stores/toastStore';
 import { useTranslation } from './useTranslation';
 
+import { en } from '@/src/locales/en';
+import { es } from '@/src/locales/es';
+
 // ---------------------------------------------------------------------------
 //  useSocket — connects to server, wires all ServerEvents → Zustand store
 // ---------------------------------------------------------------------------
 export function useSocket() {
   const store = useGameStore();
-  const { t } = useTranslation();
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -31,7 +33,9 @@ export function useSocket() {
       if (wasInRoom) {
         // Session lost on reconnect (socket ID changed)
         store.clearRoom();
-        store.setConnectionError(t('errSessionLost'));
+        const currentLang = useGameStore.getState().language;
+        const errStr = currentLang === 'es' ? es.errSessionLost : en.errSessionLost;
+        store.setConnectionError(errStr);
       } else {
         // Start clock sync only if not just kicked
         const t0 = Date.now();
@@ -62,7 +66,17 @@ export function useSocket() {
 
     socket.on('room:kicked', ({ reason }) => {
       store.clearRoom();
-      useToastStore.getState().addToast(reason, 'error');
+      const currentLang = useGameStore.getState().language;
+      const dict = currentLang === 'es' ? es : en;
+      
+      let message = '';
+      if (reason === 'afkKickReason') {
+        message = dict.youKickedAfk || 'You have been kicked for inactivity';
+      } else {
+        message = dict.youKickedByHost || 'You have been kicked by the host';
+      }
+      
+      useToastStore.getState().addToast(message, 'error');
     });
 
     socket.on('room:list', () => {

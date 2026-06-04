@@ -455,9 +455,17 @@ A continuación se detallan las tareas estéticas, cinemáticas, de red y de jug
 - [x] Standardize semantic HTML (`<main>`, headings structure) and accessibility `aria-labels` in all screens
 - [ ] Verify production compilation and passes test suite
 
+### 🚀 Phase 7 — Lobby Logic Enhancements
+
+- [x] Implement percentage-based Ready threshold (Math.max(2, Math.ceil(players/2)))
+- [x] Add auto-start countdown logic (5 seconds) once threshold is met
+- [x] Add server-side AFK check: kick unready players inactive for 90s
+- [x] Update RoomLobby UI to display required ready counts dynamically
+- [x] Update English and Spanish locales for AFK kicks and auto-start
+
 ---
 
-### 🚀 Phase 7 — Deployment
+### 🚀 Phase 8 — Deployment
 
 - [ ] Add `Dockerfile` for server
 - [ ] Add `npm run build` script: `"build": "tsc --project tsconfig.json"`
@@ -472,7 +480,7 @@ A continuación se detallan las tareas estéticas, cinemáticas, de red y de jug
 
 ---
 
-### 📦 Phase 8 — Polish & Future Features
+### 📦 Phase 9 — Polish & Future Features
 
 - [x] Spectator mode: dead players can watch the active players in 3D
 - [ ] Leaderboard: track wins per session with in-memory counter
