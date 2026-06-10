@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react';
 import { getSocket, setClockOffset } from '@/src/lib/socketClient';
 import { useGameStore } from '@/src/stores/gameStore';
 import { useToastStore } from '@/src/stores/toastStore';
-import { useTranslation } from './useTranslation';
 
 import { en } from '@/src/locales/en';
 import { es } from '@/src/locales/es';
