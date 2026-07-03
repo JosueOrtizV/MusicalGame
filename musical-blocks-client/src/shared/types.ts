@@ -20,7 +20,11 @@ export type BlockColor =
   | 'LIME'
   | 'WHITE';
 
-export type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
+export type Direction =
+  | 'UP' | 'DOWN' | 'LEFT' | 'RIGHT'
+  | 'UP_LEFT' | 'UP_RIGHT' | 'DOWN_LEFT' | 'DOWN_RIGHT'
+  | 'DASH_UP' | 'DASH_DOWN' | 'DASH_LEFT' | 'DASH_RIGHT'
+  | 'DASH_UP_LEFT' | 'DASH_UP_RIGHT' | 'DASH_DOWN_LEFT' | 'DASH_DOWN_RIGHT';
 
 export type GamePhase =
   | 'LOBBY'        // Waiting for players / host to start
@@ -222,7 +226,9 @@ export const GRID_SIZE = 12;        // 12×12 = 144 blocks
 export const MAX_PLAYERS = 8;
 export const BLOCK_SIZE = 1.1;      // world units (0.1 gap between blocks)
 export const LAG_TOLERANCE_MS = 2000; // Increase tolerance for local dev clock skew
-export const MOVE_RATE_LIMIT_MS = 100; // min ms between moves
+export const MOVE_RATE_LIMIT_MS = 120; // min ms between moves
+export const DASH_COOLDOWN_MS = 800;   // cooldown between dashes
+export const DASH_DISTANCE = 2;        // cells to dash
 
 /** Hex values for each BlockColor — used by both Three.js and CSS */
 export const COLOR_HEX: Record<BlockColor, string> = {

@@ -9,7 +9,6 @@ import {
   Room,
   BlockColor,
   GameBlock,
-  Direction,
   ChatMessage,
   PlayerCosmetics,
 } from '@/src/shared/types';
@@ -44,7 +43,14 @@ interface GameStore {
   isMuted: boolean;
   volume: number;
   language: 'en' | 'es';
-  pressedDirections: Record<Direction, boolean>;
+  pressedDirections: Record<'UP' | 'DOWN' | 'LEFT' | 'RIGHT', boolean>;
+  cameraYaw: number;
+  dashCooldownEnd: number;
+  isPointerLocked: boolean;
+  cameraMode: 'movable' | 'static';
+  hasSelectedCameraMode: boolean;
+  mobileControlType: 'joystick' | 'wasd';
+  wasAliveThisRound: boolean;
 
   // ---- Actions -------------------------------------------------------------
   setConnected: (v: boolean) => void;
@@ -68,7 +74,11 @@ interface GameStore {
   toggleMute: () => void;
   setVolume: (volume: number) => void;
   setLanguage: (lang: 'en' | 'es') => void;
-  setDirectionPressed: (dir: Direction, pressed: boolean) => void;
+  setDirectionPressed: (dir: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT', pressed: boolean) => void;
+  triggerDashCooldown: () => void;
+  setCameraMode: (mode: 'movable' | 'static') => void;
+  setHasSelectedCameraMode: (selected: boolean) => void;
+  setMobileControlType: (type: 'joystick' | 'wasd') => void;
 
   addChatMessage: (msg: ChatMessage) => void;
   clearChat: () => void;
@@ -129,6 +139,13 @@ export const useGameStore = create<GameStore>()(
       volume: 0.5,
       language: 'en',
       pressedDirections: { UP: false, DOWN: false, LEFT: false, RIGHT: false },
+      cameraYaw: 0,
+      dashCooldownEnd: 0,
+      isPointerLocked: false,
+      cameraMode: 'movable',
+      hasSelectedCameraMode: false,
+      mobileControlType: 'joystick',
+      wasAliveThisRound: false,
 
       // ---- Actions
       setConnected: (v) => set((s) => { s.isConnected = v; }),
@@ -200,6 +217,7 @@ export const useGameStore = create<GameStore>()(
           s.gameState = null;
           s.screen = 'home';
           s.sessionToken = null;
+          s.wasAliveThisRound = false;
           
           // Clear URL query parameter
           if (typeof window !== 'undefined') {
@@ -212,6 +230,16 @@ export const useGameStore = create<GameStore>()(
       setGameState: (state) =>
         set((s) => {
           s.gameState = state;
+
+          // Track if player started this round alive
+          if (state.phase === 'LOBBY' || state.phase === 'STARTING') {
+            s.wasAliveThisRound = false;
+          } else if (state.phase === 'DANCING' || state.phase === 'ANNOUNCING') {
+            const localPlayer = state.players.find(p => p.id === s.localPlayerId);
+            if (localPlayer && localPlayer.isAlive) {
+              s.wasAliveThisRound = true;
+            }
+          }
           
           // Check if local player was revived by the server
           if (s.screen === 'dead') {
@@ -267,6 +295,10 @@ export const useGameStore = create<GameStore>()(
       setVolume: (volume) => set((s) => { s.volume = Math.max(0, Math.min(1, volume)); }),
       setLanguage: (lang) => set((s) => { s.language = lang; }),
       setDirectionPressed: (dir, pressed) => set((s) => { s.pressedDirections[dir] = pressed; }),
+      triggerDashCooldown: () => set((s) => { s.dashCooldownEnd = Date.now() + 5000; }),
+      setCameraMode: (mode) => set((s) => { s.cameraMode = mode; }),
+      setHasSelectedCameraMode: (selected) => set((s) => { s.hasSelectedCameraMode = selected; }),
+      setMobileControlType: (type) => set((s) => { s.mobileControlType = type; }),
       
       addChatMessage: (msg) => set((s) => {
         const msgWithLocal = {
@@ -284,6 +316,9 @@ export const useGameStore = create<GameStore>()(
         language: state.language,
         volume: state.volume,
         isMuted: state.isMuted,
+        cameraMode: state.cameraMode,
+        hasSelectedCameraMode: state.hasSelectedCameraMode,
+        mobileControlType: state.mobileControlType,
         localPlayerName: state.localPlayerName,
         localCosmetics: state.localCosmetics
       }),

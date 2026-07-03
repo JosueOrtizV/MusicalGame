@@ -3,14 +3,24 @@
 import { Suspense, useRef, useMemo, useEffect, useLayoutEffect } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Stars, Environment, CameraShake, OrbitControls } from '@react-three/drei';
+import { Stars, Environment, OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { BlockGrid } from './BlockGrid';
 import { PlayerMesh } from './PlayerMesh';
 import { ParticleSystem, spawnParticles } from './ParticleSystem';
 import { StageShow } from './StageShow';
 import { useGameStore } from '@/src/stores/gameStore';
-import { CAMERA_POSITION, CAMERA_FOV, BLOCK_SIZE } from '@/src/lib/constants';
+import {
+  CAMERA_POSITION,
+  CAMERA_FOV,
+  BLOCK_SIZE,
+  FOLLOW_CAM_FOV,
+  FOLLOW_CAM_LERP,
+  ORBIT_MIN_POLAR,
+  ORBIT_MAX_POLAR,
+  ORBIT_MIN_DIST,
+  ORBIT_MAX_DIST,
+} from '@/src/lib/constants';
 import { GRID_SIZE, Player } from '@/src/shared/types';
 
 // ---------------------------------------------------------------------------
@@ -24,11 +34,226 @@ const SPECTATOR_MOUSE_CONFIG = {
   RIGHT: THREE.MOUSE.ROTATE
 };
 
-function CinematicCamera({ isSpectator }: { isSpectator: boolean }) {
+function CinematicCamera({ 
+  isSpectator, 
+  containerRef,
+  wasAliveThisRound
+}: { 
+  isSpectator: boolean; 
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  wasAliveThisRound: boolean;
+}) {
   const { size, camera } = useThree();
   
   // Game state subscriptions
   const phase = useGameStore((s) => s.gameState?.phase || 'LOBBY');
+  const localPlayerId = useGameStore((s) => s.localPlayerId);
+  const cameraMode = useGameStore((s) => s.cameraMode);
+
+  // Camera orbit state (mouse/touch-controlled)
+  const yawRef = useRef(0);               // horizontal rotation around player
+  const pitchRef = useRef(Math.PI * 0.3);  // vertical angle
+  const distRef = useRef(10);             // distance from player
+  const isTouchDraggingRef = useRef(false);
+  const lastTouchPosRef = useRef({ x: 0, y: 0 });
+  const activeTouchesRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const lastPinchDistanceRef = useRef<number | null>(null);
+
+  // Orbit event handlers — use capture-phase window listeners for touch and pointer lock
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let touchStartId: number | null = null;
+
+    // 1. Pointer Lock Event Handlers
+    const onMouseMove = (e: MouseEvent) => {
+      if (document.pointerLockElement !== container) return;
+      if (useGameStore.getState().cameraMode === 'static') return;
+      yawRef.current -= e.movementX * 0.003;
+      pitchRef.current = THREE.MathUtils.clamp(
+        pitchRef.current - e.movementY * 0.003,
+        ORBIT_MIN_POLAR,
+        ORBIT_MAX_POLAR
+      );
+      useGameStore.setState({ cameraYaw: yawRef.current });
+    };
+
+    const onPointerLockChange = () => {
+      const isLocked = document.pointerLockElement === container;
+      useGameStore.setState({ isPointerLocked: isLocked });
+      if (isLocked) {
+        document.addEventListener('mousemove', onMouseMove);
+      } else {
+        document.removeEventListener('mousemove', onMouseMove);
+      }
+    };
+
+    const onContainerClick = () => {
+      const isMobile = window.innerWidth <= 768;
+      const currentPhase = useGameStore.getState().gameState?.phase || 'LOBBY';
+      const isGameplay = currentPhase === 'DANCING' || currentPhase === 'ANNOUNCING' || currentPhase === 'ELIMINATING' || currentPhase === 'ROUND_END';
+      if (useGameStore.getState().cameraMode === 'static') return;
+      if (!isMobile && isGameplay && document.pointerLockElement !== container) {
+        try {
+          const promise = container.requestPointerLock();
+          if (promise && typeof promise.catch === 'function') {
+            promise.catch((err) => {
+              // Ignore abort/security lock request errors caused by rapid clicking/exiting
+              console.debug('Pointer lock request deferred or rejected:', err);
+            });
+          }
+        } catch (err) {
+          console.debug('Pointer lock request failed:', err);
+        }
+      }
+    };
+
+    // 2. Touch event handlers for mobile
+    const onPointerDown = (e: PointerEvent) => {
+      if (!container.contains(e.target as Node)) return;
+
+      if (e.pointerType === 'touch') {
+        const rect = container.getBoundingClientRect();
+        const relativeX = e.clientX - rect.left;
+        const relativeY = e.clientY - rect.top;
+        
+        // Prevent starting camera rotation on active mobile control zones (bottom-left and bottom-right)
+        const inJoystickArea = relativeX < 180 && relativeY > rect.height - 180;
+        const inDashArea = relativeX > rect.width - 140 && relativeY > rect.height - 140;
+
+        if (!inJoystickArea && !inDashArea) {
+          activeTouchesRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+          if (activeTouchesRef.current.size === 1) {
+            isTouchDraggingRef.current = true;
+            touchStartId = e.pointerId;
+            lastTouchPosRef.current = { x: e.clientX, y: e.clientY };
+          } else if (activeTouchesRef.current.size === 2) {
+            isTouchDraggingRef.current = false; // Disable single-finger drag rotation when pinching
+            const touches = Array.from(activeTouchesRef.current.values());
+            const dx = touches[0].x - touches[1].x;
+            const dy = touches[0].y - touches[1].y;
+            lastPinchDistanceRef.current = Math.sqrt(dx * dx + dy * dy);
+          }
+        }
+      }
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') {
+        if (activeTouchesRef.current.has(e.pointerId)) {
+          activeTouchesRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+          if (activeTouchesRef.current.size === 1 && isTouchDraggingRef.current && e.pointerId === touchStartId) {
+            // Only allow rotation if not in static camera mode
+            if (useGameStore.getState().cameraMode !== 'static') {
+              const dx = e.clientX - lastTouchPosRef.current.x;
+              const dy = e.clientY - lastTouchPosRef.current.y;
+              lastTouchPosRef.current = { x: e.clientX, y: e.clientY };
+
+              const factor = 0.024;
+              yawRef.current -= dx * factor;
+              pitchRef.current = THREE.MathUtils.clamp(
+                pitchRef.current - dy * factor,
+                ORBIT_MIN_POLAR,
+                ORBIT_MAX_POLAR
+              );
+              useGameStore.setState({ cameraYaw: yawRef.current });
+            }
+          } else if (activeTouchesRef.current.size === 2 && lastPinchDistanceRef.current !== null) {
+            const touches = Array.from(activeTouchesRef.current.values());
+            const dx = touches[0].x - touches[1].x;
+            const dy = touches[0].y - touches[1].y;
+            const currentDistance = Math.sqrt(dx * dx + dy * dy);
+            
+            const deltaDist = currentDistance - lastPinchDistanceRef.current;
+            lastPinchDistanceRef.current = currentDistance;
+
+            // Pinch out (deltaDist > 0) -> camera distance decreases -> zoom in
+            // Pinch in (deltaDist < 0) -> camera distance increases -> zoom out
+            const zoomFactor = 0.05;
+            distRef.current = THREE.MathUtils.clamp(
+              distRef.current - deltaDist * zoomFactor,
+              ORBIT_MIN_DIST,
+              ORBIT_MAX_DIST
+            );
+          }
+        }
+      }
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') {
+        if (activeTouchesRef.current.has(e.pointerId)) {
+          activeTouchesRef.current.delete(e.pointerId);
+
+          if (activeTouchesRef.current.size < 2) {
+            lastPinchDistanceRef.current = null;
+          }
+
+          if (activeTouchesRef.current.size === 1) {
+            // Re-enable rotation with the single remaining touch
+            const remainingPointerId = Array.from(activeTouchesRef.current.keys())[0];
+            const remainingTouch = activeTouchesRef.current.get(remainingPointerId)!;
+            isTouchDraggingRef.current = true;
+            touchStartId = remainingPointerId;
+            lastTouchPosRef.current = { x: remainingTouch.x, y: remainingTouch.y };
+          } else if (activeTouchesRef.current.size === 0) {
+            isTouchDraggingRef.current = false;
+            touchStartId = null;
+          }
+        }
+      }
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      distRef.current = THREE.MathUtils.clamp(
+        distRef.current + e.deltaY * 0.008,
+        ORBIT_MIN_DIST,
+        ORBIT_MAX_DIST
+      );
+    };
+
+    // Bind listeners
+    document.addEventListener('pointerlockchange', onPointerLockChange);
+    container.addEventListener('click', onContainerClick);
+    window.addEventListener('pointerdown', onPointerDown, { capture: true });
+    window.addEventListener('pointermove', onPointerMove, { capture: true });
+    window.addEventListener('pointerup', onPointerUp, { capture: true });
+    window.addEventListener('pointercancel', onPointerUp, { capture: true });
+    container.addEventListener('wheel', onWheel, { passive: false });
+
+    return () => {
+      document.removeEventListener('pointerlockchange', onPointerLockChange);
+      container.removeEventListener('click', onContainerClick);
+      document.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('pointerdown', onPointerDown, { capture: true });
+      window.removeEventListener('pointermove', onPointerMove, { capture: true });
+      window.removeEventListener('pointerup', onPointerUp, { capture: true });
+      window.removeEventListener('pointercancel', onPointerUp, { capture: true });
+      container.removeEventListener('wheel', onWheel);
+      
+      if (document.pointerLockElement === container) {
+        document.exitPointerLock();
+      }
+      useGameStore.setState({ isPointerLocked: false });
+    };
+  }, [containerRef]);
+
+  // Separate effect to handle exiting pointer lock when transitioning out of gameplay or to static mode
+  useEffect(() => {
+    const isGameplay = phase === 'DANCING' || phase === 'ANNOUNCING' || phase === 'ELIMINATING' || phase === 'ROUND_END';
+    const container = containerRef.current;
+    const isStatic = cameraMode === 'static';
+    if ((!isGameplay || isStatic) && container && document.pointerLockElement === container) {
+      try {
+        document.exitPointerLock();
+      } catch (err) {
+        console.debug('Exit pointer lock failed:', err);
+      }
+    }
+  }, [phase, cameraMode, containerRef]);
 
   // Keep track of intro starting sweep animation
   const startingStartTimeRef = useRef(0);
@@ -96,9 +321,43 @@ function CinematicCamera({ isSpectator }: { isSpectator: boolean }) {
 
     const targetCameraPos = basePosVec.clone();
     const targetLookAt = baseLookAtVec.clone();
-    const targetFov = baseFov;
+    let targetFov = baseFov;
 
-    if (phase === 'LOBBY' || phase === 'GAME_OVER') {
+    const isGameplay = phase === 'DANCING' || phase === 'ANNOUNCING' || phase === 'ELIMINATING' || phase === 'ROUND_END';
+
+    if (isGameplay && localPlayerId) {
+      const gameState = useGameStore.getState().gameState;
+      const localPlayer = gameState?.players.find(p => p.id === localPlayerId);
+      
+      const isEliminatingOrRoundEnd = phase === 'ELIMINATING' || phase === 'ROUND_END';
+      const shouldFollow = localPlayer && (localPlayer.isAlive || (wasAliveThisRound && isEliminatingOrRoundEnd));
+
+      if (shouldFollow) {
+        // Calculate player world position
+        const halfGrid = (GRID_SIZE / 2 - 0.5) * BLOCK_SIZE;
+        const playerWorldX = localPlayer.position.x * BLOCK_SIZE - halfGrid;
+        const playerWorldZ = localPlayer.position.z * BLOCK_SIZE - halfGrid;
+        
+        if (cameraMode === 'static') {
+          yawRef.current = THREE.MathUtils.lerp(yawRef.current, 0, 0.05);
+          pitchRef.current = THREE.MathUtils.lerp(pitchRef.current, Math.PI * 0.3, 0.05);
+          useGameStore.setState({ cameraYaw: yawRef.current });
+        }
+
+        // Calculate camera position in spherical coordinates relative to the player
+        const yaw = yawRef.current;
+        const pitch = pitchRef.current;
+        const dist = distRef.current;
+        
+        const targetCamX = playerWorldX + Math.sin(yaw) * Math.cos(pitch) * dist;
+        const targetCamY = Math.sin(pitch) * dist;
+        const targetCamZ = playerWorldZ + Math.cos(yaw) * Math.cos(pitch) * dist;
+        
+        targetCameraPos.set(targetCamX, targetCamY, targetCamZ);
+        targetLookAt.set(playerWorldX, 0.5, playerWorldZ);
+        targetFov = FOLLOW_CAM_FOV;
+      }
+    } else if (phase === 'LOBBY' || phase === 'GAME_OVER') {
       // Gentle floating orbiting view in Lobby to make the 3D scene feel organic
       const orbitSpeed = 0.12;
       const radius = isPortrait ? 22 : 17;
@@ -144,6 +403,7 @@ function CinematicCamera({ isSpectator }: { isSpectator: boolean }) {
     }
 
     // Apply linear interpolation (lerp) for buttery smooth motion
+    const lerpFactor = isGameplay ? FOLLOW_CAM_LERP : 0.065;
     if (camera instanceof THREE.PerspectiveCamera) {
       if (phase === 'STARTING' && isFirstStartingFrameRef.current) {
         // Instant snap on the very first frame to prevent ugly snapping slides from default mounting position
@@ -154,18 +414,51 @@ function CinematicCamera({ isSpectator }: { isSpectator: boolean }) {
         camera.lookAt(currentLookAtRef.current);
         isFirstStartingFrameRef.current = false;
       } else {
-        camera.position.lerp(targetCameraPos, 0.065);
+        camera.position.lerp(targetCameraPos, lerpFactor);
         
         if (Math.abs(camera.fov - targetFov) > 0.05) {
-          camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, 0.065);
+          camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, lerpFactor);
           camera.updateProjectionMatrix();
         }
       }
     }
 
+    // Custom pure camera shake logic (prevents resetting lookAt to arena center during ANNOUNCING/ELIMINATING phases)
+    let shakeX = 0;
+    let shakeY = 0;
+    let shakeZ = 0;
+    if (phase === 'ANNOUNCING' || phase === 'ELIMINATING') {
+      const timeLeft = useGameStore.getState().gameState?.timeLeft ?? 99;
+      const isUrgent = phase === 'ANNOUNCING' && timeLeft <= 3;
+      
+      // Fine-tuned, extremely subtle intensities requested by user to achieve a perfect balance
+      const intensity = phase === 'ELIMINATING' ? 0.007 : (isUrgent ? 0.004 : 0.001);
+      const speed = phase === 'ELIMINATING' ? 18 : 12;
+      const tShake = time * speed;
+      
+      if (intensity > 0) {
+        shakeX = Math.sin(tShake * 1.1) * intensity;
+        shakeY = Math.cos(tShake * 1.3) * intensity;
+        shakeZ = Math.sin(tShake * 1.7) * intensity;
+      }
+    }
+
+    if (shakeX !== 0 || shakeY !== 0 || shakeZ !== 0) {
+      camera.position.x += shakeX;
+      camera.position.y += shakeY;
+      camera.position.z += shakeZ;
+    }
+
     if (!(phase === 'STARTING' && isFirstStartingFrameRef.current)) {
-      currentLookAtRef.current.lerp(targetLookAt, 0.065);
-      camera.lookAt(currentLookAtRef.current);
+      currentLookAtRef.current.lerp(targetLookAt, lerpFactor);
+      
+      const finalLookAt = currentLookAtRef.current.clone();
+      if (shakeX !== 0 || shakeY !== 0 || shakeZ !== 0) {
+        finalLookAt.x += shakeX * 0.5;
+        finalLookAt.y += shakeY * 0.5;
+        finalLookAt.z += shakeZ * 0.5;
+      }
+      camera.lookAt(finalLookAt);
     }
   });
 
@@ -333,13 +626,26 @@ export function GameCanvas() {
   const localPlayerId = useGameStore((s) => s.localPlayerId);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Track if the player started this round alive (queried from store)
+  const wasAliveThisRound = useGameStore((s) => s.wasAliveThisRound);
+
   // Spectator detection (dead, spectating, or free camera during victory celebration!)
   const isSpectator = useMemo(() => {
     if (!gameState) return false;
     if (gameState.phase === 'GAME_OVER') return true; // Unlock OrbitControls camera for everyone on victory celebration!
     const localPlayer = gameState.players.find((p) => p.id === localPlayerId);
+    
+    // During ELIMINATING or ROUND_END, if the player was alive earlier in this round, 
+    // keep them in follow-camera mode so they can see their own character fall.
+    const isEliminatingOrRoundEnd = gameState.phase === 'ELIMINATING' || gameState.phase === 'ROUND_END';
+    const justDied = isEliminatingOrRoundEnd && wasAliveThisRound && (!localPlayer || !localPlayer.isAlive);
+    
+    if (justDied) {
+      return false;
+    }
+    
     return gameState.phase !== 'LOBBY' && (!localPlayer || !localPlayer.isAlive);
-  }, [gameState, localPlayerId]);
+  }, [gameState, localPlayerId, wasAliveThisRound]);
 
   // Initial camera position matches the starting flight coordinates to bypass default mounting snapshots
   const initialCameraPos = useMemo(() => {
@@ -361,24 +667,11 @@ export function GameCanvas() {
     return CAMERA_POSITION;
   }, [gameState?.phase]);
 
-  useEffect(() => {
-    const handleContextMenu = (e: MouseEvent) => {
-      if (containerRef.current?.contains(e.target as Node)) {
-        e.preventDefault();
-      }
-    };
-    window.addEventListener('contextmenu', handleContextMenu, { capture: true });
-    return () => {
-      window.removeEventListener('contextmenu', handleContextMenu, { capture: true });
-    };
-  }, []);
-
   return (
     <div
       ref={containerRef}
       className="game-canvas-container"
-      style={{ width: '100%', height: '100%' }}
-      onContextMenu={(e) => e.preventDefault()}
+      style={{ width: '100%', height: '100%', touchAction: 'none' }}
     >
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
@@ -388,7 +681,11 @@ export function GameCanvas() {
         eventSource={containerRef as unknown as HTMLElement}
         eventPrefix="client"
       >
-        <CinematicCamera isSpectator={isSpectator} />
+        <CinematicCamera 
+          isSpectator={isSpectator} 
+          containerRef={containerRef} 
+          wasAliveThisRound={wasAliveThisRound} 
+        />
         <Suspense fallback={null}>
 
           {/* ---- Lighting ---- */}
@@ -455,23 +752,6 @@ export function GameCanvas() {
 
           {/* Global Particle System */}
           <ParticleSystem />
-
-          {/* Camera Shake on elimination and tension buildup — only active for alive players when intensity > 0 */}
-          {!isSpectator && gameState?.phase && (gameState.phase === 'ELIMINATING' || gameState.phase === 'ANNOUNCING') && (
-            <CameraShake
-              maxYaw={0.08}
-              maxPitch={0.08}
-              maxRoll={0.08}
-              yawFrequency={0.4}
-              pitchFrequency={0.4}
-              rollFrequency={0.4}
-              intensity={
-                gameState.phase === 'ELIMINATING'
-                  ? 1.8 // amplified shake on collapse!
-                  : 0.25 // subtle building tension rumble!
-              }
-            />
-          )}
 
           {/* Post-Processing */}
           <EffectComposer>

@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Text, useGLTF, useAnimations } from '@react-three/drei';
+import { Text, useGLTF, useAnimations, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { Player } from '@/src/shared/types';
@@ -1753,18 +1753,19 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
       )}
 
       {/* Floating text name label */}
-      <Text
-        position={[0, 1.55, 0]}
-        fontSize={0.22}
-        color={isLocal ? '#FFD700' : '#FFFFFF'}
-        anchorX="center"
-        anchorY="bottom"
-        outlineWidth={0.02}
-        outlineColor="#000000"
-        renderOrder={1}
-      >
-        {player.name}
-      </Text>
+      <Billboard position={[0, 1.55, 0]}>
+        <Text
+          fontSize={0.22}
+          color={isLocal ? '#FFD700' : '#FFFFFF'}
+          anchorX="center"
+          anchorY="bottom"
+          outlineWidth={0.02}
+          outlineColor="#000000"
+          renderOrder={1}
+        >
+          {player.name}
+        </Text>
+      </Billboard>
     </group>
   );
 }

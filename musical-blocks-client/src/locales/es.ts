@@ -11,6 +11,17 @@ export const es: Translations = {
   language: 'Idioma',
   volume: 'Volumen',
   mute: 'Silencio',
+  cameraMode: 'Modo de Cámara',
+  cameraModeStatic: 'Estática',
+  cameraModeMovable: 'Libre',
+  selectCameraTitle: 'Elige el Modo de Cámara',
+  cameraModeMovableDesc: 'Gira libremente con el mouse o arrastrando. Vista dinámica en tercera persona.',
+  cameraModeStaticDesc: 'Ángulo fijo que sigue a tu personaje. Usa la rueda para hacer zoom.',
+  cameraModeSelect: 'Seleccionar Modo',
+  cameraModeRecommended: 'Recomendado',
+  mobileControls: 'Controles Celular',
+  joystick: 'Joystick',
+  wasdButtons: 'Botones WASD',
 
   // Colors
   RED: 'Rojo',

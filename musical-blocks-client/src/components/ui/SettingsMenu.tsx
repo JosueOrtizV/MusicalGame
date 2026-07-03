@@ -4,20 +4,34 @@ import { useState, useRef, useEffect } from 'react';
 import { useGameStore } from '@/src/stores/gameStore';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { getSocket } from '@/src/lib/socketClient';
-import { GearIcon, VolumeUpIcon, VolumeMuteIcon, GlobeIcon } from './Icons';
+import { GearIcon, VolumeUpIcon, VolumeMuteIcon, GlobeIcon, CameraMovableIcon, CameraStaticIcon } from './Icons';
 
 export function SettingsMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const language = useGameStore((s) => s.language);
   const volume = useGameStore((s) => s.volume);
   const isMuted = useGameStore((s) => s.isMuted);
+  const cameraMode = useGameStore((s) => s.cameraMode);
+  const mobileControlType = useGameStore((s) => s.mobileControlType);
   const setLanguage = useGameStore((s) => s.setLanguage);
   const setVolume = useGameStore((s) => s.setVolume);
   const toggleMute = useGameStore((s) => s.toggleMute);
+  const setCameraMode = useGameStore((s) => s.setCameraMode);
+  const setMobileControlType = useGameStore((s) => s.setMobileControlType);
   const screen = useGameStore((s) => s.screen);
   const clearRoom = useGameStore((s) => s.clearRoom);
   const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -90,6 +104,36 @@ export function SettingsMenu() {
               <span>{language === 'es' ? 'ESP' : 'ENG'}</span>
             </button>
           </div>
+
+          <div className="settings-option">
+            <span className="settings-label">
+              {t('cameraMode')}
+            </span>
+            <button 
+              className="settings-toggle" 
+              onClick={() => setCameraMode(cameraMode === 'movable' ? 'static' : 'movable')} 
+              aria-label={cameraMode === 'movable' ? 'Cambiar a cámara estática' : 'Cambiar a cámara libre'}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              {cameraMode === 'movable' ? <CameraMovableIcon size={14} /> : <CameraStaticIcon size={14} />}
+              <span>{cameraMode === 'movable' ? t('cameraModeMovable') : t('cameraModeStatic')}</span>
+            </button>
+          </div>
+
+          {isMobile && (
+            <div className="settings-option">
+              <span className="settings-label">
+                {t('mobileControls')}
+              </span>
+              <button 
+                className="settings-toggle" 
+                onClick={() => setMobileControlType(mobileControlType === 'joystick' ? 'wasd' : 'joystick')}
+                aria-label="Toggle mobile controls"
+              >
+                <span>{mobileControlType === 'joystick' ? t('joystick') : t('wasdButtons')}</span>
+              </button>
+            </div>
+          )}
 
           <div className="settings-option">
             <span className="settings-label">

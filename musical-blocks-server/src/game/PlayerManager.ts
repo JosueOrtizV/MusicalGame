@@ -6,6 +6,7 @@ import {
   LAG_TOLERANCE_MS,
   MOVE_RATE_LIMIT_MS,
   PLAYER_COLORS,
+  DASH_COOLDOWN_MS,
 } from '@shared/types';
 import { GridManager } from './GridManager';
 import { securityLogger } from '../utils/logger';
@@ -17,6 +18,7 @@ import { securityLogger } from '../utils/logger';
 export class PlayerManager {
   private players: Map<string, Player> = new Map();
   private lastMoveTime: Map<string, number> = new Map();
+  private lastDashTime: Map<string, number> = new Map();
 
   // ---- Player lifecycle ----------------------------------------------------
 
@@ -58,6 +60,7 @@ export class PlayerManager {
   remove(socketId: string): void {
     this.players.delete(socketId);
     this.lastMoveTime.delete(socketId);
+    this.lastDashTime.delete(socketId);
   }
 
   get(socketId: string): Player | undefined {
@@ -141,36 +144,60 @@ export class PlayerManager {
       return false;
     }
     
-    // Rate-limit: player cannot move faster than once per MOVE_RATE_LIMIT_MS
-    const lastMove = this.lastMoveTime.get(socketId) ?? 0;
-    const elapsed = serverNow - lastMove;
-    if (elapsed < MOVE_RATE_LIMIT_MS) {
-      securityLogger.warn({
-        event: 'SUSPICIOUS_INPUT_RATE',
-        playerId: socketId,
-        playerName: player.name,
-        elapsedMs: elapsed,
-        limitMs: MOVE_RATE_LIMIT_MS
-      }, 'Suspicious player move rate detected (potential speed-hack or input spam)');
-      return false;
+    const isDash = direction.startsWith('DASH_');
+
+    // Rate-limit: player cannot move faster than once per MOVE_RATE_LIMIT_MS (except when dashing)
+    if (!isDash) {
+      const lastMove = this.lastMoveTime.get(socketId) ?? 0;
+      const elapsed = serverNow - lastMove;
+      if (elapsed < MOVE_RATE_LIMIT_MS) {
+        securityLogger.warn({
+          event: 'SUSPICIOUS_INPUT_RATE',
+          playerId: socketId,
+          playerName: player.name,
+          elapsedMs: elapsed,
+          limitMs: MOVE_RATE_LIMIT_MS
+        }, 'Suspicious player move rate detected (potential speed-hack or input spam)');
+        return false;
+      }
     }
 
-    // Bounds check on destination
-    const next = applyDirection(player.position, direction);
-    if (!isInBounds(next)) {
-      return false;
-    }
+    const destination = applyDirection(player.position, direction);
 
-    // Check if block is permanently dead (Sudden Death)
-    if (grid.isBlockDead(next)) {
-      return false;
-    }
+    if (isDash) {
+      // Cooldown check
+      const lastDash = this.lastDashTime.get(socketId) ?? 0;
+      if (serverNow - lastDash < DASH_COOLDOWN_MS) return false;
 
-    // Player-to-Player physical collision blocking logic
-    if (enableCollisions) {
-      for (const p of this.players.values()) {
-        if (p.id !== socketId && p.isAlive && p.position.x === next.x && p.position.z === next.z) {
-          return false; // Destination occupied! Blocked.
+      // Validate intermediate cell (path check)
+      const baseDir = direction.replace('DASH_', '') as Direction;
+      const intermediate = applyDirection(player.position, baseDir);
+      if (!isInBounds(intermediate) || grid.isBlockDead(intermediate)) return false;
+
+      // Validate destination cell
+      if (!isInBounds(destination) || grid.isBlockDead(destination)) return false;
+
+      // Collision checks
+      if (enableCollisions) {
+        for (const p of this.players.values()) {
+          if (p.id !== socketId && p.isAlive) {
+            if ((p.position.x === intermediate.x && p.position.z === intermediate.z) ||
+                (p.position.x === destination.x && p.position.z === destination.z)) {
+              return false;
+            }
+          }
+        }
+      }
+    } else {
+      // Normal validation
+      if (!isInBounds(destination) || grid.isBlockDead(destination)) return false;
+
+      // Collision check
+      if (enableCollisions) {
+        for (const p of this.players.values()) {
+          if (p.id !== socketId && p.isAlive && p.position.x === destination.x && p.position.z === destination.z) {
+            return false;
+          }
         }
       }
     }
@@ -182,7 +209,11 @@ export class PlayerManager {
   applyMove(socketId: string, direction: Direction): GridPosition {
     const player = this.players.get(socketId)!;
     player.position = applyDirection(player.position, direction);
-    this.lastMoveTime.set(socketId, Date.now());
+    const now = Date.now();
+    this.lastMoveTime.set(socketId, now);
+    if (direction.startsWith('DASH_')) {
+      this.lastDashTime.set(socketId, now);
+    }
     return player.position;
   }
 
@@ -216,6 +247,7 @@ export class PlayerManager {
       player.lastActivityTime = Date.now();
     }
     this.lastMoveTime.clear();
+    this.lastDashTime.clear();
   }
 
   /** Reset positions for a new round (only for alive players) */
@@ -243,6 +275,7 @@ export class PlayerManager {
       i++;
     }
     this.lastMoveTime.clear();
+    this.lastDashTime.clear();
   }
 
   // ---- Private helpers -----------------------------------------------------
@@ -267,10 +300,26 @@ export class PlayerManager {
 
 export function applyDirection(pos: GridPosition, dir: Direction): GridPosition {
   const deltas: Record<Direction, GridPosition> = {
+    // Cardinal (1 cell)
     UP:    { x: 0,  z: -1 },
     DOWN:  { x: 0,  z: 1  },
     LEFT:  { x: -1, z: 0  },
     RIGHT: { x: 1,  z: 0  },
+    // Diagonal (1 cell)
+    UP_LEFT:    { x: -1, z: -1 },
+    UP_RIGHT:   { x: 1,  z: -1 },
+    DOWN_LEFT:  { x: -1, z: 1  },
+    DOWN_RIGHT: { x: 1,  z: 1  },
+    // Dash cardinal (2 cells)
+    DASH_UP:    { x: 0,  z: -2 },
+    DASH_DOWN:  { x: 0,  z: 2  },
+    DASH_LEFT:  { x: -2, z: 0  },
+    DASH_RIGHT: { x: 2,  z: 0  },
+    // Dash diagonal (2 cells)
+    DASH_UP_LEFT:    { x: -2, z: -2 },
+    DASH_UP_RIGHT:   { x: 2,  z: -2 },
+    DASH_DOWN_LEFT:  { x: -2, z: 2  },
+    DASH_DOWN_RIGHT: { x: 2,  z: 2  },
   };
   const d = deltas[dir];
   return { x: pos.x + d.x, z: pos.z + d.z };

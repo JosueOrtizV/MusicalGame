@@ -9,6 +9,17 @@ export const en = {
   language: 'Language',
   volume: 'Volume',
   mute: 'Mute',
+  cameraMode: 'Camera Mode',
+  cameraModeStatic: 'Static',
+  cameraModeMovable: 'Movable',
+  selectCameraTitle: 'Choose Camera Mode',
+  cameraModeMovableDesc: 'Orbit freely with mouse or touch. Dynamic third-person view.',
+  cameraModeStaticDesc: 'Fixed angle following your character. Scroll to zoom in/out.',
+  cameraModeSelect: 'Select Mode',
+  cameraModeRecommended: 'Recommended',
+  mobileControls: 'Mobile Controls',
+  joystick: 'Joystick',
+  wasdButtons: 'WASD Buttons',
 
   // Colors
   RED: 'Red',

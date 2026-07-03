@@ -730,4 +730,55 @@ export const FlagIcon: React.FC<IconProps> = ({ size = 24, className, ...props }
   </svg>
 );
 
+// 33. CameraMovableIcon - Voxel style camera with movement arrows / free look
+export const CameraMovableIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="square"
+    strokeLinejoin="miter"
+    className={className}
+    {...props}
+  >
+    {/* Body */}
+    <rect x="3" y="7" width="12" height="10" />
+    <path d="M7 7 V5 H11 V7" />
+    {/* Lens (blocky circle) */}
+    <rect x="6" y="10" width="6" height="4" fill="currentColor" fillOpacity="0.2" />
+    {/* Orbit arrows representing movable/orbit */}
+    <path d="M17 9 L20 6 L23 9" />
+    <path d="M23 15 L20 18 L17 15" />
+    <line x1="20" y1="6" x2="20" y2="18" />
+  </svg>
+);
+
+// 34. CameraStaticIcon - Voxel style camera locked / tripod
+export const CameraStaticIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="square"
+    strokeLinejoin="miter"
+    className={className}
+    {...props}
+  >
+    {/* Body */}
+    <rect x="6" y="6" width="12" height="9" />
+    <path d="M10 6 V4 H14 V6" />
+    {/* Lens (blocky) */}
+    <rect x="9" y="8" width="6" height="4" fill="currentColor" fillOpacity="0.2" />
+    {/* Tripod legs / locked stand */}
+    <line x1="12" y1="15" x2="12" y2="18" />
+    <path d="M8 21 L12 18 L16 21" />
+  </svg>
+);
+
 

@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, vi, afterEach } from 'vitest';
 import { PlayerManager } from './PlayerManager';
 import { GridManager } from './GridManager';
-import { GRID_SIZE, MOVE_RATE_LIMIT_MS, LAG_TOLERANCE_MS } from '@shared/types';
+import { GRID_SIZE, MOVE_RATE_LIMIT_MS, LAG_TOLERANCE_MS, DASH_COOLDOWN_MS } from '@shared/types';
 
 describe('PlayerManager', () => {
   let playerManager: PlayerManager;
@@ -130,5 +130,71 @@ describe('PlayerManager', () => {
     expect(deaths).toContain('socket-1');
     expect(p1.isAlive).toBe(false);
     expect(p1.lives).toBe(2);
+  });
+
+  test('validateMove should handle diagonal movement', () => {
+    const p1 = playerManager.add('socket-1', 'Josue', true);
+    p1.position = { x: 5, z: 5 };
+    
+    // Diagonal UP_LEFT -> should be valid (4, 4)
+    let isValid = playerManager.validateMove('socket-1', 'UP_LEFT', Date.now(), gridManager);
+    expect(isValid).toBe(true);
+
+    // Diagonal out of bounds from (0,0) UP_LEFT -> reject
+    p1.position = { x: 0, z: 0 };
+    isValid = playerManager.validateMove('socket-1', 'UP_LEFT', Date.now(), gridManager);
+    expect(isValid).toBe(false);
+  });
+
+  test('validateMove should handle dash movement and separate cooldown', () => {
+    const p1 = playerManager.add('socket-1', 'Josue', true);
+    p1.position = { x: 5, z: 5 };
+
+    // Valid Dash UP -> should move 2 cells to (5, 3)
+    let isValid = playerManager.validateMove('socket-1', 'DASH_UP', Date.now(), gridManager);
+    expect(isValid).toBe(true);
+
+    playerManager.applyMove('socket-1', 'DASH_UP');
+    expect(p1.position).toEqual({ x: 5, z: 3 });
+
+    // Try dashing again immediately -> reject (cooldown)
+    isValid = playerManager.validateMove('socket-1', 'DASH_DOWN', Date.now(), gridManager);
+    expect(isValid).toBe(false);
+
+    // Fast-forward timers by DASH_COOLDOWN_MS
+    vi.advanceTimersByTime(DASH_COOLDOWN_MS + 10);
+
+    // Try dashing again after cooldown -> allow
+    isValid = playerManager.validateMove('socket-1', 'DASH_DOWN', Date.now(), gridManager);
+    expect(isValid).toBe(true);
+  });
+
+  test('validateMove should reject dash if intermediate cell is dead', () => {
+    const p1 = playerManager.add('socket-1', 'Josue', true);
+    p1.position = { x: 5, z: 5 };
+
+    // Set intermediate cell (5, 4) as dead (permanently eliminated block)
+    const blockGrid = (gridManager as any).grid;
+    blockGrid[4][5].isDead = true; // row 4, col 5 is (5, 4) in GridPosition coordinate system
+
+    // Try to dash UP (through (5,4) to (5,3)) -> reject because path is blocked
+    const isValid = playerManager.validateMove('socket-1', 'DASH_UP', Date.now(), gridManager);
+    expect(isValid).toBe(false);
+  });
+
+  test('validateMove should handle dash collisions if enabled', () => {
+    const p1 = playerManager.add('socket-1', 'P1', true);
+    const p2 = playerManager.add('socket-2', 'P2', false);
+    p1.position = { x: 5, z: 5 };
+
+    // Case 1: Obstacle player is at intermediate position (5, 4)
+    p2.position = { x: 5, z: 4 };
+    let isValid = playerManager.validateMove('socket-1', 'DASH_UP', Date.now(), gridManager, true);
+    expect(isValid).toBe(false);
+
+    // Case 2: Obstacle player is at destination position (5, 3)
+    p2.position = { x: 5, z: 3 };
+    isValid = playerManager.validateMove('socket-1', 'DASH_UP', Date.now(), gridManager, true);
+    expect(isValid).toBe(false);
   });
 });
