@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useGameStore, selectIsHost } from '@/src/stores/gameStore';
 import { getSocket } from '@/src/lib/socketClient';
 import { useTranslation } from '@/src/hooks/useTranslation';
@@ -85,6 +86,20 @@ export function RoomLobby() {
   const [previewAnimType, setPreviewAnimType] = useState<'dance' | 'idle' | 'celebrate' | null>(null);
   const [autoStartSeconds, setAutoStartSeconds] = useState<number | null>(null);
   const [countdownIsAuto, setCountdownIsAuto] = useState<boolean>(true);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const timer = setTimeout(() => {
+      if (active) {
+        setIsMounted(true);
+      }
+    }, 0);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, []);
 
   const localCosmetics = useGameStore((s) => s.localCosmetics);
   const updateLocalCosmetics = useGameStore((s) => s.updateLocalCosmetics);
@@ -236,6 +251,17 @@ export function RoomLobby() {
     };
   }, []);
 
+  useEffect(() => {
+    if (autoStartSeconds !== null) {
+      document.body.classList.add('game-starting');
+    } else {
+      document.body.classList.remove('game-starting');
+    }
+    return () => {
+      document.body.classList.remove('game-starting');
+    };
+  }, [autoStartSeconds]);
+
   if (!room) return null;
 
   const isPrivate = room.visibility === 'private';
@@ -288,102 +314,91 @@ export function RoomLobby() {
 
   return (
     <div className="room-lobby-bg">
-      <div className="room-lobby-card">
-        {/* HUD Corner Brackets & Scanlines for maximum Retro-Futurism aesthetic */}
-        <span className="hud-corner top-left"></span>
-        <span className="hud-corner top-right"></span>
-        <span className="hud-corner bottom-left"></span>
-        <span className="hud-corner bottom-right"></span>
-        <div className="hud-scanlines"></div>
-
-        {autoStartSeconds !== null && (
+      {isMounted && autoStartSeconds !== null && createPortal(
+        <div className="lobby-floating-banner">
           <div 
-            className="lobby-floating-banner"
+            className={`banner-content ${autoStartSeconds <= 3 ? 'critical' : ''}`}
             style={{
-              position: 'absolute',
-              top: '-1.4rem',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 99,
-              pointerEvents: 'none',
-              width: '90%',
-              maxWidth: 'max-content',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              background: 'rgba(10, 10, 25, 0.95)',
+              backdropFilter: 'blur(12px) saturate(1.5)',
+              border: autoStartSeconds <= 3 ? '1.5px solid rgba(244, 63, 94, 0.7)' : '1px solid rgba(0, 240, 255, 0.4)',
+              boxShadow: autoStartSeconds <= 3 
+                ? '0 4px 20px rgba(0, 0, 0, 0.6), 0 0 20px rgba(244, 63, 94, 0.4)' 
+                : '0 4px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 240, 255, 0.2)',
+              padding: '0.45rem 1.25rem',
+              borderRadius: '9999px',
+              color: '#fff',
+              transition: 'all 0.3s ease',
             }}
           >
-            <div 
-              className={`banner-content ${autoStartSeconds <= 3 ? 'critical' : ''}`}
+            <span 
+              className="banner-pulse-dot" 
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                background: 'rgba(10, 10, 25, 0.95)',
-                backdropFilter: 'blur(12px) saturate(1.5)',
-                border: autoStartSeconds <= 3 ? '1.5px solid rgba(244, 63, 94, 0.7)' : '1px solid rgba(0, 240, 255, 0.4)',
-                boxShadow: autoStartSeconds <= 3 
-                  ? '0 4px 20px rgba(0, 0, 0, 0.6), 0 0 20px rgba(244, 63, 94, 0.4)' 
-                  : '0 4px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 240, 255, 0.2)',
-                padding: '0.45rem 1.25rem',
-                borderRadius: '9999px',
-                color: '#fff',
-                transition: 'all 0.3s ease',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: autoStartSeconds <= 3 ? '#f43f5e' : '#00f0ff',
+                boxShadow: autoStartSeconds <= 3 ? '0 0 8px #f43f5e' : '0 0 8px #00f0ff',
+              }}
+            />
+            <span 
+              className="banner-text"
+              style={{
+                fontFamily: 'var(--font-display), "Inter", sans-serif',
+                fontSize: 'clamp(0.75rem, 3.2vw, 0.85rem)',
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                whiteSpace: 'nowrap',
+                textTransform: 'uppercase',
               }}
             >
-              <span 
-                className="banner-pulse-dot" 
+              {countdownIsAuto 
+                ? (lang === 'es' ? 'Auto-iniciando en ' : 'Auto starting in ')
+                : (lang === 'es' ? 'Iniciando en ' : 'Starting in ')}
+              <strong
                 style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: autoStartSeconds <= 3 ? '#f43f5e' : '#00f0ff',
-                  boxShadow: autoStartSeconds <= 3 ? '0 0 8px #f43f5e' : '0 0 8px #00f0ff',
-                }}
-              />
-              <span 
-                className="banner-text"
-                style={{
-                  fontFamily: 'var(--font-display), "Inter", sans-serif',
-                  fontSize: 'clamp(0.75rem, 3.2vw, 0.85rem)',
-                  fontWeight: 700,
-                  letterSpacing: '0.05em',
-                  whiteSpace: 'nowrap',
-                  textTransform: 'uppercase',
+                  color: autoStartSeconds <= 3 ? '#f43f5e' : '#00f0ff',
+                  fontWeight: 900,
+                  fontSize: 'clamp(0.95rem, 4vw, 1.05rem)',
+                  textShadow: autoStartSeconds <= 3 ? '0 0 8px rgba(244, 63, 94, 0.7)' : '0 0 8px rgba(0, 240, 255, 0.7)',
+                  marginLeft: '4px',
                 }}
               >
-                {countdownIsAuto 
-                  ? (lang === 'es' ? 'Auto-iniciando en ' : 'Auto starting in ')
-                  : (lang === 'es' ? 'Iniciando en ' : 'Starting in ')}
-                <strong
-                  style={{
-                    color: autoStartSeconds <= 3 ? '#f43f5e' : '#00f0ff',
-                    fontWeight: 900,
-                    fontSize: 'clamp(0.95rem, 4vw, 1.05rem)',
-                    textShadow: autoStartSeconds <= 3 ? '0 0 8px rgba(244, 63, 94, 0.7)' : '0 0 8px rgba(0, 240, 255, 0.7)',
-                    marginLeft: '4px',
+                {autoStartSeconds}s
+              </strong>
+              {isHost && room.cancellationCount >= 3 && (
+                <span 
+                  style={{ 
+                    fontSize: '0.7rem', 
+                    color: '#f43f5e', 
+                    marginLeft: '8px', 
+                    borderLeft: '1px solid rgba(255,255,255,0.2)', 
+                    paddingLeft: '8px',
+                    fontFamily: 'var(--font-mono), monospace'
                   }}
                 >
-                  {autoStartSeconds}s
-                </strong>
-                {isHost && (
-                  <span 
-                    style={{ 
-                      fontSize: '0.7rem', 
-                      color: room.cancellationCount >= 3 ? '#f43f5e' : 'rgba(255, 255, 255, 0.6)', 
-                      marginLeft: '8px', 
-                      borderLeft: '1px solid rgba(255,255,255,0.2)', 
-                      paddingLeft: '8px',
-                      fontFamily: 'var(--font-mono), monospace'
-                    }}
-                  >
-                    {room.cancellationCount >= 3
-                      ? (lang === 'es' ? 'INICIO INEVITABLE' : 'START INEVITABLE')
-                      : (lang === 'es' ? `CANCELA: ${room.cancellationCount}/3` : `CANCELS: ${room.cancellationCount}/3`)}
-                  </span>
-                )}
-              </span>
-            </div>
+                  {lang === 'es' ? 'INICIO INEVITABLE' : 'START INEVITABLE'}
+                </span>
+              )}
+            </span>
           </div>
-        )}
+        </div>,
+        document.body
+      )}
+
+      <div className="room-lobby-container" style={{ position: 'relative', width: 'min(520px, 95vw)', display: 'flex', flexDirection: 'column' }}>
+
+        <div className="room-lobby-card">
+          {/* HUD Corner Brackets & Scanlines for maximum Retro-Futurism aesthetic */}
+          <span className="hud-corner top-left"></span>
+          <span className="hud-corner top-right"></span>
+          <span className="hud-corner bottom-left"></span>
+          <span className="hud-corner bottom-right"></span>
+          <div className="hud-scanlines"></div>
 
         {/* Host Settings Trigger Button */}
         {isHost && (
@@ -676,6 +691,7 @@ export function RoomLobby() {
             </p>
           </div>
         </div>
+      </div>
 
       </div>
 

@@ -3532,6 +3532,11 @@ select.lobby-input option {
   pointer-events: none;
   max-height: 40vh;
   overflow: visible;
+  transition: top 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.game-starting .toast-container {
+  top: 5.8rem;
 }
 
 .toast {
@@ -4399,12 +4404,14 @@ select.lobby-input option {
 /* Countdown Floating Banner styles */
 .lobby-floating-banner {
   position: fixed;
-  top: 1.5rem;
+  top: 2.5rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1000;
+  z-index: 10005;
   pointer-events: none;
   animation: banner-slide-down 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  width: 90%;
+  max-width: max-content;
 }
 
 .banner-content {
