@@ -74,14 +74,22 @@ export function usePlayerInput() {
   const emit = useCallback(
     (direction: Direction) => {
       if (phase !== 'DANCING' && phase !== 'ANNOUNCING') return;
-      if (!localPlayerId) return;
+      const gameMode = useGameStore.getState().gameMode;
       
-      const isAlive = useGameStore.getState().gameState?.players.find(p => p.id === localPlayerId)?.isAlive;
+      const isAlive = gameMode === 'singleplayer'
+        ? useGameStore.getState().gameState?.players[0]?.isAlive
+        : (localPlayerId ? useGameStore.getState().gameState?.players.find(p => p.id === localPlayerId)?.isAlive : false);
       if (!isAlive) return;
 
       lastEmitTimeRef.current = performance.now(); // delay auto-repeat tick
       isRepeatingRef.current = false;
-      getSocket().emit('player:move', { direction, timestamp: serverNow() });
+
+      if (gameMode === 'singleplayer') {
+        window.dispatchEvent(new CustomEvent('sp:move', { detail: { direction } }));
+      } else {
+        if (!localPlayerId) return;
+        getSocket().emit('player:move', { direction, timestamp: serverNow() });
+      }
     },
     [phase, localPlayerId],
   );
@@ -95,7 +103,8 @@ export function usePlayerInput() {
         animFrameId = requestAnimationFrame(tick);
         return;
       }
-      if (!localPlayerId) {
+      const gameMode = useGameStore.getState().gameMode;
+      if (gameMode !== 'singleplayer' && !localPlayerId) {
         animFrameId = requestAnimationFrame(tick);
         return;
       }
@@ -111,11 +120,17 @@ export function usePlayerInput() {
 
         if (isNewDirection || lastEmitTimeRef.current === 0) {
           // Instant response for first step or direction change
-          const isAlive = useGameStore.getState().gameState?.players.find(p => p.id === localPlayerId)?.isAlive;
+          const isAlive = gameMode === 'singleplayer'
+            ? useGameStore.getState().gameState?.players[0]?.isAlive
+            : (localPlayerId ? useGameStore.getState().gameState?.players.find(p => p.id === localPlayerId)?.isAlive : false);
           if (isAlive) {
             lastEmitTimeRef.current = now;
             isRepeatingRef.current = false;
-            getSocket().emit('player:move', { direction: dir, timestamp: serverNow() });
+            if (gameMode === 'singleplayer') {
+              window.dispatchEvent(new CustomEvent('sp:move', { detail: { direction: dir } }));
+            } else {
+              getSocket().emit('player:move', { direction: dir, timestamp: serverNow() });
+            }
           }
         } else {
           // Check repeat delays
@@ -123,11 +138,17 @@ export function usePlayerInput() {
           const requiredDelay = isRepeatingRef.current ? MOVE_RATE_LIMIT_MS : 180; // 180ms initial repeat delay
           
           if (elapsed >= requiredDelay) {
-            const isAlive = useGameStore.getState().gameState?.players.find(p => p.id === localPlayerId)?.isAlive;
+            const isAlive = gameMode === 'singleplayer'
+              ? useGameStore.getState().gameState?.players[0]?.isAlive
+              : (localPlayerId ? useGameStore.getState().gameState?.players.find(p => p.id === localPlayerId)?.isAlive : false);
             if (isAlive) {
               lastEmitTimeRef.current = now;
               isRepeatingRef.current = true;
-              getSocket().emit('player:move', { direction: dir, timestamp: serverNow() });
+              if (gameMode === 'singleplayer') {
+                window.dispatchEvent(new CustomEvent('sp:move', { detail: { direction: dir } }));
+              } else {
+                getSocket().emit('player:move', { direction: dir, timestamp: serverNow() });
+              }
             }
           }
         }

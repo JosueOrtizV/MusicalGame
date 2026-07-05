@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ToastContainer } from '@/src/components/ui/ToastContainer';
 import { HtmlLangSync } from '@/src/components/ui/HtmlLangSync';
+import { GlobalAudioPlayer } from '@/src/components/audio/GlobalAudioPlayer';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://voxelrave.com'),
@@ -77,6 +78,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <GlobalAudioPlayer />
         <HtmlLangSync />
         {children}
         <ToastContainer />

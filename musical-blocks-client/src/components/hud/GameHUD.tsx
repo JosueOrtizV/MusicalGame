@@ -6,7 +6,7 @@ import { COLOR_HEX, Direction } from '@/src/shared/types';
 import { getSocket, serverNow } from '@/src/lib/socketClient';
 import { useTranslation, DictKey } from '@/src/hooks/useTranslation';
 import { ChatOverlay } from './ChatOverlay';
-import { VolumeMuteIcon, VolumeUpIcon, HeartIcon, SkullIcon, EyeIcon, CameraMovableIcon, CameraStaticIcon } from '../ui/Icons';
+import { VolumeMuteIcon, VolumeUpIcon, HeartIcon, SkullIcon, EyeIcon, CameraMovableIcon, CameraStaticIcon, TrophyIcon } from '../ui/Icons';
 import { computeDirection } from '@/src/hooks/usePlayerInput';
 
 // ---------------------------------------------------------------------------
@@ -22,6 +22,8 @@ export function GameHUD() {
   const hasSelectedCameraMode = useGameStore((s) => s.hasSelectedCameraMode);
   const phase = useGameStore(selectPhase);
   const settings = useGameStore((s) => s.room?.settings);
+  const gameMode = useGameStore((s) => s.gameMode);
+  const spLastScore = useGameStore((s) => s.spLastScore);
   const { t } = useTranslation();
 
   const [showBanner, setShowBanner] = useState(false);
@@ -203,8 +205,30 @@ export function GameHUD() {
         {/* ---- Pointer Lock Prompt ----------------------------------------- */}
         <PointerLockPrompt />
 
-        {/* ---- Round info --------------------------------------------------- */}
-        {gameState.round > 0 && <div className="hud-round">{t('roundNumber', { round: gameState.round })}</div>}
+        {/* ---- Round & Score info ------------------------------------------- */}
+        {gameState.round > 0 && (
+          <div className="hud-round flex items-center gap-1.5 font-mono">
+            {/* Round display (Desktop / Mobile) */}
+            <span className="hidden md:inline">
+              {t('roundNumber', { round: gameState.round })}
+            </span>
+            <span className="inline md:hidden">
+              R{gameState.round}
+            </span>
+
+            {/* Score display if Singleplayer */}
+            {gameMode === 'singleplayer' && (
+              <>
+                <span className="opacity-40"> - </span>
+                <span className="flex items-center gap-1">
+                  <TrophyIcon size={13} className="text-[#eaea00] text-glow-cyan" />
+                  <span className="hidden md:inline">{t('score')}: </span>
+                  <span className="text-[#eaea00] text-glow-cyan">{spLastScore}</span>
+                </span>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ---- Chat (Outside hud-overlay wrapper to avoid pointer-events: none and capped z-index) ---- */}
@@ -480,6 +504,7 @@ function MobileControls() {
   const phase = useGameStore((s) => s.gameState?.phase);
   const localPlayerId = useGameStore((s) => s.localPlayerId);
   const mobileControlType = useGameStore((s) => s.mobileControlType);
+  const gameMode = useGameStore((s) => s.gameMode);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -524,10 +549,10 @@ function MobileControls() {
 
   const handleDash = () => {
     if (phase !== 'DANCING' && phase !== 'ANNOUNCING') return;
-    if (!localPlayerId) return;
 
-    // Check if player is alive
-    const isAlive = useGameStore.getState().gameState?.players.find(p => p.id === localPlayerId)?.isAlive;
+    const isAlive = gameMode === 'singleplayer'
+      ? useGameStore.getState().gameState?.players[0]?.isAlive
+      : (localPlayerId ? useGameStore.getState().gameState?.players.find(p => p.id === localPlayerId)?.isAlive : false);
     if (!isAlive) return;
 
     const pressed = useGameStore.getState().pressedDirections;
@@ -538,7 +563,13 @@ function MobileControls() {
     }
 
     const dashDir = `DASH_${baseDir}` as Direction;
-    getSocket().emit('player:move', { direction: dashDir, timestamp: serverNow() });
+    
+    if (gameMode === 'singleplayer') {
+      window.dispatchEvent(new CustomEvent('sp:move', { detail: { direction: dashDir } }));
+    } else {
+      if (!localPlayerId) return;
+      getSocket().emit('player:move', { direction: dashDir, timestamp: serverNow() });
+    }
   };
 
   return (

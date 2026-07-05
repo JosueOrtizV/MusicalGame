@@ -180,6 +180,43 @@ export const en = {
   
   // Chat
   chatPlaceholder: 'Type a message...',
+
+  // Single Player Mode
+  singlePlayer: 'Single Player',
+  multiplayer: 'Multiplayer',
+  modeSelectTitle: 'Select Game Mode',
+  modeSelectSub: 'Solo practice or online multiplayer party!',
+  singlePlayerDesc: 'Practice solo, no waiting',
+  multiplayerDesc: 'Play online with friends',
+  playSolo: 'Play Solo',
+  playOnline: 'Play Online',
+  highScore: 'High Score',
+  score: 'Score',
+  globalLeaderboard: 'Global Leaderboard',
+  roundsSurvived: 'Rounds Survived: {rounds}',
+  spGameOver: 'Game Over!',
+  newRecord: 'NEW RECORD!',
+  finalScore: 'Final Score: {score}',
+  backToMenu: 'Back to Menu',
+  playAgain: 'Play Again',
+  difficulty: 'Difficulty',
+  speed: 'Speed',
+  easy: 'Easy',
+  normal: 'Normal',
+  hard: 'Hard',
+  extreme: 'Extreme',
+  leaderboardLoading: 'Loading leaderboard...',
+  establishingNeuralLink: 'Establishing neural link...',
+  establishingRoomLink: 'Establishing room link...',
+  serverStatus: 'Server',
+  online: 'Online',
+  offline: 'Offline',
+  latency: 'Latency',
+  systemStatus: 'System Status',
+  nominal: 'Nominal',
+  localMode: 'Local Mode',
+  privacyProtocol: 'Privacy Protocol',
+  termsOfService: 'Terms of Service',
 };
 
 export type Translations = typeof en;

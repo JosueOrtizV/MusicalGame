@@ -56,6 +56,28 @@ export const JoystickIcon: React.FC<IconProps> = ({ size = 24, className, ...pro
   </svg>
 );
 
+// UserIcon - Single player avatar (blocky)
+export const UserIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="square"
+    strokeLinejoin="miter"
+    className={className}
+    {...props}
+  >
+    {/* Head */}
+    <rect x="9" y="5" width="6" height="6" />
+    {/* Shoulders */}
+    <rect x="5" y="14" width="14" height="5" />
+    <rect x="7" y="12" width="10" height="2" />
+  </svg>
+);
+
 // 3. ShirtIcon - A voxel shirt silhouette
 export const ShirtIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
   <svg
@@ -778,6 +800,46 @@ export const CameraStaticIcon: React.FC<IconProps> = ({ size = 24, className, ..
     {/* Tripod legs / locked stand */}
     <line x1="12" y1="15" x2="12" y2="18" />
     <path d="M8 21 L12 18 L16 21" />
+  </svg>
+);
+
+// 35. BackArrowIcon - Blocky retro back arrow
+export const BackArrowIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    className={className}
+    fill="none"
+    {...props}
+  >
+    <path d="M20 11H8V9H6V11H4V13H6V15H8V13H20V11Z" fill="currentColor" />
+  </svg>
+);
+
+// 36. TrophyIcon - Blocky retro trophy
+export const TrophyIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    className={className}
+    {...props}
+  >
+    <path d="M5 2H19V4H17V6H15V14H9V6H7V4H5V2ZM9 16H15V18H17V20H7V18H9V16ZM3 4H5V8H7V10H5V12H3V4ZM21 4H19V8H17V10H19V12H21V4Z" fill="currentColor" />
+  </svg>
+);
+
+// 37. PlayArrowIcon - Blocky retro play arrow
+export const PlayArrowIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    className={className}
+    {...props}
+  >
+    <path d="M8 5V19L18 12L8 5Z" fill="currentColor" />
   </svg>
 );
 

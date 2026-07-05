@@ -11,6 +11,7 @@ import {
   GameBlock,
   ChatMessage,
   PlayerCosmetics,
+  RoomSettings,
 } from '@/src/shared/types';
 import { persist } from 'zustand/middleware';
 
@@ -20,6 +21,7 @@ import { persist } from 'zustand/middleware';
 interface GameStore {
   // ---- Connection ----------------------------------------------------------
   isConnected: boolean;
+  latency: number;
   connectionError: string | null;
 
   // ---- Room ----------------------------------------------------------------
@@ -36,13 +38,23 @@ interface GameStore {
   chatMessages: ChatMessage[];
 
   // ---- UI state ------------------------------------------------------------
-  screen: 'home' | 'lobby' | 'game' | 'dead' | 'winner';
+  screen: 'home' | 'lobby' | 'game' | 'dead' | 'winner' | 'sp_game';
   roomListRefreshKey: number; // increment to trigger refresh
+
+  // ---- Single Player Mode --------------------------------------------------
+  gameMode: 'multiplayer' | 'singleplayer';
+  spHighScore: number;
+  spPlayerId: string;
+  spLastScore: number;
+  spLastRounds: number;
+  spSettings: RoomSettings;
+  hostSettings: RoomSettings;
 
   // ---- Settings ------------------------------------------------------------
   isMuted: boolean;
   volume: number;
   language: 'en' | 'es';
+  hasSetLanguage: boolean;
   pressedDirections: Record<'UP' | 'DOWN' | 'LEFT' | 'RIGHT', boolean>;
   cameraYaw: number;
   dashCooldownEnd: number;
@@ -54,6 +66,7 @@ interface GameStore {
 
   // ---- Actions -------------------------------------------------------------
   setConnected: (v: boolean) => void;
+  setLatency: (v: number) => void;
   setConnectionError: (msg: string | null) => void;
   updateLocalCosmetics: (cosmetics: Partial<PlayerCosmetics>) => void;
 
@@ -79,6 +92,13 @@ interface GameStore {
   setCameraMode: (mode: 'movable' | 'static') => void;
   setHasSelectedCameraMode: (selected: boolean) => void;
   setMobileControlType: (type: 'joystick' | 'wasd') => void;
+  setGameMode: (mode: 'multiplayer' | 'singleplayer') => void;
+  setSpHighScore: (score: number) => void;
+  setSpLastScore: (score: number) => void;
+  setSpLastRounds: (rounds: number) => void;
+  initSpPlayerId: () => void;
+  setSpSettings: (settings: RoomSettings) => void;
+  setHostSettings: (settings: RoomSettings) => void;
 
   addChatMessage: (msg: ChatMessage) => void;
   clearChat: () => void;
@@ -92,6 +112,7 @@ export const useGameStore = create<GameStore>()(
     immer((set) => ({
       // ---- Connection
       isConnected: false,
+      latency: 0,
       connectionError: null,
 
       // ---- Room
@@ -134,10 +155,36 @@ export const useGameStore = create<GameStore>()(
       screen: 'home',
       roomListRefreshKey: 0,
 
+      // ---- Single Player Mode
+      gameMode: 'multiplayer',
+      spHighScore: 0,
+      spPlayerId: '',
+      spLastScore: 0,
+      spLastRounds: 0,
+      spSettings: {
+        maxColors: 6,
+        gameSpeed: 'NORMAL',
+        maxLives: 3,
+        isBlindMode: false,
+        suddenDeathMode: 'NORMAL',
+        enableCollisions: false,
+        maxPlayers: 8
+      },
+      hostSettings: {
+        maxColors: 6,
+        gameSpeed: 'NORMAL',
+        maxLives: 3,
+        isBlindMode: false,
+        suddenDeathMode: 'NORMAL',
+        enableCollisions: false,
+        maxPlayers: 8
+      },
+
       // ---- Settings (defaults, can be overridden)
       isMuted: false,
       volume: 0.5,
       language: 'en',
+      hasSetLanguage: false,
       pressedDirections: { UP: false, DOWN: false, LEFT: false, RIGHT: false },
       cameraYaw: 0,
       dashCooldownEnd: 0,
@@ -147,8 +194,9 @@ export const useGameStore = create<GameStore>()(
       mobileControlType: 'joystick',
       wasAliveThisRound: false,
 
-      // ---- Actions
+       // ---- Actions
       setConnected: (v) => set((s) => { s.isConnected = v; }),
+      setLatency: (v) => set((s) => { s.latency = v; }),
       setConnectionError: (msg) => set((s) => { s.connectionError = msg; }),
       updateLocalCosmetics: (cosmetics) =>
         set((s) => {
@@ -172,16 +220,7 @@ export const useGameStore = create<GameStore>()(
             }
           }
           
-          // Sync URL query parameter for private rooms
-          if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            if (room.visibility === 'private') {
-              url.searchParams.set('room', room.id.toUpperCase());
-            } else {
-              url.searchParams.delete('room');
-            }
-            window.history.replaceState({}, '', url.pathname + url.search);
-          }
+
           
           // Only auto-navigate to lobby if:
           // 1. The local player is actually IN the room list
@@ -208,7 +247,9 @@ export const useGameStore = create<GameStore>()(
       setLocalPlayer: (id, name) =>
         set((s) => {
           s.localPlayerId = id;
-          s.localPlayerName = name;
+          if (name) {
+            s.localPlayerName = name;
+          }
         }),
 
       clearRoom: () =>
@@ -219,12 +260,7 @@ export const useGameStore = create<GameStore>()(
           s.sessionToken = null;
           s.wasAliveThisRound = false;
           
-          // Clear URL query parameter
-          if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.searchParams.delete('room');
-            window.history.replaceState({}, '', url.pathname + url.search);
-          }
+
         }),
 
       setGameState: (state) =>
@@ -293,12 +329,28 @@ export const useGameStore = create<GameStore>()(
 
       toggleMute: () => set((s) => { s.isMuted = !s.isMuted; }),
       setVolume: (volume) => set((s) => { s.volume = Math.max(0, Math.min(1, volume)); }),
-      setLanguage: (lang) => set((s) => { s.language = lang; }),
+      setLanguage: (lang) => set((s) => {
+        s.language = lang;
+        s.hasSetLanguage = true;
+      }),
       setDirectionPressed: (dir, pressed) => set((s) => { s.pressedDirections[dir] = pressed; }),
       triggerDashCooldown: () => set((s) => { s.dashCooldownEnd = Date.now() + 5000; }),
       setCameraMode: (mode) => set((s) => { s.cameraMode = mode; }),
       setHasSelectedCameraMode: (selected) => set((s) => { s.hasSelectedCameraMode = selected; }),
       setMobileControlType: (type) => set((s) => { s.mobileControlType = type; }),
+      setGameMode: (mode) => set((s) => { s.gameMode = mode; }),
+      setSpHighScore: (score) => set((s) => { s.spHighScore = score; }),
+      setSpLastScore: (score) => set((s) => { s.spLastScore = score; }),
+      setSpLastRounds: (rounds) => set((s) => { s.spLastRounds = rounds; }),
+      initSpPlayerId: () => set((s) => {
+        if (!s.spPlayerId) {
+          s.spPlayerId = typeof crypto !== 'undefined' && crypto.randomUUID 
+            ? crypto.randomUUID() 
+            : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        }
+      }),
+      setSpSettings: (settings) => set((s) => { s.spSettings = settings; }),
+      setHostSettings: (settings) => set((s) => { s.hostSettings = settings; }),
       
       addChatMessage: (msg) => set((s) => {
         const msgWithLocal = {
@@ -314,13 +366,21 @@ export const useGameStore = create<GameStore>()(
       name: 'voxelrave-settings',
       partialize: (state) => ({
         language: state.language,
+        hasSetLanguage: state.hasSetLanguage,
         volume: state.volume,
         isMuted: state.isMuted,
         cameraMode: state.cameraMode,
         hasSelectedCameraMode: state.hasSelectedCameraMode,
         mobileControlType: state.mobileControlType,
         localPlayerName: state.localPlayerName,
-        localCosmetics: state.localCosmetics
+        localCosmetics: state.localCosmetics,
+        gameMode: state.gameMode,
+        spHighScore: state.spHighScore,
+        spPlayerId: state.spPlayerId,
+        spLastScore: state.spLastScore,
+        spLastRounds: state.spLastRounds,
+        spSettings: state.spSettings,
+        hostSettings: state.hostSettings
       }),
     }
   )

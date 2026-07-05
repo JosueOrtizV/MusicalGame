@@ -122,12 +122,20 @@ export function useGameAudio() {
   useEffect(() => {
     bindOnEndRef.current = bindOnEnd;
 
+    // ---- GLOBAL MENUS (Home, Lobby Browser, SinglePlayer Config) ----
     if (screen === 'home') {
-      stopAllLobbySongsExcept();
+      const homeLobbyTrack = LOBBY_SONGS[0];
+      
       activeDanceTrack.current?.stop();
       activeDanceTrack.current = null;
       stopWinnerSongs();
       stopAllDanceSongs();
+      
+      if (!homeLobbyTrack.playing()) {
+        stopAllLobbySongsExcept(homeLobbyTrack);
+        homeLobbyTrack.play();
+        homeLobbyTrack.fade(0, 0.4, 1000);
+      }
       return;
     }
 

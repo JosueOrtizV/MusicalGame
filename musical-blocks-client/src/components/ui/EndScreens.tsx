@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { GhostIcon, CrownIcon, FlagIcon } from './Icons';
 import { hexToRgba } from '@/src/lib/colorUtils';
+import { useRouter } from 'next/navigation';
 
 // ---------------------------------------------------------------------------
 //  GameOverScreen — shown when local player dies (spectating)
@@ -25,11 +26,13 @@ export function GameOverScreen() {
   if (!visible) return null;
 
   return (
-    <div className="spectator-banner" role="alert" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-      <div className="spectator-banner-icon" style={{ display: 'flex', alignItems: 'center' }}><GhostIcon size={32} /></div>
-      <div className="spectator-banner-text">
-        <h3 className="spectator-title">{t('youFell')}</h3>
-        <p className="spectator-sub">{t('spectating')}</p>
+    <div className="overlay overlay--gameover" role="alert">
+      <div className="overlay-card overlay-card--gameover">
+        <div className="overlay-icon animate-pulse" style={{ display: 'flex', justifyContent: 'center', color: '#ef4444' }}>
+          <GhostIcon size={48} />
+        </div>
+        <h2 className="overlay-title">{t('youFell')}</h2>
+        <p className="overlay-sub">{t('spectating')}</p>
       </div>
     </div>
   );
@@ -38,9 +41,78 @@ export function GameOverScreen() {
 
 
 // ---------------------------------------------------------------------------
+//  SinglePlayerEndScreen — shown when game over in single player
+// ---------------------------------------------------------------------------
+export function SinglePlayerEndScreen() {
+  const store = useGameStore();
+  const router = useRouter();
+  const { t } = useTranslation();
+  const spLastScore = store.spLastScore;
+  const spLastRounds = store.spLastRounds;
+  const isNewHighScore = spLastScore > 0 && spLastScore === store.spHighScore;
+
+  return (
+    <div className="overlay overlay--winner" role="dialog" aria-modal="true">
+      <div className="confetti-bg" aria-hidden="true" />
+
+      <div className="overlay-card overlay-card--winner">
+        <span className="hud-corner top-left" aria-hidden="true"></span>
+        <span className="hud-corner top-right" aria-hidden="true"></span>
+        <span className="hud-corner bottom-left" aria-hidden="true"></span>
+        <span className="hud-corner bottom-right" aria-hidden="true"></span>
+        <div className="hud-scanlines" aria-hidden="true"></div>
+
+        <div className="overlay-header">
+          <div className="overlay-icon" style={{ display: 'flex', justifyContent: 'center', color: isNewHighScore ? '#eab308' : '#ef4444' }}>
+            {isNewHighScore ? <CrownIcon size={48} /> : <FlagIcon size={48} />}
+          </div>
+          <h2 className="overlay-title">
+            {isNewHighScore ? t('newRecord') : t('spGameOver')}
+          </h2>
+          <p className="overlay-sub" style={{ fontSize: '1.2rem', marginTop: '0.8rem', color: isNewHighScore ? '#eab308' : '#fff' }}>
+            {t('finalScore', { score: spLastScore })}
+          </p>
+          <p style={{ fontSize: '0.9rem', opacity: 0.8, marginTop: '0.4rem' }}>
+            {t('roundsSurvived', { rounds: spLastRounds })}
+          </p>
+        </div>
+
+        <div className="overlay-content-wrapper">
+          <div className="overlay-actions" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', width: '100%', marginTop: '1.5rem' }}>
+            <button
+              className="lobby-btn lobby-btn--primary"
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                const settings = store.spSettings;
+                window.dispatchEvent(new CustomEvent('sp:start', {
+                  detail: { settings }
+                }));
+              }}
+            >
+              ◀ {t('playAgain')}
+            </button>
+            
+            <button
+              className="lobby-btn lobby-btn--secondary"
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                useGameStore.setState({ screen: 'home' });
+              }}
+            >
+              {t('backToMenu')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 //  WinnerScreen — shown when game ends
 // ---------------------------------------------------------------------------
 export function WinnerScreen() {
+  const gameMode = useGameStore((s) => s.gameMode);
   const gameState = useGameStore((s) => s.gameState);
   const localPlayerId = useGameStore((s) => s.localPlayerId);
   const store = useGameStore();
@@ -82,6 +154,10 @@ export function WinnerScreen() {
       });
     }
   }, [isCardVisible, winner?.color]);
+
+  if (gameMode === 'singleplayer') {
+    return <SinglePlayerEndScreen />;
+  }
 
   // While the card is not yet visible, render an unobstructed view with a premium top banner
   if (!isCardVisible) {

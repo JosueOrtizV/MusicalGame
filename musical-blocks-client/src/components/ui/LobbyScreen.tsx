@@ -8,6 +8,8 @@ import { Room, RoomSummary } from '@/src/shared/types';
 
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { SpinnerIcon, MusicIcon, LockIcon, GlobeIcon } from './Icons';
+import { useSinglePlayerGame } from '@/src/hooks/useSinglePlayerGame';
+import { fetchTopScores, LeaderboardEntry } from '@/src/lib/supabase/leaderboard';
 
 // ---------------------------------------------------------------------------
 //  LobbyScreen — home screen + room selection
@@ -19,9 +21,28 @@ export function LobbyScreen() {
   const [privateCode, setPrivateCode] = useState('');
   const [loading, setLoading] = useState<string | null>(null);
   const [publicRooms, setPublicRooms] = useState<RoomSummary[]>([]);
-  const [step, setStep] = useState<'main' | 'join_private' | 'public_rooms'>('main');
+  const [step, setStep] = useState<'mode_select' | 'sp_config' | 'main' | 'join_private' | 'public_rooms'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('room')) return 'main';
+    }
+    return store.gameMode === 'singleplayer' ? 'sp_config' : 'mode_select';
+  });
   const [pendingDirectJoinCode, setPendingDirectJoinCode] = useState<string | null>(null);
   const addToast = useToastStore((s) => s.addToast);
+
+  const [spDifficulty, setSpDifficulty] = useState<'easy' | 'normal' | 'hard' | 'extreme'>('normal');
+  const [spSpeed, setSpSpeed] = useState<'CHILL' | 'NORMAL' | 'TURBO'>('NORMAL');
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
+
+  const [prevStoreName, setPrevStoreName] = useState(store.localPlayerName);
+
+  // Sync name input when store hydrates (adjusting state during render)
+  if (store.localPlayerName !== prevStoreName) {
+    setPrevStoreName(store.localPlayerName);
+    setName(store.localPlayerName || '');
+  }
 
   const clearUrlQuery = () => {
     if (typeof window !== 'undefined') {
@@ -97,6 +118,32 @@ export function LobbyScreen() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (step !== 'sp_config') return;
+
+    let active = true;
+    const timer = setTimeout(() => {
+      if (!active) return;
+      setLoadingLeaderboard(true);
+      fetchTopScores(10).then((data) => {
+        if (active) {
+          setLeaderboard(data);
+          setLoadingLeaderboard(false);
+        }
+      }).catch((e) => {
+        console.error(e);
+        if (active) {
+          setLoadingLeaderboard(false);
+        }
+      });
+    }, 0);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [step]);
 
   useEffect(() => {
     if (store.connectionError) {
@@ -216,6 +263,275 @@ export function LobbyScreen() {
             <h2 className="logo-title">{t('loading')}</h2>
             <p className="logo-sub">{t('joiningRoomSpinner', { code: pendingDirectJoinCode || '' })}</p>
           </div>
+        ) : step === 'mode_select' ? (
+          <>
+            <div className="lobby-logo">
+              <span className="logo-emoji" style={{ color: 'var(--c-accent)' }}><MusicIcon size={48} /></span>
+              <h1 className="logo-title">{t('gameTitle')}</h1>
+              <p className="logo-sub">{t('gameSubtitle')}</p>
+            </div>
+            
+            <div className="lobby-content-wrapper" style={{ marginTop: '1.5rem' }}>
+              <h2 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '1.2rem',
+                textAlign: 'center',
+                marginBottom: '1.5rem',
+                color: 'var(--c-accent-2)'
+              }}>{t('modeSelectTitle')}</h2>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr',
+                gap: '1rem',
+                width: '100%'
+              }}>
+                <button
+                  className="lobby-btn lobby-btn--primary"
+                  style={{
+                    height: 'auto',
+                    padding: '1.2rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    textAlign: 'center',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    store.setGameMode('singleplayer');
+                    setStep('sp_config');
+                  }}
+                >
+                  <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>👤 {t('singlePlayer')}</span>
+                  <span style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: 400 }}>
+                    Práctica solo, sin esperas
+                  </span>
+                  {store.spHighScore > 0 && (
+                    <span style={{ fontSize: '0.7rem', color: '#eab308', marginTop: '0.2rem' }}>
+                      🏆 Récord: {store.spHighScore} pts
+                    </span>
+                  )}
+                </button>
+                
+                <button
+                  className="lobby-btn lobby-btn--accent"
+                  style={{
+                    height: 'auto',
+                    padding: '1.2rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    textAlign: 'center',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    store.setGameMode('multiplayer');
+                    setStep('main');
+                  }}
+                >
+                  <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>👥 {t('multiplayer')}</span>
+                  <span style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: 400 }}>
+                    Juega online con amigos
+                  </span>
+                </button>
+              </div>
+            </div>
+          </>
+        ) : step === 'sp_config' ? (
+          <>
+            <div className="lobby-logo">
+              <span className="logo-emoji" style={{ color: 'var(--c-accent)' }}><MusicIcon size={48} /></span>
+              <h2 className="logo-title">{t('singlePlayer')}</h2>
+              <p className="logo-sub">{t('gameSubtitle')}</p>
+            </div>
+
+            <div className="lobby-content-wrapper" style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '4px' }}>
+              {/* Name input */}
+              <div className="lobby-section">
+                <label className="lobby-label" htmlFor="player-name">{t('yourName')}</label>
+                <input
+                  id="player-name"
+                  className="lobby-input"
+                  type="text"
+                  placeholder={t('namePlaceholder')}
+                  maxLength={16}
+                  value={name}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val.length <= 16) {
+                      setName(val);
+                    } else {
+                      setName(val.slice(0, 16));
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Difficulty Selection */}
+              <div className="lobby-section" style={{ marginBottom: '1rem' }}>
+                <label className="lobby-label">{t('difficulty')}</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                  {(
+                    [
+                      { key: 'easy', colors: 4, label: t('easy') },
+                      { key: 'normal', colors: 6, label: t('normal') },
+                      { key: 'hard', colors: 8, label: t('hard') },
+                      { key: 'extreme', colors: 10, label: t('extreme') },
+                    ] as const
+                  ).map((diff) => (
+                    <button
+                      key={diff.key}
+                      className="lobby-btn"
+                      style={{
+                        padding: '0.5rem 0',
+                        fontSize: '0.75rem',
+                        height: 'auto',
+                        background: spDifficulty === diff.key ? 'var(--c-accent)' : 'rgba(255,255,255,0.05)',
+                        border: spDifficulty === diff.key ? '1px solid var(--c-accent)' : '1px solid rgba(255,255,255,0.1)',
+                        color: spDifficulty === diff.key ? '#000' : '#fff',
+                        fontWeight: spDifficulty === diff.key ? '800' : '400',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setSpDifficulty(diff.key)}
+                    >
+                      {diff.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Speed Selection */}
+              <div className="lobby-section" style={{ marginBottom: '1rem' }}>
+                <label className="lobby-label">{t('speed')}</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                  {(['CHILL', 'NORMAL', 'TURBO'] as const).map((spd) => (
+                    <button
+                      key={spd}
+                      className="lobby-btn"
+                      style={{
+                        padding: '0.5rem 0',
+                        fontSize: '0.75rem',
+                        height: 'auto',
+                        background: spSpeed === spd ? 'var(--c-accent-2)' : 'rgba(255,255,255,0.05)',
+                        border: spSpeed === spd ? '1px solid var(--c-accent-2)' : '1px solid rgba(255,255,255,0.1)',
+                        color: spSpeed === spd ? '#000' : '#fff',
+                        fontWeight: spSpeed === spd ? '800' : '400',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setSpSpeed(spd)}
+                    >
+                      {spd}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* High Score Local */}
+              {store.spHighScore > 0 && (
+                <div style={{
+                  background: 'rgba(234, 179, 8, 0.08)',
+                  border: '1px solid rgba(234, 179, 8, 0.3)',
+                  padding: '0.5rem 1rem',
+                  borderRadius: 'var(--radius)',
+                  textAlign: 'center',
+                  marginBottom: '1rem',
+                  fontSize: '0.8rem',
+                  color: '#eab308'
+                }}>
+                  🏆 {t('highScore')}: <strong>{store.spHighScore} pts</strong>
+                </div>
+              )}
+
+              {/* Leaderboard Global Widget */}
+              <div style={{
+                background: 'rgba(5, 5, 20, 0.5)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                padding: '0.8rem',
+                borderRadius: 'var(--radius)',
+                marginBottom: '1.2rem',
+                maxHeight: '180px',
+                overflowY: 'auto'
+              }}>
+                <h4 style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '0.8rem',
+                  color: 'var(--c-accent)',
+                  marginBottom: '0.5rem',
+                  textAlign: 'center',
+                  letterSpacing: '0.05em'
+                }}>🏆 {t('globalLeaderboard')}</h4>
+                
+                {loadingLeaderboard ? (
+                  <p style={{ fontSize: '0.75rem', color: '#aaa', textAlign: 'center' }}>{t('leaderboardLoading')}</p>
+                ) : leaderboard.length === 0 ? (
+                  <p style={{ fontSize: '0.75rem', color: '#777', textAlign: 'center' }}>No records yet. Be the first!</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {leaderboard.map((entry, index) => (
+                      <div
+                        key={entry.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          fontSize: '0.75rem',
+                          padding: '3px 6px',
+                          background: entry.player_id === store.spPlayerId ? 'rgba(0, 240, 255, 0.1)' : 'transparent',
+                          borderRadius: '3px',
+                          border: entry.player_id === store.spPlayerId ? '1px solid rgba(0, 240, 255, 0.3)' : 'none'
+                        }}
+                      >
+                        <span style={{ color: index === 0 ? '#eab308' : index === 1 ? '#cbd5e1' : index === 2 ? '#b45309' : '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>
+                          {index + 1}. <strong>{entry.name}</strong>
+                          <span style={{ fontSize: '0.6rem', color: '#888', marginLeft: '6px' }}>
+                            ({entry.difficulty.toUpperCase()} • {entry.speed})
+                          </span>
+                        </span>
+                        <strong style={{ color: 'var(--c-accent)', flexShrink: 0 }}>{entry.score} pts</strong>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Action buttons */}
+              <button
+                className="lobby-btn lobby-btn--primary"
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  if (!validateName()) return;
+                  store.setPlayerName(name.trim());
+                  
+                  // Start single player
+                  let diffColors = 6;
+                  if (spDifficulty === 'easy') diffColors = 4;
+                  else if (spDifficulty === 'normal') diffColors = 6;
+                  else if (spDifficulty === 'hard') diffColors = 8;
+                  else if (spDifficulty === 'extreme') diffColors = 10;
+                  
+                  window.dispatchEvent(new CustomEvent('sp:start', {
+                    detail: { difficulty: diffColors, speed: spSpeed }
+                  }));
+                }}
+              >
+                ▶ {t('playSolo')}
+              </button>
+
+              <button
+                className="lobby-btn lobby-btn--secondary"
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  setStep('mode_select');
+                }}
+              >
+                {t('back')}
+              </button>
+            </div>
+          </>
         ) : step === 'main' ? (
           <>
             {/* Logo */}

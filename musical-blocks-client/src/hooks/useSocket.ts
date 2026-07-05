@@ -7,22 +7,26 @@ import { useToastStore } from '@/src/stores/toastStore';
 
 import { en } from '@/src/locales/en';
 import { es } from '@/src/locales/es';
+import { Room, GameState, BlockColor, GameBlock, ChatMessage, GridPosition } from '@/src/shared/types';
 
 // ---------------------------------------------------------------------------
 //  useSocket — connects to server, wires all ServerEvents → Zustand store
 // ---------------------------------------------------------------------------
 export function useSocket() {
   const store = useGameStore();
-  const initialized = useRef(false);
+  const gameMode = store.gameMode;
 
   useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
     const socket = getSocket();
+    if (gameMode === 'singleplayer') {
+      if (socket.connected) socket.disconnect();
+      return;
+    }
 
-    // ---- Connection events -------------------------------------------------
-    socket.on('connect', () => {
+    // Connect
+    if (!socket.connected) socket.connect();
+
+    const onConnect = () => {
       const wasInRoom = !!useGameStore.getState().room;
       
       store.setConnected(true);
@@ -40,30 +44,31 @@ export function useSocket() {
         const t0 = Date.now();
         socket.emit('ping', { clientTime: t0 });
       }
-    });
+    };
 
-    socket.on('disconnect', () => {
+    const onDisconnect = () => {
       store.setConnected(false);
-    });
+    };
 
-    socket.on('connect_error', (err) => {
+    const onConnectError = (err: Error) => {
       const errMsg = err.message || 'Cannot connect to server. Is it running?';
       store.setConnectionError(errMsg);
       useToastStore.getState().addToast(errMsg, 'error');
-    });
+    };
 
-    // ---- Clock sync --------------------------------------------------------
-    socket.on('pong', ({ serverTime, clientTime }) => {
+    // ---- Clock sync & Latency ----------------------------------------------
+    const onPong = ({ serverTime, clientTime }: { serverTime: number; clientTime: number }) => {
       const rtt = Date.now() - clientTime;
       setClockOffset(serverTime - (clientTime + rtt / 2));
-    });
+      store.setLatency(rtt);
+    };
 
     // ---- Room events -------------------------------------------------------
-    socket.on('room:updated', ({ room }) => {
+    const onRoomUpdated = ({ room }: { room: Room }) => {
       useGameStore.getState().setRoom(room);
-    });
+    };
 
-    socket.on('room:kicked', ({ reason }) => {
+    const onRoomKicked = ({ reason }: { reason: string }) => {
       store.clearRoom();
       const currentLang = useGameStore.getState().language;
       const dict = currentLang === 'es' ? es : en;
@@ -78,22 +83,18 @@ export function useSocket() {
       }
       
       useToastStore.getState().addToast(message, 'error');
-    });
+    };
 
-    socket.on('room:list', () => {
-      // Handled by LobbyScreen component via emit + callback
-    });
-
-    socket.on('room:error', ({ message }) => {
+    const onRoomError = ({ message }: { message: string }) => {
       store.setConnectionError(message);
-    });
+    };
 
     // ---- Game events -------------------------------------------------------
-    socket.on('game:state', (state) => {
+    const onGameState = (state: GameState) => {
       useGameStore.getState().setGameState(state);
-    });
+    };
 
-    socket.on('game:round_start', ({ round, blocks }) => {
+    const onGameRoundStart = ({ round, blocks }: { round: number; blocks: GameBlock[][] }) => {
       const { gameState } = useGameStore.getState();
       if (gameState) {
         useGameStore.getState().setGameState({
@@ -106,9 +107,9 @@ export function useSocket() {
       } else {
         useGameStore.getState().updateBlocks(blocks);
       }
-    });
+    };
 
-    socket.on('game:announce', ({ winnerColor }) => {
+    const onGameAnnounce = ({ winnerColor }: { winnerColor: BlockColor | null }) => {
       const { gameState } = useGameStore.getState();
       if (gameState) {
         useGameStore.getState().setGameState({
@@ -119,9 +120,9 @@ export function useSocket() {
       } else {
         useGameStore.getState().setWinnerColor(winnerColor);
       }
-    });
+    };
 
-    socket.on('game:eliminate', ({ eliminatedBlocks }) => {
+    const onGameEliminate = ({ eliminatedBlocks }: { eliminatedBlocks: { row: number; col: number }[] }) => {
       const { gameState } = useGameStore.getState();
       if (!gameState) return;
       // Mark eliminated blocks as inactive
@@ -134,41 +135,76 @@ export function useSocket() {
         }),
       );
       useGameStore.getState().updateBlocks(updatedBlocks);
-    });
+    };
 
-    socket.on('game:player_died', ({ playerId }) => {
+    const onGamePlayerDied = ({ playerId }: { playerId: string }) => {
       useGameStore.getState().markPlayerDead(playerId);
-    });
+    };
 
-    socket.on('game:over', ({ winnerId }) => {
+    const onGameOver = ({ winnerId }: { winnerId: string | null }) => {
       useGameStore.getState().setGameOver(winnerId);
-    });
+    };
 
-    socket.on('chat:broadcast', (message) => {
+    const onChatBroadcast = (message: ChatMessage) => {
       useGameStore.getState().addChatMessage(message);
-    });
+    };
 
-    // Connect
-    if (!socket.connected) socket.connect();
+    // Register all listeners
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('connect_error', onConnectError);
+    socket.on('pong', onPong);
+    socket.on('room:updated', onRoomUpdated);
+    socket.on('room:kicked', onRoomKicked);
+    socket.on('room:error', onRoomError);
+    socket.on('game:state', onGameState);
+    socket.on('game:round_start', onGameRoundStart);
+    socket.on('game:announce', onGameAnnounce);
+    socket.on('game:eliminate', onGameEliminate);
+    socket.on('game:player_died', onGamePlayerDied);
+    socket.on('game:over', onGameOver);
+    socket.on('chat:broadcast', onChatBroadcast);
+
+    // Dynamic latency checks (5s interval, pauses when tab is hidden)
+    const interval = setInterval(() => {
+      if (socket.connected && typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        socket.emit('ping', { clientTime: Date.now() });
+      }
+    }, 5000);
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible' && socket.connected) {
+        socket.emit('ping', { clientTime: Date.now() });
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
 
     return () => {
-      socket.off('connect');
-      socket.off('disconnect');
-      socket.off('connect_error');
-      socket.off('pong');
-      socket.off('room:updated');
-      socket.off('room:list');
-      socket.off('room:error');
-      socket.off('game:state');
-      socket.off('game:round_start');
-      socket.off('game:announce');
-      socket.off('game:eliminate');
-      socket.off('game:player_died');
-      socket.off('game:over');
-      socket.off('chat:broadcast');
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('connect_error', onConnectError);
+      socket.off('pong', onPong);
+      socket.off('room:updated', onRoomUpdated);
+      socket.off('room:kicked', onRoomKicked);
+      socket.off('room:error', onRoomError);
+      socket.off('game:state', onGameState);
+      socket.off('game:round_start', onGameRoundStart);
+      socket.off('game:announce', onGameAnnounce);
+      socket.off('game:eliminate', onGameEliminate);
+      socket.off('game:player_died', onGamePlayerDied);
+      socket.off('game:over', onGameOver);
+      socket.off('chat:broadcast', onChatBroadcast);
+
+      clearInterval(interval);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [gameMode]);
 
   return getSocket();
 }
