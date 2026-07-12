@@ -243,13 +243,28 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
     }
 
     // 2. Loop through all 144 blocks to update matrices and colors instantly
+    const localPlayerId = useGameStore.getState().localPlayerId;
+    const localPlayer = useGameStore.getState().gameState?.players.find(p => p.id === localPlayerId);
+
     currentBlocks.flat().forEach((block, i) => {
       const x = block.col * BLOCK_SIZE - halfGrid;
       const z = block.row * BLOCK_SIZE - halfGrid;
-      const hex = COLOR_HEX[block.color];
+      const hex = block.isGrey ? '#5c697d' : COLOR_HEX[block.color];
 
       let y = 0;
       let scale = 1.0;
+
+      // Calculate Fog of War visibility factor if round >= 70
+      let visibility = 1.0;
+      if (localPlayer && currentRound >= 70) {
+        const dx = block.col - localPlayer.position.x;
+        const dz = block.row - localPlayer.position.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        const fogRadius = Math.max(2.5, 3.5 - Math.max(0, currentRound - 70) * 0.05);
+        if (dist > fogRadius) {
+          visibility = Math.max(0.05, 1.0 - (dist - fogRadius) * 0.5);
+        }
+      }
 
       if (block.isActive) {
         // A. Handle active block states (idle, announcing, blackout question marks)
@@ -288,7 +303,7 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
             const isQuestionMarkCell = QUESTION_MARK_MAP[block.row]?.[block.col] === 1;
             if (isQuestionMarkCell) {
               color.set('#d946ef');
-              color.multiplyScalar(1.2 + beatPulse * 0.8);
+              color.multiplyScalar((1.2 + beatPulse * 0.8) * visibility);
             } else {
               color.set('#070212'); // obsidian void
             }
@@ -321,7 +336,7 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
               mesh.setMatrixAt(i, matrix);
 
               color.set(hex);
-              color.multiplyScalar(0.75); // Darken incorrect blocks slightly
+              color.multiplyScalar(0.75 * visibility); // Darken incorrect blocks slightly
               mesh.setColorAt(i, color);
               return;
             }
@@ -345,7 +360,7 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
           if (isQuestionMarkCell) {
             // Neon magenta question mark pixels breathing their glow intensely
             color.set('#d946ef');
-            color.multiplyScalar(1.2 + beatPulse * 0.8);
+            color.multiplyScalar((1.2 + beatPulse * 0.8) * visibility);
           } else {
             color.set('#070212'); // obsidian void
           }
@@ -355,12 +370,12 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
             // Pulse glow intensely on the beat to help guide players!
             // BUT if bobbing is disabled, keep a steady solid glow (no pulsing/blinking)
             if (enableBobbing) {
-              color.multiplyScalar(1.2 + beatPulse * 1.0);
+              color.multiplyScalar((1.2 + beatPulse * 1.0) * visibility);
             } else {
-              color.multiplyScalar(1.2); // steady solid glow
+              color.multiplyScalar(1.2 * visibility); // steady solid glow
             }
           } else {
-            color.multiplyScalar(1.0);
+            color.multiplyScalar(1.0 * visibility);
           }
         }
         mesh.setColorAt(i, color);
@@ -387,7 +402,7 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
         color.set(hex);
         // Dim the falling blocks gradually
         const fade = Math.max(0.2, Math.min(1.0, (fallingY.current[i] + 10) / 10));
-        color.multiplyScalar(fade);
+        color.multiplyScalar(fade * visibility);
         mesh.setColorAt(i, color);
       }
     });

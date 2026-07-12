@@ -353,6 +353,7 @@ export const useGameStore = create<GameStore>()(
       setHostSettings: (settings) => set((s) => { s.hostSettings = settings; }),
       
       addChatMessage: (msg) => set((s) => {
+        if (s.chatMessages.some((m) => m.id === msg.id)) return;
         const msgWithLocal = {
           ...msg,
           localTimestamp: Date.now()

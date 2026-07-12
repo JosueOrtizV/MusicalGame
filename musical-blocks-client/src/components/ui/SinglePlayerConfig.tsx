@@ -375,15 +375,7 @@ export function SinglePlayerConfig() {
           aria-hidden="true"
         />
 
-        {/* Brand Header */}
-        <div className="text-center mb-6 md:mb-16 z-20">
-          <h1 className="font-display text-4xl md:text-7xl font-bold text-[#ffabf3] text-glow-magenta tracking-tighter uppercase">
-            VOXEL RAVE
-          </h1>
-          <p className="font-mono text-[10px] md:text-xs text-[#00fbfb] tracking-[0.8em] mt-1.5 md:mt-3 uppercase text-glow-cyan">
-            Party Game
-          </p>
-        </div>
+
 
         {/* Main Setup Card container (Desktop: Centered) */}
         <div className="game-card game-card-cyan start-container flex flex-col justify-between p-6 md:p-8 z-20">
@@ -398,11 +390,10 @@ export function SinglePlayerConfig() {
 
           {/* Cosmetic Locker Button inside setup card (Symmetrical on Top-Right) */}
           <button
-            className="lobby-cosmetics-btn"
+            className="sp-cosmetics-btn"
             onClick={openLocker}
             title={lang === 'es' ? 'Personalizar Avatar' : 'Customize Avatar'}
             aria-label={lang === 'es' ? 'Personalizar Avatar' : 'Customize Avatar'}
-            style={{ left: 'auto', right: '1.25rem', top: '1.25rem' }}
             type="button"
           >
             <ShirtIcon size={18} />
@@ -410,11 +401,10 @@ export function SinglePlayerConfig() {
 
           {/* Match Settings Button (JoystickIcon / Gear) */}
           <button
-            className="lobby-settings-btn"
+            className="sp-settings-btn"
             onClick={openSettings}
             title={t('roomSettingsTitle')}
             aria-label={t('roomSettingsTitle')}
-            style={{ left: 'auto', right: '4rem', top: '1.25rem' }}
             type="button"
           >
             <JoystickIcon size={18} />
@@ -429,6 +419,13 @@ export function SinglePlayerConfig() {
           <div className="flex flex-col gap-4">
             {/* Header */}
             <div className="text-center mt-2 mb-3">
+              {/* Micro-Branding Label */}
+              <div className="flex items-center justify-center gap-1.5 mb-1 opacity-60">
+                <MusicIcon size={12} className="text-[#ffabf3] pixel-note" />
+                <span className="font-display text-[9px] tracking-[0.3em] text-[#f4dcec] uppercase">
+                  Voxel Rave
+                </span>
+              </div>
               <h1 className="font-display text-2xl md:text-3xl text-[#ffabf3] tracking-[0.2em] uppercase mb-1.5 text-glow-magenta">
                 {t('singlePlayer')}
               </h1>
@@ -438,36 +435,140 @@ export function SinglePlayerConfig() {
 
               {/* Real-time Game Difficulty Status Chips */}
               <div className="flex flex-wrap justify-center gap-2 mt-4 font-mono text-[9px] font-bold tracking-wider uppercase">
+                {/* Color/Difficulty Chip */}
+                {/* Color/Difficulty Chip */}
+                <div className="tooltip-container tooltip-align-left">
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#00fbfb]/30 rounded-sm">
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{
+                        backgroundColor: (spSettings.maxColors === 4) ? '#22c55e' :
+                          (spSettings.maxColors === 6) ? '#3b82f6' :
+                            (spSettings.maxColors === 8) ? '#eab308' :
+                              '#ef4444',
+                        boxShadow: `0 0 6px ${(spSettings.maxColors === 4) ? '#22c55e' :
+                            (spSettings.maxColors === 6) ? '#3b82f6' :
+                              (spSettings.maxColors === 8) ? '#eab308' :
+                                '#ef4444'
+                          }`
+                      }}
+                    />
+                    <span style={{
+                      color: (spSettings.maxColors === 4) ? '#22c55e' :
+                        (spSettings.maxColors === 6) ? '#3b82f6' :
+                          (spSettings.maxColors === 8) ? '#eab308' :
+                            '#ef4444'
+                    }}>
+                      {t(spDifficulty)}
+                    </span>
+                  </div>
+                  <div className={`tooltip-box tooltip-${
+                    (spSettings.maxColors === 4) ? 'green' :
+                      (spSettings.maxColors === 6) ? 'blue' :
+                        (spSettings.maxColors === 8) ? 'amber' :
+                          'rose'
+                  }`}>
+                    <span style={{ 
+                      color: (spSettings.maxColors === 4) ? '#22c55e' :
+                        (spSettings.maxColors === 6) ? '#00fbfb' :
+                          (spSettings.maxColors === 8) ? '#eab308' :
+                            '#ef4444',
+                      fontWeight: 'bold',
+                      textShadow: `0 0 5px ${(spSettings.maxColors === 4) ? '#22c55e' :
+                        (spSettings.maxColors === 6) ? '#00fbfb' :
+                          (spSettings.maxColors === 8) ? '#eab308' :
+                            '#ef4444'}`
+                    }}>
+                      {(spSettings.maxColors ?? 6)} {lang === 'es' ? 'Colores' : 'Colors'}
+                    </span>
+                    {' - '}
+                    {(spSettings.maxColors === 4) ? t('easyDesc') :
+                      (spSettings.maxColors === 6) ? t('normalDesc') :
+                        (spSettings.maxColors === 8) ? t('hardDesc') :
+                          t('extremeDesc')
+                    }
+                  </div>
+                </div>
+
+                {/* Speed Chip */}
+                <div className="tooltip-container">
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-white/10 rounded-sm">
+                    {spSpeed === 'CHILL' ? (
+                      <>
+                        <SnowflakeIcon size={10} className="text-[#38bdf8]" />
+                        <span className="text-[#38bdf8]">{t('speedChill')}</span>
+                      </>
+                    ) : spSpeed === 'TURBO' ? (
+                      <>
+                        <LightningIcon size={10} className="text-[#eab308]" />
+                        <span className="text-[#eab308]">{t('speedTurbo')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <StopwatchIcon size={10} className="text-[#3b82f6]" />
+                        <span className="text-[#3b82f6]">{t('speedNormal')}</span>
+                      </>
+                    )}
+                  </div>
+                  <div className={`tooltip-box tooltip-${
+                    spSpeed === 'CHILL' ? 'blue' :
+                      spSpeed === 'TURBO' ? 'amber' : 'blue'
+                  }`}>
+                    {spSpeed === 'CHILL' ? t('speedChillDesc') :
+                      spSpeed === 'TURBO' ? t('speedTurboDesc') : t('speedNormalDesc')
+                    }
+                  </div>
+                </div>
+
                 {/* Lives Chip */}
                 {spSettings.maxLives !== undefined && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#f43f5e]/30 rounded-sm">
-                    <HeartIcon size={10} style={{ fill: '#f43f5e' }} className="text-[#f43f5e]" />
-                    <span className="text-[#f43f5e]">{spSettings.maxLives} {spSettings.maxLives === 1 ? (lang === 'es' ? 'Vida' : 'Life') : (lang === 'es' ? 'Vidas' : 'Lives')}</span>
+                  <div className="tooltip-container tooltip-align-right">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#f43f5e]/30 rounded-sm">
+                      <HeartIcon size={10} style={{ fill: '#f43f5e' }} className="text-[#f43f5e]" />
+                      <span className="text-[#f43f5e]">{spSettings.maxLives} {spSettings.maxLives === 1 ? (lang === 'es' ? 'Vida' : 'Life') : (lang === 'es' ? 'Vidas' : 'Lives')}</span>
+                    </div>
+                    <div className="tooltip-box tooltip-rose">
+                      {spSettings.maxLives === 1 ? t('lives1Desc') :
+                        spSettings.maxLives === 3 ? t('lives3Desc') :
+                          spSettings.maxLives === 5 ? t('lives5Desc') :
+                            (lang === 'es' ? `Inicias la partida con ${spSettings.maxLives} vidas.` : `You start the match with ${spSettings.maxLives} lives.`)
+                      }
+                    </div>
                   </div>
                 )}
 
                 {/* Blind Mode Chip */}
                 {spSettings.isBlindMode && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#d946ef]/30 rounded-sm">
-                    <GlassesIcon size={10} className="text-[#d946ef]" />
-                    <span className="text-[#d946ef]">{t('blindModeLabel')}</span>
+                  <div className="tooltip-container tooltip-align-right">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#d946ef]/30 rounded-sm">
+                      <GlassesIcon size={10} className="text-[#d946ef]" />
+                      <span className="text-[#d946ef]">{t('blindModeLabel')}</span>
+                    </div>
+                    <div className="tooltip-box tooltip-purple">
+                      {t('blindModeDesc')}
+                    </div>
                   </div>
                 )}
 
                 {/* Sudden Death Mode Chip */}
                 {spSettings.suddenDeathMode && spSettings.suddenDeathMode !== 'NORMAL' && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-red-500/30 rounded-sm">
-                    {spSettings.suddenDeathMode === 'CHAOS' ? (
-                      <>
-                        <SkullIcon size={10} className="text-[#f43f5e]" />
-                        <span className="text-[#f43f5e]">{t('sdChaos')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <DoveIcon size={10} className="text-[#10b981]" />
-                        <span className="text-[#10b981]">{t('sdOff')}</span>
-                      </>
-                    )}
+                  <div className="tooltip-container tooltip-align-right">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-red-500/30 rounded-sm">
+                      {spSettings.suddenDeathMode === 'CHAOS' ? (
+                        <>
+                          <SkullIcon size={10} className="text-[#f43f5e]" />
+                          <span className="text-[#f43f5e]">{t('sdChaos')}</span>
+                        </>
+                      ) : (
+                        <>
+                          <DoveIcon size={10} className="text-[#10b981]" />
+                          <span className="text-[#10b981]">{t('sdOff')}</span>
+                        </>
+                      )}
+                    </div>
+                    <div className={`tooltip-box tooltip-${spSettings.suddenDeathMode === 'CHAOS' ? 'rose' : 'green'}`}>
+                      {spSettings.suddenDeathMode === 'CHAOS' ? t('sdChaosDesc') : t('sdOffDesc')}
+                    </div>
                   </div>
                 )}
               </div>
@@ -576,8 +677,8 @@ export function SinglePlayerConfig() {
             <PlayArrowIcon size={24} className="drop-shadow-[0_0_5px_rgba(56,0,56,0.6)] animate-pulse" />
           </button>
         </div>
-        <MenuFooter />
       </div>
+      <MenuFooter />
 
       {/* Modern Glassmorphic Settings Modal */}
       {isSettingsOpen && (
@@ -994,9 +1095,51 @@ export function SinglePlayerConfig() {
             </button>
 
             {/* Modal Header */}
-            <div className="flex items-center gap-3 mb-6 text-[#ffabf3] font-display text-sm tracking-wider uppercase">
-              <TrophyIcon size={22} className="text-glow-magenta" />
-              <h2>{t('globalLeaderboard')}</h2>
+            <div className="flex items-center justify-between mb-6 w-full pr-8">
+              <div className="flex items-center gap-3 text-[#ffabf3] font-display text-sm tracking-wider uppercase">
+                <TrophyIcon size={22} className="text-glow-magenta" />
+                <h2>{t('globalLeaderboard')}</h2>
+              </div>
+              
+              {/* Score Multiplier Help Tooltip */}
+              <div className="relative group/tooltip">
+                <button
+                  type="button"
+                  className="w-5 h-5 rounded-full border border-[#ffabf3]/40 flex items-center justify-center text-[10px] text-[#ffabf3]/60 hover:text-[#ffabf3] hover:border-[#ffabf3] font-mono font-bold cursor-help transition-all"
+                >
+                  ?
+                </button>
+                <div className="absolute right-0 top-6 w-64 bg-[#120811] border border-[#ffabf3]/30 p-3 rounded shadow-2xl z-50 text-[10px] font-mono text-left text-white/90 hidden group-hover/tooltip:block pointer-events-none">
+                  <p className="text-[#ffabf3] font-bold mb-1.5 uppercase tracking-wider">
+                    {lang === 'es' ? 'MULTIPLICADORES DE PUNTOS' : 'SCORE MULTIPLIERS'}
+                  </p>
+                  <p className="mb-1.5 border-b border-white/10 pb-1 text-[#00fbfb]">
+                    {lang === 'es' ? 'Fórmula: (Ronda × 10) × Mults' : 'Formula: (Round × 10) × Mults'}
+                  </p>
+                  <div className="space-y-1">
+                    <div>
+                      <span className="text-fuchsia-400 font-bold">{lang === 'es' ? 'Colores: ' : 'Colors: '}</span>
+                      <span>4 (1.0x) • 6 (1.5x) • 8 (2.0x) • 10 (3.0x)</span>
+                    </div>
+                    <div>
+                      <span className="text-fuchsia-400 font-bold">{lang === 'es' ? 'Velocidad: ' : 'Speed: '}</span>
+                      <span>Chill (0.8x) • Normal (1.0x) • Turbo (2.0x)</span>
+                    </div>
+                    <div>
+                      <span className="text-fuchsia-400 font-bold">{lang === 'es' ? 'Vidas: ' : 'Lives: '}</span>
+                      <span>1 (1.5x) • 2 (1.2x) • 3 (1.0x) • 4 (0.9x) • 5 (0.8x)</span>
+                    </div>
+                    <div>
+                      <span className="text-fuchsia-400 font-bold">{lang === 'es' ? 'Muerte Súbita: ' : 'Sudden Death: '}</span>
+                      <span>Off (0.5x) • Normal (1.0x) • Chaos (2.0x)</span>
+                    </div>
+                    <div>
+                      <span className="text-fuchsia-400 font-bold">{lang === 'es' ? 'Modo Ciego: ' : 'Blind Mode: '}</span>
+                      <span>{lang === 'es' ? 'Activo (2.0x)' : 'Active (2.0x)'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Scrollable list */}
@@ -1044,7 +1187,7 @@ export function SinglePlayerConfig() {
                   router.push('/leaderboard');
                 }}
               >
-                <span>View All Rankings</span>
+                <span>{lang === 'es' ? 'Ver Tabla Completa' : 'View Full Leaderboard'}</span>
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
               </button>
             </div>
@@ -1073,7 +1216,7 @@ export function SinglePlayerConfig() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                     </svg>
                     <div>
-                      <h2 className="locker-modal-title" id="locker-title">{lang === 'es' ? 'Locker de Avatar' : 'Avatar Locker'}</h2>
+                      <h3 className="locker-modal-title" id="locker-title">{lang === 'es' ? 'Locker de Avatar' : 'Avatar Locker'}</h3>
                       <p className="hud-terminal-sub">SYSTEM // CALIBRATING_DNA_STREAM... <span className="blinking-cursor">_</span></p>
                     </div>
                   </div>
@@ -1131,7 +1274,7 @@ export function SinglePlayerConfig() {
                     {/* Cyberpunk Navigation Sub-tabs */}
                     <div className="flex border-b border-white/10 mb-4 w-full gap-2 p-1 bg-black/40 rounded-lg">
                       <button
-                        className={`flex-1 py-3 px-4 font-mono text-xs font-extrabold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'equip'
+                        className={`flex-1 py-2 md:py-3 px-1 md:px-4 font-mono text-[9px] md:text-xs font-extrabold uppercase tracking-normal md:tracking-widest flex items-center justify-center gap-1 md:gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'equip'
                             ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]'
                             : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
                           }`}
@@ -1145,7 +1288,7 @@ export function SinglePlayerConfig() {
                         <span>{lang === 'es' ? 'Equipar' : 'Equip'}</span>
                       </button>
                       <button
-                        className={`flex-1 py-3 px-4 font-mono text-xs font-extrabold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'colors'
+                        className={`flex-1 py-2 md:py-3 px-1 md:px-4 font-mono text-[9px] md:text-xs font-extrabold uppercase tracking-normal md:tracking-widest flex items-center justify-center gap-1 md:gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'colors'
                             ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]'
                             : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
                           }`}
@@ -1158,7 +1301,7 @@ export function SinglePlayerConfig() {
                         <span>{lang === 'es' ? 'Colores' : 'Colors'}</span>
                       </button>
                       <button
-                        className={`flex-1 py-3 px-4 font-mono text-xs font-extrabold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'anims'
+                        className={`flex-1 py-2 md:py-3 px-1 md:px-4 font-mono text-[9px] md:text-xs font-extrabold uppercase tracking-normal md:tracking-widest flex items-center justify-center gap-1 md:gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'anims'
                             ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]'
                             : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
                           }`}

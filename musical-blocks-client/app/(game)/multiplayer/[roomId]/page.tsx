@@ -103,7 +103,7 @@ export default function MultiplayerRoomPage() {
           <span className="hud-corner bottom-right" aria-hidden="true"></span>
           <div className="hud-scanlines" aria-hidden="true"></div>
           <div className="lobby-logo" style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-            <h2 className="logo-title" style={{ color: '#ef4444' }}>Error</h2>
+            <h1 className="logo-title text-2xl md:text-3xl" style={{ color: '#ef4444' }}>Error</h1>
             <p className="logo-sub" style={{ color: '#ff6b6b', marginBottom: '1.5rem', textAlign: 'center' }}>
               {connectionError}
             </p>
@@ -134,7 +134,7 @@ export default function MultiplayerRoomPage() {
           <span className="hud-corner bottom-right" aria-hidden="true"></span>
           <div className="hud-scanlines" aria-hidden="true"></div>
           <div className="lobby-logo" style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-            <h2 className="logo-title">Connecting...</h2>
+            <h1 className="logo-title text-2xl md:text-3xl">Connecting...</h1>
             <p className="logo-sub">Joining room {roomId?.toUpperCase()}</p>
           </div>
         </div>

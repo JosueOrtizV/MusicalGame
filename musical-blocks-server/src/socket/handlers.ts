@@ -37,6 +37,17 @@ export function registerHandlers(
   const sid = socket.id;
   console.log(`[Socket] Connected: ${sid}`);
 
+  // Rate Limiting closure state per socket connection
+  let chatWindowStart = Date.now();
+  let chatCount = 0;
+  const MAX_CHAT_PER_WINDOW = 5;
+  const CHAT_WINDOW_MS = 5000;
+
+  let moveWindowStart = Date.now();
+  let moveCount = 0;
+  const MAX_MOVE_PER_WINDOW = 100;
+  const MOVE_WINDOW_MS = 1000;
+
   // HMAC Session Token Verification Interceptor
   socket.use((packet, next) => {
     const [eventName, payload] = packet;
@@ -284,6 +295,19 @@ export function registerHandlers(
 
   // ---- Player movement -----------------------------------------------------
   socket.on('player:move', ({ direction, timestamp }: { direction: Direction; timestamp: number; token?: string }) => {
+    const now = Date.now();
+    if (now - moveWindowStart > MOVE_WINDOW_MS) {
+      moveWindowStart = now;
+      moveCount = 0;
+    }
+    moveCount++;
+    if (moveCount > MAX_MOVE_PER_WINDOW) {
+      if (moveCount === MAX_MOVE_PER_WINDOW + 1) {
+        securityLogger.warn({ socketId: sid }, 'Movement rate limit exceeded (spam prevention)');
+      }
+      return;
+    }
+
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
     room.handlePlayerMove(sid, direction, timestamp);
@@ -291,6 +315,20 @@ export function registerHandlers(
 
   // ---- Chat ----------------------------------------------------------------
   socket.on('chat:send', ({ text }: { text: string; token?: string }) => {
+    const now = Date.now();
+    if (now - chatWindowStart > CHAT_WINDOW_MS) {
+      chatWindowStart = now;
+      chatCount = 0;
+    }
+    chatCount++;
+    if (chatCount > MAX_CHAT_PER_WINDOW) {
+      if (chatCount === MAX_CHAT_PER_WINDOW + 1) {
+        socket.emit('room:error', { message: 'Estás enviando mensajes demasiado rápido. / You are sending messages too fast.' });
+        securityLogger.warn({ socketId: sid, text }, 'Chat rate limit exceeded (spam prevention)');
+      }
+      return;
+    }
+
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
     room.handleChat(sid, text);

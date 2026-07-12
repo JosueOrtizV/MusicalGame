@@ -207,12 +207,14 @@ export function WinnerScreen() {
                  display: 'inline-flex',
                  alignItems: 'center',
                  justifyContent: 'center',
-                 padding: '0.6rem 2.2rem',
+                 flexWrap: 'wrap',
+                 gap: '0.3rem',
+                 padding: '0.5rem clamp(1rem, 4vw, 2.2rem)',
                  background: `linear-gradient(135deg, rgba(20, 20, 47, 0.9) 0%, ${hexToRgba(winner.color, 0.15)} 100%)`,
                  borderRadius: 'var(--radius)',
                  border: `2px solid ${winner.color}`,
                  boxShadow: `0 0 20px ${hexToRgba(winner.color, 0.55)}, inset 0 0 10px ${hexToRgba(winner.color, 0.25)}`,
-                 fontSize: '1.5rem',
+                 fontSize: 'clamp(1rem, 4.5vw, 1.4rem)',
                  fontWeight: 800,
                  margin: '1.5rem 0',
                  textShadow: `0 0 10px ${winner.color}`,
@@ -224,17 +226,18 @@ export function WinnerScreen() {
                }}>
                  <span style={{ 
                    color: winner.color, 
-                   marginRight: '0.6rem', 
-                   fontSize: '1.6rem',
+                   marginRight: '0.2rem', 
+                   fontSize: 'clamp(1.1rem, 5vw, 1.5rem)',
                    textShadow: `0 0 8px ${winner.color}`,
                    flexShrink: 0,
                  }}>★</span>
                  <span style={{
-                   overflow: 'hidden',
-                   textOverflow: 'ellipsis',
-                   whiteSpace: 'nowrap',
-                   display: 'block',
+                   whiteSpace: 'normal',
+                   wordBreak: 'break-word',
+                   display: 'inline-block',
                    minWidth: 0,
+                   maxWidth: '100%',
+                   textAlign: 'center',
                  }}>
                    {winner.name}
                  </span>

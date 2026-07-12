@@ -182,7 +182,8 @@ export function MultiplayerBrowser() {
   };
 
   return (
-    <main className="relative h-[100dvh] overflow-y-auto flex flex-col items-center justify-start md:justify-center p-4 pt-18 md:pt-0 pb-28 md:pb-12 md:p-12 z-[60] w-full bg-[#1c0f1a] select-none">
+    <>
+      <main className="relative h-[100dvh] overflow-y-auto flex flex-col items-center justify-start md:justify-center p-4 pt-18 md:pt-0 pb-28 md:pb-12 md:p-12 z-[60] w-full bg-[#1c0f1a] select-none">
       {/* CRT Scanlines */}
       <div className="fixed inset-0 scanline-overlay z-50"></div>
 
@@ -213,16 +214,6 @@ export function MultiplayerBrowser() {
       {/* Animated Background Icons */}
       <FloatingMusicNotes />
 
-      {/* Brand Header */}
-      <div className="text-center mb-6 md:mb-16 z-20">
-        <h1 className="font-display text-4xl md:text-7xl font-bold text-[#ffabf3] text-glow-magenta tracking-tighter uppercase">
-          VOXEL RAVE
-        </h1>
-        <p className="font-mono text-[10px] md:text-xs text-[#00fbfb] tracking-[0.8em] mt-1.5 md:mt-3 uppercase text-glow-cyan">
-          Party Game
-        </p>
-      </div>
-
       {/* Central Multiplayer Panel */}
       <div className="game-card game-card-magenta start-container z-20 p-6 md:p-8">
         {/* Back Button */}
@@ -246,17 +237,25 @@ export function MultiplayerBrowser() {
         <div className="absolute -bottom-[2px] -left-[2px] w-5 h-5 border-b-4 border-l-4 border-[#ffabf3]/40"></div>
         <div className="absolute -bottom-[2px] -right-[2px] w-5 h-5 border-b-4 border-r-4 border-[#ffabf3]/40"></div>
 
+        {/* Header */}
+        <div className="text-center mt-2 mb-6 w-full">
+          {/* Micro-Branding Label */}
+          <div className="flex items-center justify-center gap-1.5 mb-1 opacity-60">
+            <MusicIcon size={12} className="text-[#ffabf3] pixel-note" />
+            <span className="font-display text-[9px] tracking-[0.3em] text-[#f4dcec] uppercase">
+              Voxel Rave
+            </span>
+          </div>
+          <h1 className="font-display text-2xl md:text-3xl text-[#ffabf3] tracking-[0.2em] uppercase mb-1.5 text-glow-magenta">
+            {t('multiplayer')}
+          </h1>
+          <p className="font-mono text-[10px] text-[#00fbfb]/60 uppercase tracking-widest">
+            {step === 'main' ? t('establishingRoomLink') : step === 'join_private' ? t('joinRoomTitle') : t('activeRooms')}
+          </p>
+        </div>
+
         {step === 'main' ? (
           <div className="flex flex-col items-center w-full mt-0">
-            {/* Header */}
-            <div className="text-center mt-2 mb-3">
-              <h1 className="font-display text-2xl md:text-3xl text-[#ffabf3] tracking-[0.2em] uppercase mb-1.5 text-glow-magenta">
-                {t('multiplayer')}
-              </h1>
-              <p className="font-mono text-[10px] text-[#00fbfb]/60 uppercase tracking-widest">
-                {t('establishingRoomLink')}
-              </p>
-            </div>
             {/* Player Name Input */}
             <div className="flex flex-col gap-3 w-full mb-2">
               <label className="block text-center font-mono text-[11px] text-[#ffabf3] uppercase tracking-[0.3em] mb-1">
@@ -336,9 +335,6 @@ export function MultiplayerBrowser() {
         ) : step === 'join_private' ? (
           <div className="flex flex-col w-full gap-6 mt-6">
             <div className="text-center mb-4">
-              <h2 className="font-display text-2xl text-[#ffabf3] tracking-[0.15em] uppercase mb-2 text-glow-magenta">
-                {t('joinRoomTitle')}
-              </h2>
               <p className="font-mono text-xs text-[#00fbfb]/60 uppercase tracking-widest">
                 {t('joinRoomSub')}
               </p>
@@ -384,14 +380,13 @@ export function MultiplayerBrowser() {
           </div>
         ) : (
           <div className="flex flex-col w-full gap-6 mt-6">
-            <div className="text-center mb-4">
-              <h2 className="font-display text-2xl text-[#ffabf3] tracking-[0.15em] uppercase mb-2 text-glow-magenta">
-                {t('activeRooms')}
-              </h2>
-              <p className="font-mono text-xs text-[#00fbfb]/60 uppercase tracking-widest">
-                {publicRooms.length > 0 ? t('gameSubtitle') : t('noPublicRooms')}
-              </p>
-            </div>
+            {publicRooms.length > 0 && (
+              <div className="text-center mb-4">
+                <p className="font-mono text-xs text-[#00fbfb]/60 uppercase tracking-widest">
+                  {t('gameSubtitle')}
+                </p>
+              </div>
+            )}
 
             <div className="max-h-[260px] overflow-y-auto space-y-3 pr-2 scrollbar-custom w-full">
               {publicRooms.length === 0 ? (
@@ -446,8 +441,8 @@ export function MultiplayerBrowser() {
         <div className="bg-[#f4dcec]"></div>
         <div className="bg-[#cdcd00]"></div>
       </div>
-
-      <MenuFooter />
     </main>
+    <MenuFooter />
+  </>
   );
 }

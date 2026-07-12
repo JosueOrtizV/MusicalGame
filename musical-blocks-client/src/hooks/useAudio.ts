@@ -86,6 +86,7 @@ export function useGameAudio() {
   const prevAliveCount = useRef<number>(0);
   
   const activeDanceTrack = useRef<Howl | null>(null);
+  const currentLobbyTrack = useRef<Howl | null>(null);
   const playlistIndexRef = useRef<number>(0);
 
   // Sync global volume and mute
@@ -131,7 +132,9 @@ export function useGameAudio() {
       stopWinnerSongs();
       stopAllDanceSongs();
       
-      if (!homeLobbyTrack.playing()) {
+      if (currentLobbyTrack.current !== homeLobbyTrack) {
+        currentLobbyTrack.current?.stop();
+        currentLobbyTrack.current = homeLobbyTrack;
         stopAllLobbySongsExcept(homeLobbyTrack);
         homeLobbyTrack.play();
         homeLobbyTrack.fade(0, 0.4, 1000);
@@ -148,7 +151,9 @@ export function useGameAudio() {
       activeDanceTrack.current = null;
       stopWinnerSongs();
 
-      if (!activeLobbyTrack.playing()) {
+      if (currentLobbyTrack.current !== activeLobbyTrack) {
+        currentLobbyTrack.current?.stop();
+        currentLobbyTrack.current = activeLobbyTrack;
         stopAllLobbySongsExcept(activeLobbyTrack);
         activeLobbyTrack.play();
         activeLobbyTrack.fade(0, 0.4, 1000);
@@ -162,6 +167,8 @@ export function useGameAudio() {
 
     // ---- GAME AUDIO ----
     if (screen === 'game' || screen === 'dead' || screen === 'winner') {
+      currentLobbyTrack.current?.stop();
+      currentLobbyTrack.current = null;
 
       // Phase Transitions
       if (phase !== prevPhase.current) {

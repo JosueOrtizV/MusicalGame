@@ -177,7 +177,7 @@ export default function Home() {
           </div>
 
           {/* Gradient Title */}
-          <h1 className="font-sans text-6xl md:text-8xl font-bold tracking-tighter italic mt-4 drop-shadow-[0_0_20px_rgba(255,0,255,0.4)]">
+          <h1 className="font-sans text-5xl md:text-7xl font-bold tracking-tighter italic mt-4 drop-shadow-[0_0_20px_rgba(255,0,255,0.4)]">
             <span className="w-full inline-block pr-4 bg-gradient-to-r from-[#00fbfb] via-[#ffabf3] to-[#cdcd00] bg-clip-text text-transparent">
               {t('gameTitle')}
             </span>

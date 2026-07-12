@@ -41,6 +41,7 @@ export class GameRoom {
   // Current authoritative game state fields
   private currentPhase: GamePhase = 'LOBBY';
   private round = 0;
+  private startingRound = 1;
   private timeLeft = 0;
   private winnerColor: BlockColor | null = null;
   private winnerId: string | null = null;
@@ -374,6 +375,18 @@ export class GameRoom {
     if (!player) return;
     this.players.updateActivity(sid);
 
+    // Parse chat commands for testing (Host only, in lobby/waiting status, only in development)
+    const isDev = process.env.NODE_ENV !== 'production';
+    if (isDev && this.status === 'waiting' && sid === this.hostId && text.startsWith('/round ')) {
+      const parts = text.split(' ');
+      const targetRound = parseInt(parts[1], 10);
+      if (!isNaN(targetRound) && targetRound >= 1 && targetRound <= 200) {
+        this.startingRound = targetRound;
+        this.broadcastSystemMessage(`Ronda inicial establecida en ${targetRound} por el anfitrión. / Starting round set to ${targetRound} by host.`);
+        return;
+      }
+    }
+
     // Validate: if game is playing, only dead players can chat
     if (this.status === 'playing' && player.isAlive) {
       return;
@@ -485,6 +498,7 @@ export class GameRoom {
       this.winnerId = null;
       this.winnerColor = null;
       this.round = 0;
+      this.startingRound = 1;
       this.players.resetAlive();
       this.randomizeSongs(); // Randomize tracks for the next match!
       this.cancellationCount = 0;
@@ -691,7 +705,7 @@ export class GameRoom {
           player.lives = this.settings.maxLives ?? 3;
         }
 
-        this.loop.start();
+        this.loop.start(this.startingRound);
       }
     }, seconds * 1000);
   }

@@ -447,15 +447,24 @@ export function RoomLobby() {
             <span className="hud-corner bottom-left"></span>
             <span className="hud-corner bottom-right"></span>
 
+            {/* Back Button inside setup card */}
+            <button
+              className="absolute top-5 left-5 text-[#00fbfb] font-retro text-xs md:text-sm font-bold uppercase tracking-widest bg-transparent border-none p-0 cursor-pointer z-20 flex items-center gap-2 hover:text-[#ffabf3] transition-all duration-300 group hover:drop-shadow-[0_0_8px_rgba(255,171,243,0.8)]"
+              onClick={leaveRoom}
+            >
+              <BackArrowIcon size={20} className="group-hover:-translate-x-1 transition-transform text-glow-cyan" />
+              <span>{t('back').replace('← ', '')}</span>
+            </button>
+
             {/* Host Settings Trigger Button */}
             {isHost && (
               <button
-                className="lobby-settings-btn"
+                className="sp-settings-btn"
                 onClick={openSettings}
                 title={t('roomSettingsTitle')}
                 aria-label={t('roomSettingsTitle')}
                 aria-expanded={isSettingsOpen}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                type="button"
               >
                 <JoystickIcon size={18} />
               </button>
@@ -463,12 +472,12 @@ export function RoomLobby() {
 
             {/* Cosmetic Locker Trigger Button (Symmetrical on Top-Left) */}
             <button
-              className="lobby-cosmetics-btn"
+              className="sp-cosmetics-btn"
               onClick={openLocker}
               title={lang === 'es' ? 'Locker de Cosméticos' : 'Cosmetic Locker'}
               aria-label={lang === 'es' ? 'Locker de Cosméticos' : 'Cosmetic Locker'}
               aria-expanded={isLockerOpen}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              type="button"
             >
               <ShirtIcon size={18} />
             </button>
@@ -479,9 +488,9 @@ export function RoomLobby() {
                 <MusicIcon size={24} className="text-[#ffabf3] animate-bounce" style={{ animationDuration: '2s' }} />
                 <MusicIcon size={18} className="text-[#00fbfb] animate-bounce" style={{ animationDuration: '1.5s', animationDelay: '0.2s' }} />
               </div>
-              <h2 className="font-display text-3xl font-bold tracking-tighter italic uppercase bg-gradient-to-r from-[#00fbfb] via-[#ffabf3] to-[#eaea00] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(255,0,255,0.3)]">
+              <h1 className="font-display text-3xl font-bold tracking-tighter italic uppercase bg-gradient-to-r from-[#00fbfb] via-[#ffabf3] to-[#eaea00] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(255,0,255,0.3)]">
                 {isPrivate ? t('privateRoom', { id: room.id }) : t('publicRoom')}
-              </h2>
+              </h1>
               {isPrivate && (
                 <button className="room-code-badge mt-2" onClick={copyCode} title="Click to copy" aria-label={lang === 'es' ? `Copiar código de sala ${room.id}` : `Copy room code ${room.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   <span className="room-code-text">{room.id}</span>
@@ -495,89 +504,151 @@ export function RoomLobby() {
               {/* Real-time Game Difficulty Status Chips */}
               <div className="flex flex-wrap justify-center gap-2 mt-4 font-mono text-[9px] font-bold tracking-wider uppercase">
                 {/* Color/Difficulty Chip */}
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#00fbfb]/30 rounded-sm">
-                  <span
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{
-                      backgroundColor: (room.settings?.maxColors === 4) ? '#22c55e' :
-                        (room.settings?.maxColors === 6) ? '#3b82f6' :
-                          (room.settings?.maxColors === 8) ? '#eab308' :
-                            '#ef4444',
-                      boxShadow: `0 0 6px ${(room.settings?.maxColors === 4) ? '#22c55e' :
+                <div className="tooltip-container tooltip-align-left">
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#00fbfb]/30 rounded-sm">
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{
+                        backgroundColor: (room.settings?.maxColors === 4) ? '#22c55e' :
                           (room.settings?.maxColors === 6) ? '#3b82f6' :
                             (room.settings?.maxColors === 8) ? '#eab308' :
-                              '#ef4444'
-                        }`
-                    }}
-                  />
-                  <span style={{
-                    color: (room.settings?.maxColors === 4) ? '#22c55e' :
-                      (room.settings?.maxColors === 6) ? '#3b82f6' :
-                        (room.settings?.maxColors === 8) ? '#eab308' :
-                          '#ef4444'
-                  }}>
-                    {getDifficultyName(room.settings?.maxColors ?? 6)}
-                  </span>
+                              '#ef4444',
+                        boxShadow: `0 0 6px ${(room.settings?.maxColors === 4) ? '#22c55e' :
+                            (room.settings?.maxColors === 6) ? '#3b82f6' :
+                              (room.settings?.maxColors === 8) ? '#eab308' :
+                                '#ef4444'
+                          }`
+                      }}
+                    />
+                    <span style={{
+                      color: (room.settings?.maxColors === 4) ? '#22c55e' :
+                        (room.settings?.maxColors === 6) ? '#3b82f6' :
+                          (room.settings?.maxColors === 8) ? '#eab308' :
+                            '#ef4444'
+                    }}>
+                      {getDifficultyName(room.settings?.maxColors ?? 6)}
+                    </span>
+                  </div>
+                  <div className={`tooltip-box tooltip-${
+                    (room.settings?.maxColors === 4) ? 'green' :
+                      (room.settings?.maxColors === 6) ? 'blue' :
+                        (room.settings?.maxColors === 8) ? 'amber' :
+                          'rose'
+                  }`}>
+                    <span style={{ 
+                      color: (room.settings?.maxColors === 4) ? '#22c55e' :
+                        (room.settings?.maxColors === 6) ? '#00fbfb' :
+                          (room.settings?.maxColors === 8) ? '#eab308' :
+                            '#ef4444',
+                      fontWeight: 'bold',
+                      textShadow: `0 0 5px ${(room.settings?.maxColors === 4) ? '#22c55e' :
+                        (room.settings?.maxColors === 6) ? '#00fbfb' :
+                          (room.settings?.maxColors === 8) ? '#eab308' :
+                            '#ef4444'}`
+                    }}>
+                      {(room.settings?.maxColors ?? 6)} {lang === 'es' ? 'Colores' : 'Colors'}
+                    </span>
+                    {' - '}
+                    {(room.settings?.maxColors === 4) ? t('easyDesc') :
+                      (room.settings?.maxColors === 6) ? t('normalDesc') :
+                        (room.settings?.maxColors === 8) ? t('hardDesc') :
+                          t('extremeDesc')
+                    }
+                  </div>
                 </div>
 
                 {/* Speed Chip */}
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-white/10 rounded-sm">
-                  {room.settings?.gameSpeed === 'CHILL' ? (
-                    <>
-                      <SnowflakeIcon size={10} className="text-[#38bdf8]" />
-                      <span className="text-[#38bdf8]">{t('speedChill')}</span>
-                    </>
-                  ) : room.settings?.gameSpeed === 'TURBO' ? (
-                    <>
-                      <LightningIcon size={10} className="text-[#eab308]" />
-                      <span className="text-[#eab308]">{t('speedTurbo')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <StopwatchIcon size={10} className="text-[#3b82f6]" />
-                      <span className="text-[#3b82f6]">{t('speedNormal')}</span>
-                    </>
-                  )}
+                <div className="tooltip-container">
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-white/10 rounded-sm">
+                    {room.settings?.gameSpeed === 'CHILL' ? (
+                      <>
+                        <SnowflakeIcon size={10} className="text-[#38bdf8]" />
+                        <span className="text-[#38bdf8]">{t('speedChill')}</span>
+                      </>
+                    ) : room.settings?.gameSpeed === 'TURBO' ? (
+                      <>
+                        <LightningIcon size={10} className="text-[#eab308]" />
+                        <span className="text-[#eab308]">{t('speedTurbo')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <StopwatchIcon size={10} className="text-[#3b82f6]" />
+                        <span className="text-[#3b82f6]">{t('speedNormal')}</span>
+                      </>
+                    )}
+                  </div>
+                  <div className={`tooltip-box tooltip-${
+                    room.settings?.gameSpeed === 'CHILL' ? 'blue' :
+                      room.settings?.gameSpeed === 'TURBO' ? 'amber' : 'blue'
+                  }`}>
+                    {room.settings?.gameSpeed === 'CHILL' ? t('speedChillDesc') :
+                      room.settings?.gameSpeed === 'TURBO' ? t('speedTurboDesc') : t('speedNormalDesc')
+                    }
+                  </div>
                 </div>
 
                 {/* Lives Chip */}
                 {room.settings?.maxLives !== undefined && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#f43f5e]/30 rounded-sm">
-                    <HeartIcon size={10} style={{ fill: '#f43f5e' }} className="text-[#f43f5e]" />
-                    <span className="text-[#f43f5e]">{room.settings.maxLives} {room.settings.maxLives === 1 ? (lang === 'es' ? 'Vida' : 'Life') : (lang === 'es' ? 'Vidas' : 'Lives')}</span>
+                  <div className="tooltip-container tooltip-align-right">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#f43f5e]/30 rounded-sm">
+                      <HeartIcon size={10} style={{ fill: '#f43f5e' }} className="text-[#f43f5e]" />
+                      <span className="text-[#f43f5e]">{room.settings.maxLives} {room.settings.maxLives === 1 ? (lang === 'es' ? 'Vida' : 'Life') : (lang === 'es' ? 'Vidas' : 'Lives')}</span>
+                    </div>
+                    <div className="tooltip-box tooltip-rose">
+                      {room.settings.maxLives === 1 ? t('lives1Desc') :
+                        room.settings.maxLives === 3 ? t('lives3Desc') :
+                          room.settings.maxLives === 5 ? t('lives5Desc') :
+                            (lang === 'es' ? `Inicias la partida con ${room.settings.maxLives} vidas.` : `You start the match with ${room.settings.maxLives} lives.`)
+                      }
+                    </div>
                   </div>
                 )}
 
                 {/* Blind Mode Chip */}
                 {room.settings?.isBlindMode && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#d946ef]/30 rounded-sm">
-                    <GlassesIcon size={10} className="text-[#d946ef]" />
-                    <span className="text-[#d946ef]">{t('blindModeLabel')}</span>
+                  <div className="tooltip-container tooltip-align-right">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#d946ef]/30 rounded-sm">
+                      <GlassesIcon size={10} className="text-[#d946ef]" />
+                      <span className="text-[#d946ef]">{t('blindModeLabel')}</span>
+                    </div>
+                    <div className="tooltip-box tooltip-purple">
+                      {t('blindModeDesc')}
+                    </div>
                   </div>
                 )}
 
                 {/* Collisions Chip */}
                 {room.settings?.enableCollisions && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#00f0ff]/30 rounded-sm">
-                    <UsersIcon size={10} className="text-[#00f0ff]" />
-                    <span className="text-[#00f0ff]">{t('collisionsLabel')}</span>
+                  <div className="tooltip-container tooltip-align-right">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#00f0ff]/30 rounded-sm">
+                      <UsersIcon size={10} className="text-[#00f0ff]" />
+                      <span className="text-[#00f0ff]">{t('collisionsLabel')}</span>
+                    </div>
+                    <div className="tooltip-box">
+                      {t('collisionsEnabledDesc')}
+                    </div>
                   </div>
                 )}
 
                 {/* Sudden Death Mode Chip */}
                 {room.settings?.suddenDeathMode && room.settings.suddenDeathMode !== 'NORMAL' && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-red-500/30 rounded-sm">
-                    {room.settings.suddenDeathMode === 'CHAOS' ? (
-                      <>
-                        <SkullIcon size={10} className="text-[#f43f5e]" />
-                        <span className="text-[#f43f5e]">{t('sdChaos')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <DoveIcon size={10} className="text-[#10b981]" />
-                        <span className="text-[#10b981]">{t('sdOff')}</span>
-                      </>
-                    )}
+                  <div className="tooltip-container tooltip-align-right">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-red-500/30 rounded-sm">
+                      {room.settings.suddenDeathMode === 'CHAOS' ? (
+                        <>
+                          <SkullIcon size={10} className="text-[#f43f5e]" />
+                          <span className="text-[#f43f5e]">{t('sdChaos')}</span>
+                        </>
+                      ) : (
+                        <>
+                          <DoveIcon size={10} className="text-[#10b981]" />
+                          <span className="text-[#10b981]">{t('sdOff')}</span>
+                        </>
+                      )}
+                    </div>
+                    <div className={`tooltip-box tooltip-${room.settings.suddenDeathMode === 'CHAOS' ? 'rose' : 'green'}`}>
+                      {room.settings.suddenDeathMode === 'CHAOS' ? t('sdChaosDesc') : t('sdOffDesc')}
+                    </div>
                   </div>
                 )}
               </div>
@@ -723,14 +794,6 @@ export function RoomLobby() {
                   </button>
                 )}
 
-                <button
-                  className="game-btn game-btn-outline font-mono hover:border-red-500/30 hover:text-red-400 group"
-                  onClick={leaveRoom}
-                  style={{ justifyContent: 'center', gap: '8px' }}
-                >
-                  <BackArrowIcon size={14} className="transition-transform group-hover:-translate-x-0.5 text-white/60 group-hover:text-red-400" />
-                  <span>{t('leaveRoom').replace('← ', '')}</span>
-                </button>
 
                 <p className={`room-footer-note ${autoStartSeconds ? 'auto-starting-note' : ''} text-center font-mono text-[9px] text-[#00fbfb]/60 uppercase tracking-wider mt-2`}>
                   {autoStartSeconds
@@ -1260,7 +1323,7 @@ export function RoomLobby() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                       </svg>
                       <div>
-                        <h2 className="locker-modal-title" id="locker-title">{lang === 'es' ? 'Locker de Avatar' : 'Avatar Locker'}</h2>
+                        <h3 className="locker-modal-title" id="locker-title">{lang === 'es' ? 'Locker de Avatar' : 'Avatar Locker'}</h3>
                         <p className="hud-terminal-sub">SYSTEM // CALIBRATING_DNA_STREAM... <span className="blinking-cursor">_</span></p>
                       </div>
                     </div>
@@ -1317,7 +1380,7 @@ export function RoomLobby() {
                       {/* Cyberpunk Navigation Sub-tabs */}
                       <div className="flex border-b border-white/10 mb-4 w-full gap-2 p-1 bg-black/40 rounded-lg">
                         <button
-                          className={`flex-1 py-3 px-4 font-mono text-xs font-extrabold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'equip'
+                          className={`flex-1 py-2 md:py-3 px-1 md:px-4 font-mono text-[9px] md:text-xs font-extrabold uppercase tracking-normal md:tracking-widest flex items-center justify-center gap-1 md:gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'equip'
                               ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]'
                               : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
                             }`}
@@ -1330,7 +1393,7 @@ export function RoomLobby() {
                           <span>{lang === 'es' ? 'Equipar' : 'Equip'}</span>
                         </button>
                         <button
-                          className={`flex-1 py-3 px-4 font-mono text-xs font-extrabold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'colors'
+                          className={`flex-1 py-2 md:py-3 px-1 md:px-4 font-mono text-[9px] md:text-xs font-extrabold uppercase tracking-normal md:tracking-widest flex items-center justify-center gap-1 md:gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'colors'
                               ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]'
                               : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
                             }`}
@@ -1342,7 +1405,7 @@ export function RoomLobby() {
                           <span>{lang === 'es' ? 'Colores' : 'Colors'}</span>
                         </button>
                         <button
-                          className={`flex-1 py-3 px-4 font-mono text-xs font-extrabold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'anims'
+                          className={`flex-1 py-2 md:py-3 px-1 md:px-4 font-mono text-[9px] md:text-xs font-extrabold uppercase tracking-normal md:tracking-widest flex items-center justify-center gap-1 md:gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'anims'
                               ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]'
                               : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
                             }`}

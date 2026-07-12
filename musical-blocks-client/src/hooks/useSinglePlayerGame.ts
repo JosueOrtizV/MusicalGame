@@ -73,16 +73,19 @@ export function useSinglePlayerGame() {
 
     // Submit to Supabase leaderboard (fire and forget)
     const spPlayerId = state.spPlayerId || 'anonymous';
-    const difficultyLevel = gridManager.current.getColorDistribution();
-    const colorsCount = Object.values(difficultyLevel).reduce((a, b) => a + (b > 0 ? 1 : 0), 0);
+    const colorsCount = gridManager.current.getMaxColors();
     
     let difficultyName = 'normal';
     if (colorsCount <= 4) difficultyName = 'easy';
     else if (colorsCount <= 6) difficultyName = 'normal';
     else if (colorsCount <= 8) difficultyName = 'hard';
-    else difficultyName = 'extreme';
+    else difficultyName = 'expert';
 
     const speed = gameLoop.current ? gameLoop.current.getSpeed() : 'NORMAL';
+    const maxLives = gameLoop.current ? gameLoop.current.getMaxLives() : 3;
+    const suddenDeath = gameLoop.current ? gameLoop.current.getSuddenDeathMode() : 'NORMAL';
+    const blindMode = gameLoop.current ? gameLoop.current.getIsBlindMode() : false;
+    const telemetry = gameLoop.current ? gameLoop.current.getTelemetry() : null;
 
     submitScore({
       player_id: spPlayerId,
@@ -90,7 +93,11 @@ export function useSinglePlayerGame() {
       score: finalScore,
       rounds: rounds,
       difficulty: difficultyName,
-      speed: speed
+      speed: speed,
+      max_lives: maxLives,
+      sudden_death: suddenDeath,
+      blind_mode: blindMode,
+      telemetry
     });
 
     state.setScreen('winner');

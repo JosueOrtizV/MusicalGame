@@ -8,15 +8,32 @@ export interface LeaderboardEntry {
   rounds: number;
   difficulty: string;
   speed: string;
+  max_lives?: number;
+  sudden_death?: string;
+  blind_mode?: boolean;
   created_at: string;
 }
 
-export async function submitScore(entry: Omit<LeaderboardEntry, 'id' | 'created_at'>) {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from('sp_leaderboard')
-    .insert(entry);
-  if (error) console.warn('[Leaderboard] Error submitting score:', error.message);
+export async function submitScore(
+  entry: Omit<LeaderboardEntry, 'id' | 'created_at'> & {
+    telemetry?: { startTime: number; rounds: Array<{ round: number; timestamp: number }> } | null;
+  }
+) {
+  try {
+    const res = await fetch('/api/leaderboard/submit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(entry),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn('[Leaderboard] Error submitting score:', errText);
+    }
+  } catch (error) {
+    console.error('[Leaderboard] Network error submitting score:', error);
+  }
 }
 
 export async function fetchTopScores(limit = 10): Promise<LeaderboardEntry[]> {

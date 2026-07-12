@@ -76,6 +76,7 @@
    BASE
    ============================================================ */
 @layer base {
+
   html,
   body {
     height: 100%;
@@ -89,7 +90,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.5;
-    text-shadow: 0 0 1px rgba(0,0,0,0.01);
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.01);
   }
 }
 
@@ -376,7 +377,6 @@ input {
 
 .logo-title {
   font-family: var(--font-display);
-  font-size: 2.2rem;
   font-weight: 900;
   letter-spacing: 0.05em;
   background: linear-gradient(135deg, #00f0ff, #ff00ff, #a0ff00);
@@ -1155,7 +1155,7 @@ select.lobby-input option {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999 !important;
   animation: modal-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -1972,6 +1972,7 @@ select.lobby-input option {
     opacity: 0;
     transform: scale(0.8);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -2581,9 +2582,7 @@ select.lobby-input option {
     position: absolute !important;
   }
 
-  .logo-title {
-    font-size: 1.8rem;
-  }
+
 
   .room-title {
     font-size: 1.2rem;
@@ -2776,9 +2775,7 @@ select.lobby-input option {
     font-size: 2rem !important;
   }
 
-  .logo-title {
-    font-size: 1.5rem !important;
-  }
+
 
   /* --- HOME SCREEN (Main View) --- */
   .lobby-content-wrapper {
@@ -3551,7 +3548,7 @@ select.lobby-input option {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  z-index: 9999;
+  z-index: 30000 !important;
   pointer-events: none;
   max-height: 40vh;
   overflow: visible;
@@ -3675,7 +3672,7 @@ body.game-starting .toast-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999 !important;
   animation: modal-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -3742,60 +3739,225 @@ body.game-starting .toast-container {
 }
 
 @media (max-width: 680px) {
-  .locker-modal-overlay {
-    padding: 2.25rem 1rem !important;
-    /* Spacing top/bottom to avoid chat/config overlap */
-    align-items: flex-start !important;
-    /* Start from top of screen */
+
+  /* --- Settings Modal Mobile Adjustments --- */
+  .settings-modal-overlay {
+    padding: 0.75rem !important;
+    align-items: center !important;
+    overflow-y: hidden !important;
+    z-index: 9999 !important;
+  }
+
+  .settings-modal-card {
+    height: 94dvh !important;
+    max-height: 660px !important;
+    overflow: hidden !important;
+    padding: 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .settings-modal-title {
+    font-size: 0.95rem !important;
+  }
+
+  .settings-modal-header {
+    margin-bottom: 0.6rem !important;
+    padding-bottom: 0.4rem !important;
+  }
+
+  .settings-modal-body--with-sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    gap: 0.75rem !important;
+  }
+
+  .settings-sidebar {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.4rem !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding-right: 0 !important;
+    padding-bottom: 0.5rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .settings-tab-btn {
+    padding: 0.45rem 0.3rem !important;
+    font-size: 0.62rem !important;
+    letter-spacing: 0.01em !important;
+    gap: 0.2rem !important;
+    white-space: nowrap !important;
+    justify-content: center !important;
+  }
+
+  .settings-content-area {
+    flex: 1 !important;
+    min-height: 0 !important;
     overflow-y: auto !important;
-    /* Whole modal scrolling happens here! */
+    padding-right: 4px !important;
+  }
+
+  .settings-modal-footer {
+    margin-top: 0.5rem !important;
+    padding-top: 0.4rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .settings-modal-save-btn {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .settings-modal-subtitle {
+    font-size: 0.85rem !important;
+    margin-bottom: 0.2rem !important;
+  }
+
+  .settings-modal-intro,
+  .settings-modal-description {
+    font-size: 0.65rem !important;
+    margin-bottom: 0.4rem !important;
+  }
+
+  /* --- Locker Modal Mobile Adjustments --- */
+  .locker-modal-overlay {
+    padding: 0.75rem !important;
+    align-items: center !important;
+    overflow-y: hidden !important;
+  }
+
+  .locker-modal-title {
+    font-size: 0.95rem !important;
+  }
+
+  .locker-modal-header {
+    margin-bottom: 0.6rem !important;
+    padding-bottom: 0.4rem !important;
+  }
+
+  .locker-modal-header .hud-terminal-sub {
+    display: none !important;
   }
 
   .locker-modal-card {
-    height: auto !important;
-    /* Grow card to fit contents */
-    max-height: none !important;
+    height: 94dvh !important;
+    max-height: 660px !important;
+    overflow: hidden !important;
+    padding: 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
-    overflow: visible !important;
-    padding: 1.25rem !important;
   }
 
   .locker-modal-body {
     grid-template-columns: 1fr !important;
-    /* Stack vertically */
-    height: auto !important;
-    overflow: visible !important;
-    flex: none !important;
-    gap: 1.25rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    gap: 0.75rem !important;
   }
 
   .locker-modal-preview-panel {
-    height: auto !important;
-    min-height: 280px !important;
+    height: 200px !important;
+    min-height: 200px !important;
+    padding: 0.5rem !important;
     box-sizing: border-box;
+    flex-shrink: 0 !important;
     flex: none !important;
   }
 
   .locker-modal-canvas-container {
-    height: 240px !important;
-    max-height: 240px !important;
-    aspect-ratio: 1 !important;
+    height: 160px !important;
+    max-height: 160px !important;
+    flex-shrink: 0 !important;
     flex: none !important;
   }
 
   .locker-modal-controls-panel {
-    height: auto !important;
-    overflow: visible !important;
-    /* Disable double scroll, overlay handles it */
+    flex: 1 !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
     padding-right: 0 !important;
   }
 
   .locker-tab-content-scroll {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    padding-right: 4px !important;
+  }
+
+  /* Compact navigation tabs on mobile */
+  .locker-modal-controls-panel>div.flex {
+    gap: 0.2rem !important;
+    padding: 0.2rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .locker-modal-controls-panel>div.flex button {
+    padding: 0.45rem 0.2rem !important;
+    font-size: 0.62rem !important;
+    letter-spacing: 0.01em !important;
+    gap: 0.2rem !important;
+  }
+
+  .locker-modal-controls-panel>div.flex button svg {
+    width: 0.7rem !important;
+    height: 0.7rem !important;
+  }
+
+  /* Compact Accessory Toggles on mobile (Force 2 Columns) */
+  .locker-modal-toggles-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.45rem !important;
+  }
+
+  .locker-modal-toggle-card {
+    padding: 0.5rem !important;
+    gap: 0.35rem !important;
+    min-height: 0 !important;
     height: auto !important;
-    overflow-y: visible !important;
-    /* Disable inner scroll on mobile */
-    padding-right: 0 !important;
+  }
+
+  .locker-modal-toggle-card svg {
+    width: 1.1rem !important;
+    height: 1.1rem !important;
+  }
+
+  .locker-modal-toggle-label {
+    font-size: 0.62rem !important;
+    line-height: 1.25 !important;
+  }
+
+  /* Compact Companions on mobile (Force 2 Columns) */
+  .locker-modal-options-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.45rem !important;
+  }
+
+  .locker-modal-option-btn {
+    padding: 0.45rem 0.6rem !important;
+    font-size: 0.65rem !important;
+    gap: 0.35rem !important;
+  }
+
+  .locker-modal-option-emoji,
+  .locker-modal-option-btn svg {
+    width: 0.9rem !important;
+    height: 0.9rem !important;
+    font-size: 0.9rem !important;
   }
 }
 
@@ -4324,9 +4486,11 @@ body.game-starting .toast-container {
 
 /* Mobile adjustments to avoid horizontal scroll and stack grids */
 @media (max-width: 480px) {
+
+
   .locker-modal-overlay {
-    padding: 2.5rem 0.5rem !important;
-    /* Extra safety margin on tiny screens */
+    padding: 0.5rem !important;
+    align-items: center !important;
   }
 
   .locker-modal-card {
@@ -4335,7 +4499,7 @@ body.game-starting .toast-container {
 
   .locker-modal-toggles-grid,
   .locker-modal-options-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr 1fr !important;
   }
 
   .locker-modal-skin-btn {
@@ -4444,7 +4608,7 @@ body.game-starting .toast-container {
   background: rgba(5, 5, 20, 0.85);
   backdrop-filter: blur(10px) saturate(1.5);
   border: 1px solid rgba(0, 240, 255, 0.3);
-  box-shadow: 
+  box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.5),
     0 0 15px rgba(0, 240, 255, 0.15);
   padding: 0.75rem 1.75rem;
@@ -4455,7 +4619,7 @@ body.game-starting .toast-container {
 
 .banner-content.critical {
   border-color: rgba(244, 63, 94, 0.5);
-  box-shadow: 
+  box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.5),
     0 0 20px rgba(244, 63, 94, 0.3);
 }
@@ -4500,6 +4664,7 @@ body.game-starting .toast-container {
     transform: translate(-50%, -100%);
     opacity: 0;
   }
+
   to {
     transform: translate(-50%, 0);
     opacity: 1;
@@ -4507,9 +4672,20 @@ body.game-starting .toast-container {
 }
 
 @keyframes banner-ping {
-  0% { transform: scale(0.85); opacity: 0.6; }
-  50% { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(0.85); opacity: 0.6; }
+  0% {
+    transform: scale(0.85);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.85);
+    opacity: 0.6;
+  }
 }
 
 /* ============================================================
@@ -4522,6 +4698,7 @@ body.game-starting .toast-container {
 }
 
 @media (max-width: 768px) {
+
   /* Hide the old dpad if any instances remain */
   .hud-dpad {
     display: none !important;
@@ -4539,7 +4716,7 @@ body.game-starting .toast-container {
     pointer-events: none;
     z-index: 10000;
   }
-  
+
   .mobile-joystick {
     pointer-events: auto;
     width: 110px;
@@ -4624,7 +4801,7 @@ body.game-starting .toast-container {
     width: 90px;
     height: 90px;
   }
-  
+
   .joystick-knob {
     width: 36px;
     height: 36px;
@@ -4641,6 +4818,7 @@ body.game-starting .toast-container {
   0% {
     box-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
   }
+
   100% {
     box-shadow: 0 0 24px rgba(244, 63, 94, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.35);
   }
@@ -4651,10 +4829,12 @@ body.game-starting .toast-container {
     box-shadow: 0 0 0px rgba(255, 255, 255, 0.8);
     filter: brightness(1);
   }
+
   50% {
     box-shadow: 0 0 35px rgba(255, 255, 255, 1);
     filter: brightness(1.8);
   }
+
   100% {
     box-shadow: var(--glow-rose), 0 5px 20px rgba(244, 63, 94, 0.5);
     filter: brightness(1);
@@ -4663,6 +4843,7 @@ body.game-starting .toast-container {
 
 /* Hide floating HUD camera/mute buttons on mobile so they only use the settings gear */
 @media (max-width: 768px) {
+
   .hud-mute-btn,
   .hud-camera-btn {
     display: none !important;
@@ -4938,7 +5119,8 @@ body.game-starting .toast-container {
   cursor: pointer;
 }
 
-.dpad-btn:active, .dpad-btn.active {
+.dpad-btn:active,
+.dpad-btn.active {
   background: rgba(244, 63, 94, 0.25) !important;
   border-color: var(--c-accent-2) !important;
   transform: scale(0.9);
@@ -4990,10 +5172,8 @@ body.game-starting .toast-container {
 
 /* Scanline overlay */
 .scanline-overlay {
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%,
-    rgba(0, 0, 0, 0.15) 50%
-  );
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.15) 50%);
   background-size: 100% 4px;
   pointer-events: none;
 }
@@ -5012,6 +5192,7 @@ body.game-starting .toast-container {
 .text-glow-cyan {
   text-shadow: 0 0 10px rgba(0, 251, 251, 0.8);
 }
+
 .text-glow-magenta {
   text-shadow: 0 0 10px rgba(255, 0, 255, 0.8);
 }
@@ -5020,9 +5201,19 @@ body.game-starting .toast-container {
 .music-float {
   animation: float 6s ease-in-out infinite;
 }
+
 @keyframes float {
-  0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); opacity: 0.1; }
-  50% { transform: translateY(-20px) translateX(10px) rotate(10deg); opacity: 0.25; }
+
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.1;
+  }
+
+  50% {
+    transform: translateY(-20px) translateX(10px) rotate(10deg);
+    opacity: 0.25;
+  }
 }
 
 /* Unified Card Design */
@@ -5214,16 +5405,24 @@ body.game-starting .toast-container {
   align-items: center;
   justify-content: center;
   padding: 16px;
+  padding-bottom: 80px;
+  /* Prevents overlap with fixed footers on mobile */
+  overflow-y: auto;
+  /* Fallback scroll when screen height is tiny */
 }
 
 .leaderboard-modal-card {
   background: rgba(22, 10, 21, 0.95);
   border: 2px solid #ffabf3;
-  padding: 32px 24px 24px 24px;
+  padding: 28px 20px 20px 20px;
   border-radius: 4px;
   box-shadow: 0 0 30px rgba(255, 171, 243, 0.25);
   width: 100%;
   max-width: 360px;
+  max-height: calc(100dvh - 120px);
+  /* Keeps modal from stretching out of bounds */
+  display: flex;
+  flex-direction: column;
   position: relative;
   animation: modal-glow-fade 0.3s ease-out;
 }
@@ -5233,8 +5432,237 @@ body.game-starting .toast-container {
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+/* Custom Cyberpunk Tooltips */
+.tooltip-container {
+  position: relative;
+  display: inline-flex;
+  cursor: help;
+}
+
+.tooltip-box {
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px) scale(0.95);
+  background: rgba(18, 8, 20, 0.95);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2), inset 0 0 8px rgba(0, 240, 255, 0.1);
+  padding: 8px 12px;
+  border-radius: 4px;
+  color: #fff;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: normal;
+  width: max-content;
+  max-width: 220px;
+  text-align: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: none;
+  font-weight: normal;
+}
+
+/* Tooltip Arrow */
+.tooltip-box::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(0, 240, 255, 0.4) transparent transparent transparent;
+}
+
+.tooltip-container:hover .tooltip-box {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Adjustments for custom colors */
+.tooltip-box.tooltip-magenta {
+  border-color: rgba(255, 171, 243, 0.4);
+  box-shadow: 0 0 15px rgba(255, 171, 243, 0.2), inset 0 0 8px rgba(255, 171, 243, 0.1);
+}
+
+.tooltip-box.tooltip-magenta::after {
+  border-color: rgba(255, 171, 243, 0.4) transparent transparent transparent;
+}
+
+.tooltip-box.tooltip-rose {
+  border-color: rgba(244, 63, 94, 0.4);
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.2), inset 0 0 8px rgba(244, 63, 94, 0.1);
+}
+
+.tooltip-box.tooltip-rose::after {
+  border-color: rgba(244, 63, 94, 0.4) transparent transparent transparent;
+}
+
+.tooltip-box.tooltip-purple {
+  border-color: rgba(217, 70, 239, 0.4);
+  box-shadow: 0 0 15px rgba(217, 70, 239, 0.2), inset 0 0 8px rgba(217, 70, 239, 0.1);
+}
+
+.tooltip-box.tooltip-purple::after {
+  border-color: rgba(217, 70, 239, 0.4) transparent transparent transparent;
+}
+
+.tooltip-box.tooltip-green {
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.2), inset 0 0 8px rgba(16, 185, 129, 0.1);
+}
+
+.tooltip-box.tooltip-green::after {
+  border-color: rgba(16, 185, 129, 0.4) transparent transparent transparent;
+}
+
+.tooltip-box.tooltip-amber {
+  border-color: rgba(234, 179, 8, 0.4);
+  box-shadow: 0 0 15px rgba(234, 179, 8, 0.2), inset 0 0 8px rgba(234, 179, 8, 0.1);
+}
+
+.tooltip-box.tooltip-amber::after {
+  border-color: rgba(234, 179, 8, 0.4) transparent transparent transparent;
+}
+
+.tooltip-box.tooltip-blue {
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.2), inset 0 0 8px rgba(59, 130, 246, 0.1);
+}
+
+.tooltip-box.tooltip-blue::after {
+  border-color: rgba(59, 130, 246, 0.4) transparent transparent transparent;
+}
+
+/* Singleplayer Custom Buttons (Locker & Settings) */
+.sp-cosmetics-btn,
+.sp-settings-btn {
+  position: absolute;
+  top: 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(217, 70, 239, 0.25);
+  padding: 0.5rem;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(217, 70, 239, 0.08);
+  z-index: 20;
+}
+
+.sp-settings-btn {
+  border-color: rgba(0, 240, 255, 0.25);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.08);
+}
+
+.sp-cosmetics-btn:hover {
+  transform: scale(1.1) translateY(-2px);
+  background: rgba(217, 70, 239, 0.15);
+  border-color: #d946ef;
+}
+
+.sp-settings-btn:hover {
+  transform: scale(1.1) translateY(-2px);
+  background: rgba(0, 240, 255, 0.15);
+  border-color: #00f0ff;
+}
+
+/* Desktop positioning */
+.sp-cosmetics-btn {
+  right: 1.25rem;
+  left: auto;
+}
+
+.sp-settings-btn {
+  right: 4rem;
+  left: auto;
+}
+
+/* Mobile positioning */
+@media (max-width: 768px) {
+
+  .sp-cosmetics-btn,
+  .sp-settings-btn {
+    top: 0.8rem !important;
+    padding: 0.35rem !important;
+    position: absolute !important;
+  }
+
+  .sp-cosmetics-btn {
+    right: 0.8rem !important;
+    left: auto !important;
+  }
+
+  .sp-settings-btn {
+    right: 3.2rem !important;
+    left: auto !important;
+  }
+}
+
+/* Tooltip Alignment Overrides to Prevent Edge Overflow */
+.tooltip-container.tooltip-align-left .tooltip-box {
+  left: 0 !important;
+  right: auto !important;
+  transform: translateY(4px) scale(0.95) !important;
+}
+
+.tooltip-container.tooltip-align-left .tooltip-box::after {
+  left: 20px !important;
+  right: auto !important;
+  transform: none !important;
+}
+
+.tooltip-container.tooltip-align-left:hover .tooltip-box {
+  transform: translateY(0) scale(1) !important;
+}
+
+.tooltip-container.tooltip-align-right .tooltip-box {
+  left: auto !important;
+  right: 0 !important;
+  transform: translateY(4px) scale(0.95) !important;
+}
+
+.tooltip-container.tooltip-align-right .tooltip-box::after {
+  left: auto !important;
+  right: 20px !important;
+  transform: none !important;
+}
+
+.tooltip-container.tooltip-align-right:hover .tooltip-box {
+  transform: translateY(0) scale(1) !important;
+}
+
+/* Hide floating HUD buttons when any modal is open globally */
+body:has(.settings-modal-overlay) .settings-menu-container,
+body:has(.locker-modal-overlay) .settings-menu-container,
+body:has(.leaderboard-modal-overlay) .settings-menu-container,
+body:has(.settings-modal-overlay) .leaderboard-btn-container,
+body:has(.locker-modal-overlay) .leaderboard-btn-container,
+body:has(.leaderboard-modal-overlay) .leaderboard-btn-container {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .hud-banner {
+    padding: 0.6rem 1.2rem !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    text-align: center !important;
+    width: 85vw !important;
+    max-width: 320px !important;
+    font-size: clamp(1.1rem, 6vw, 1.6rem) !important;
   }
 }

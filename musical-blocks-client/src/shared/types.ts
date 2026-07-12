@@ -87,6 +87,7 @@ export interface GameBlock {
   color: BlockColor;
   isActive: boolean;   // false = eliminated / falling
   isDead?: boolean;    // permanently eliminated (sudden death)
+  isGrey?: boolean;    // Color Fatigue: block is rendered grey
 }
 
 /** Full game state snapshot sent to all clients on every relevant change */

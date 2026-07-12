@@ -55,9 +55,9 @@ export class GameLoop {
 
   // ---- Public API ----------------------------------------------------------
 
-  start(): void {
+  start(startingRound = 1): void {
     if (this.timer) return; // already running
-    this.round = 0;
+    this.round = startingRound - 1;
     this.lastHrTime = process.hrtime.bigint();
     this.timer = setInterval(() => this.tick(), this.TICK_INTERVAL);
     this.transitionTo('STARTING');
@@ -123,7 +123,8 @@ export class GameLoop {
     switch (next) {
       case 'STARTING': {
         this.phaseMs = PHASE_DURATIONS.STARTING!;
-        this.grid.generate(1);
+        const initialRound = Math.max(1, this.round + 1);
+        this.grid.generate(initialRound);
         this.players.resetForRound(this.grid);
         this.callbacks.onStateUpdate();
         break;
