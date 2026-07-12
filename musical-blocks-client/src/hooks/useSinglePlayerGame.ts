@@ -87,6 +87,10 @@ export function useSinglePlayerGame() {
     const blindMode = gameLoop.current ? gameLoop.current.getIsBlindMode() : false;
     const telemetry = gameLoop.current ? gameLoop.current.getTelemetry() : null;
 
+    state.setSpLastRank(null);
+    state.setSpLastDiffRank(null);
+    state.setIsSubmittingScore(true);
+
     submitScore({
       player_id: spPlayerId,
       name: state.localPlayerName || 'Player Solo',
@@ -98,6 +102,15 @@ export function useSinglePlayerGame() {
       sudden_death: suddenDeath,
       blind_mode: blindMode,
       telemetry
+    }).then((res) => {
+      if (res.success && res.globalRank !== undefined && res.diffRank !== undefined) {
+        state.setSpLastRank(res.globalRank);
+        state.setSpLastDiffRank(res.diffRank);
+      }
+      state.setIsSubmittingScore(false);
+    }).catch((err) => {
+      console.error('[Singleplayer Game] Failed to submit score:', err);
+      state.setIsSubmittingScore(false);
     });
 
     state.setScreen('winner');

@@ -162,7 +162,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Error inserting score into database' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    // Count how many scores are strictly higher than this one globally
+    const { count: globalCount, error: globalCountError } = await supabase
+      .from('sp_leaderboard')
+      .select('*', { count: 'exact', head: true })
+      .gt('score', score);
+
+    // Count how many scores are strictly higher than this one in the same difficulty
+    const { count: diffCount, error: diffCountError } = await supabase
+      .from('sp_leaderboard')
+      .select('*', { count: 'exact', head: true })
+      .eq('difficulty', difficulty)
+      .gt('score', score);
+
+    let globalRank = 1;
+    if (!globalCountError && globalCount !== null) {
+      globalRank = globalCount + 1;
+    } else if (globalCountError) {
+      console.error('[Leaderboard API] Error counting global rank:', globalCountError.message);
+    }
+
+    let diffRank = 1;
+    if (!diffCountError && diffCount !== null) {
+      diffRank = diffCount + 1;
+    } else if (diffCountError) {
+      console.error('[Leaderboard API] Error counting difficulty rank:', diffCountError.message);
+    }
+
+    return NextResponse.json({
+      success: true,
+      globalRank,
+      diffRank,
+    });
   } catch (err) {
     console.error('[Leaderboard API] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -1,5 +1,3 @@
-'use client';
-
 import { SettingsMenu } from '@/src/components/ui/SettingsMenu';
 
 export default function GameLayout({ children }: { children: React.ReactNode }) {

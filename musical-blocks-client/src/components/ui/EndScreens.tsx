@@ -49,6 +49,9 @@ export function SinglePlayerEndScreen() {
   const { t } = useTranslation();
   const spLastScore = store.spLastScore;
   const spLastRounds = store.spLastRounds;
+  const spLastRank = store.spLastRank;
+  const spLastDiffRank = store.spLastDiffRank;
+  const isSubmittingScore = store.isSubmittingScore;
   const isNewHighScore = spLastScore > 0 && spLastScore === store.spHighScore;
 
   return (
@@ -69,12 +72,88 @@ export function SinglePlayerEndScreen() {
           <h2 className="overlay-title">
             {isNewHighScore ? t('newRecord') : t('spGameOver')}
           </h2>
-          <p className="overlay-sub" style={{ fontSize: '1.2rem', marginTop: '0.8rem', color: isNewHighScore ? '#eab308' : '#fff' }}>
-            {t('finalScore', { score: spLastScore })}
+          <p className="overlay-sub" style={{ fontSize: '1.2rem', marginTop: '0.8rem', color: '#fff' }}>
+            {t('finalScore', { score: '___SCORE___' }).split('___SCORE___')[0]}
+            <span style={{ color: '#eab308', fontWeight: 800, textShadow: '0 0 10px rgba(234, 179, 8, 0.6)' }}>
+              {spLastScore}
+            </span>
+            {t('finalScore', { score: '___SCORE___' }).split('___SCORE___')[1]}
           </p>
           <p style={{ fontSize: '0.9rem', opacity: 0.8, marginTop: '0.4rem' }}>
             {t('roundsSurvived', { rounds: spLastRounds })}
           </p>
+
+          {isSubmittingScore ? (
+            <div style={{ 
+              marginTop: '1rem', 
+              fontFamily: 'var(--font-retro)', 
+              fontSize: '0.85rem', 
+              color: '#38bdf8', 
+              letterSpacing: '0.05em',
+              animation: 'pulse 1.5s infinite' 
+            }}>
+              {store.language === 'es' ? '[ VERIFICANDO RANGO GLOBAL... ]' : '[ VERIFYING GLOBAL RANK... ]'}
+            </div>
+          ) : spLastRank !== null ? (
+            <div style={{ 
+              marginTop: '1.2rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.3rem',
+              animation: 'rankAppear 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both'
+            }}>
+              {spLastRank <= 10 ? (
+                <div style={{
+                  color: '#eab308',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '1.25rem',
+                  fontWeight: 800,
+                  textShadow: '0 0 10px rgba(234, 179, 8, 0.6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem'
+                }}>
+                  🏆 {store.language === 'es' ? `¡TOP #${spLastRank} GLOBAL!` : `TOP #${spLastRank} GLOBAL!`}
+                </div>
+              ) : spLastRank <= 100 ? (
+                <div style={{
+                  color: '#22c55e',
+                  fontFamily: 'var(--font-retro)',
+                  fontSize: '1.05rem',
+                  fontWeight: 700,
+                  textShadow: '0 0 8px rgba(34, 197, 94, 0.5)'
+                }}>
+                  {store.language === 'es' ? `RANGO GLOBAL: #${spLastRank}` : `GLOBAL RANK: #${spLastRank}`}
+                </div>
+              ) : (
+                <div style={{
+                  color: '#94a3b8',
+                  fontFamily: 'var(--font-retro)',
+                  fontSize: '0.9rem',
+                  opacity: 0.9
+                }}>
+                  {store.language === 'es' ? `Posición Global: #${spLastRank}` : `Global Position: #${spLastRank}`}
+                </div>
+              )}
+
+              {/* Rango por Dificultad */}
+              {spLastRank > 10 && spLastDiffRank !== null && spLastDiffRank <= 50 && (
+                <div style={{
+                  color: '#38bdf8',
+                  fontFamily: 'var(--font-retro)',
+                  fontSize: '0.8rem',
+                  opacity: 0.9,
+                  textShadow: '0 0 5px rgba(56, 189, 248, 0.3)'
+                }}>
+                  {store.language === 'es' 
+                    ? `Top #${spLastDiffRank} en ${store.spSettings.maxColors <= 4 ? 'Fácil' : store.spSettings.maxColors <= 6 ? 'Normal' : store.spSettings.maxColors <= 8 ? 'Difícil' : 'Experto'}`
+                    : `Top #${spLastDiffRank} in ${store.spSettings.maxColors <= 4 ? 'Easy' : store.spSettings.maxColors <= 6 ? 'Normal' : store.spSettings.maxColors <= 8 ? 'Hard' : 'Expert'}`
+                  }
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
 
         <div className="overlay-content-wrapper">

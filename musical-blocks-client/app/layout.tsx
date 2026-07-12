@@ -1,32 +1,58 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ToastContainer } from '@/src/components/ui/ToastContainer';
 import { HtmlLangSync } from '@/src/components/ui/HtmlLangSync';
 import { GlobalAudioPlayer } from '@/src/components/audio/GlobalAudioPlayer';
+import { orbitron, outfit, pressStart, vt323 } from '@/src/lib/fonts';
+import { JsonLd } from '@/src/components/seo/JsonLd';
+import { getVideoGameSchema, getOrganizationSchema, getWebApplicationSchema } from '@/src/lib/seo/jsonld';
 
+// ── Viewport (Next.js 16 API) ──────────────────────────────────────
+export const viewport: Viewport = {
+  themeColor: '#0f0f23',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  colorScheme: 'dark',
+};
+
+// ── Static Metadata ────────────────────────────────────────────────
 export const metadata: Metadata = {
   metadataBase: new URL('https://voxelrave.com'),
+  applicationName: 'VoxelRave',
   title: {
     default: 'VoxelRave — Juego de Fiesta Voxel Multijugador 3D',
     template: '%s | VoxelRave',
   },
-  description: 'Juego de ritmo multijugador 3D gratuito. Baila sobre bloques de colores, sobrevive la eliminación y sé el último en pie. ¡Juega con amigos desde el navegador sin descargas!',
+  description:
+    'Juego de ritmo multijugador 3D gratuito. Baila sobre bloques de colores, sobrevive a la eliminación y sé el último en pie. ¡Juega con amigos al instante en tu navegador sin descargas!',
   keywords: [
     'voxelrave', 'voxel party game', 'juego multijugador de ritmo',
     'multiplayer browser game', 'block party game online',
     '3D rhythm game free', 'juego de bloques online gratis',
-    'browser party game with friends',
+    'browser party game with friends', 'juego arcade de ritmo',
   ],
-  authors: [{ name: 'VoxelRave Team' }],
-  creator: 'VoxelRave',
+  authors: [{ name: 'VoxelRave Studios' }],
+  creator: 'VoxelRave Studios',
+  publisher: 'VoxelRave Studios',
+  category: 'Games',
   openGraph: {
     title: 'VoxelRave — Juego de Fiesta Voxel Multijugador 3D',
-    description: 'Baila sobre bloques de colores, sobrevive la eliminación y sé el último en pie. ¡Gratis y sin descargas!',
+    description:
+      'Baila sobre bloques de colores, sobrevive a la eliminación y sé el último en pie. ¡Gratis y al instante sin descargas!',
     url: 'https://voxelrave.com',
     siteName: 'VoxelRave',
-    locale: 'es_ES',
+    locale: 'es_MX',
+    alternateLocale: ['en_US'],
     type: 'website',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'VoxelRave — Juego de Fiesta Voxel 3D' }],
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'VoxelRave — Juego de Fiesta Voxel 3D',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
@@ -35,10 +61,13 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
   icons: { icon: '/icon.png', apple: '/apple-icon.png' },
-  other: { 'theme-color': '#0f0f23' },
   alternates: {
     canonical: 'https://voxelrave.com',
-    languages: { 'en': 'https://voxelrave.com', 'es': 'https://voxelrave.com' }
+    languages: {
+      'es': 'https://voxelrave.com',
+      'en': 'https://voxelrave.com',
+      'x-default': 'https://voxelrave.com',
+    },
   },
   robots: {
     index: true,
@@ -46,6 +75,9 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
     },
   },
 };
@@ -53,31 +85,18 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "VoxelRave",
-    "applicationCategory": "Game",
-    "applicationSubCategory": "Party Game",
-    "operatingSystem": "Web Browser",
-    "description": "Juego de ritmo multijugador 3D gratuito. Baila sobre bloques de colores, sobrevive la eliminación y sé el último en pie. ¡Juega con amigos desde el navegador sin descargas!",
-    "offers": {
-      "@type": "Offer",
-      "price": "0.00",
-      "priceCurrency": "USD"
-    },
-    "inLanguage": ["es", "en"]
-  };
-
   return (
     <html lang="es">
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        {/* Preload critical 3D model */}
+        <link rel="preload" href="/models/player.glb" as="fetch" crossOrigin="anonymous" />
+        
+        {/* Inject Structured Schemas */}
+        <JsonLd data={[getVideoGameSchema(), getOrganizationSchema(), getWebApplicationSchema()]} />
       </head>
-      <body>
+      <body
+        className={`${orbitron.variable} ${outfit.variable} ${pressStart.variable} ${vt323.variable} antialiased`}
+      >
         <GlobalAudioPlayer />
         <HtmlLangSync />
         {children}

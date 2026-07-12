@@ -18,7 +18,7 @@ export async function submitScore(
   entry: Omit<LeaderboardEntry, 'id' | 'created_at'> & {
     telemetry?: { startTime: number; rounds: Array<{ round: number; timestamp: number }> } | null;
   }
-) {
+): Promise<{ success: boolean; globalRank?: number; diffRank?: number; error?: string }> {
   try {
     const res = await fetch('/api/leaderboard/submit', {
       method: 'POST',
@@ -30,9 +30,17 @@ export async function submitScore(
     if (!res.ok) {
       const errText = await res.text();
       console.warn('[Leaderboard] Error submitting score:', errText);
+      return { success: false, error: errText };
     }
+    const data = await res.json();
+    return {
+      success: true,
+      globalRank: data.globalRank,
+      diffRank: data.diffRank,
+    };
   } catch (error) {
     console.error('[Leaderboard] Network error submitting score:', error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 

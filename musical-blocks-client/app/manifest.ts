@@ -2,13 +2,13 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'VoxelRave — Juego de Fiesta Voxel 3D',
+    name: 'VoxelRave — 3D Voxel Rhythm Party Game',
     short_name: 'VoxelRave',
-    description: 'Juego de ritmo multijugador 3D gratuito. ¡Baila, sobrevive y gana!',
+    description: 'Free 3D multiplayer rhythm party game. Dance, survive, and be the last standing!',
     start_url: '/',
     display: 'standalone',
     background_color: '#0f0f23',
-    theme_color: '#7c3aed',
+    theme_color: '#0f0f23',
     icons: [
       {
         src: '/icon.png',

@@ -47,6 +47,9 @@ interface GameStore {
   spPlayerId: string;
   spLastScore: number;
   spLastRounds: number;
+  spLastRank: number | null;
+  spLastDiffRank: number | null;
+  isSubmittingScore: boolean;
   spSettings: RoomSettings;
   hostSettings: RoomSettings;
 
@@ -96,6 +99,9 @@ interface GameStore {
   setSpHighScore: (score: number) => void;
   setSpLastScore: (score: number) => void;
   setSpLastRounds: (rounds: number) => void;
+  setSpLastRank: (rank: number | null) => void;
+  setSpLastDiffRank: (rank: number | null) => void;
+  setIsSubmittingScore: (val: boolean) => void;
   initSpPlayerId: () => void;
   setSpSettings: (settings: RoomSettings) => void;
   setHostSettings: (settings: RoomSettings) => void;
@@ -161,6 +167,9 @@ export const useGameStore = create<GameStore>()(
       spPlayerId: '',
       spLastScore: 0,
       spLastRounds: 0,
+      spLastRank: null,
+      spLastDiffRank: null,
+      isSubmittingScore: false,
       spSettings: {
         maxColors: 6,
         gameSpeed: 'NORMAL',
@@ -342,6 +351,9 @@ export const useGameStore = create<GameStore>()(
       setSpHighScore: (score) => set((s) => { s.spHighScore = score; }),
       setSpLastScore: (score) => set((s) => { s.spLastScore = score; }),
       setSpLastRounds: (rounds) => set((s) => { s.spLastRounds = rounds; }),
+      setSpLastRank: (rank: number | null) => set((s) => { s.spLastRank = rank; }),
+      setSpLastDiffRank: (rank: number | null) => set((s) => { s.spLastDiffRank = rank; }),
+      setIsSubmittingScore: (val: boolean) => set((s) => { s.isSubmittingScore = val; }),
       initSpPlayerId: () => set((s) => {
         if (!s.spPlayerId) {
           s.spPlayerId = typeof crypto !== 'undefined' && crypto.randomUUID 
