@@ -127,19 +127,20 @@ export class GameRoom {
         this.currentPhase = 'GAME_OVER';
         this.status = 'finished';
         this.winnerId = winnerId;
-        
+
         for (const player of this.players.getAll()) {
           player.hasReturnedToLobby = false;
+          player.isReady = player.isHost;
         }
-        
+
         this.io.to(this.id).emit('game:over', { winnerId, winnerName });
-        
+
         if (winnerName) {
           this.broadcastSystemMessage(`${winnerName} won the game!`);
         } else {
           this.broadcastSystemMessage(`Game Over! Everyone died.`);
         }
-        
+
         console.log(`[Game] Room ${this.id} ended. Winner: ${winnerName || 'None'} (Round ${this.round})`);
 
         // Auto-reset room to waiting after 15 seconds
@@ -203,6 +204,7 @@ export class GameRoom {
 
       for (const player of this.players.getAll()) {
         player.hasReturnedToLobby = false;
+        player.isReady = player.isHost;
       }
 
       this.io.to(this.id).emit('game:over', {
@@ -251,7 +253,7 @@ export class GameRoom {
     const player = this.players.get(playerId);
     if (player) {
       console.log(`[Room] "${player.name}" was kicked from room ${this.id} (${reason})`);
-      
+
       let msg = '';
       if (reason === 'afkKickReason') {
         msg = `${player.name} has been kicked for inactivity`;
@@ -260,7 +262,7 @@ export class GameRoom {
       } else {
         msg = `${player.name} has been kicked by the host`;
       }
-      
+
       this.broadcastSystemMessage(msg);
       if (targetSocket) {
         targetSocket.emit('room:kicked', { reason });
@@ -312,16 +314,16 @@ export class GameRoom {
     const speed = ['CHILL', 'NORMAL', 'TURBO'].includes(settings.gameSpeed) ? settings.gameSpeed : 'NORMAL';
     const maxLives = [1, 2, 3, 4, 5].includes(settings.maxLives as number) ? settings.maxLives : 3;
     const sdMode = ['NORMAL', 'OFF', 'CHAOS'].includes(settings.suddenDeathMode as string) ? settings.suddenDeathMode : 'NORMAL';
-    
+
     const currentCount = this.players.count();
     const maxPlayers = Math.max(currentCount, Math.max(2, Math.min(12, settings.maxPlayers || 8)));
-    
-    this.settings = { 
-      maxColors, 
-      gameSpeed: speed, 
-      isBlindMode: !!settings.isBlindMode, 
-      maxLives, 
-      suddenDeathMode: sdMode, 
+
+    this.settings = {
+      maxColors,
+      gameSpeed: speed,
+      isBlindMode: !!settings.isBlindMode,
+      maxLives,
+      suddenDeathMode: sdMode,
       enableCollisions: !!settings.enableCollisions,
       maxPlayers
     };
@@ -352,7 +354,7 @@ export class GameRoom {
     if (this.countdownType === 'manual') {
       return { ok: false, error: 'Countdown already in progress.' };
     }
-    
+
     this.startCountdown(5, false);
     return { ok: true };
   }
@@ -362,7 +364,7 @@ export class GameRoom {
 
     const player = this.players.get(sid);
     if (!player || !player.isAlive) return;
-    
+
     // Authoritative validation
     if (!this.players.validateMove(sid, direction, timestamp, this.grid, this.settings.enableCollisions)) return;
 
@@ -491,7 +493,7 @@ export class GameRoom {
       clearTimeout(this.gameOverTimeout);
       this.gameOverTimeout = null;
     }
-    
+
     if (this.status === 'finished') {
       this.status = 'waiting';
       this.currentPhase = 'LOBBY';
@@ -522,7 +524,7 @@ export class GameRoom {
     } else {
       this.lobbySongIndex = Math.floor(Math.random() * 3);
     }
-    
+
     // 2. Game tracks: shuffle 10 songs and guarantee the FIRST song playing is different
     const indices = Array.from({ length: 10 }, (_, i) => i);
     do {
@@ -532,7 +534,7 @@ export class GameRoom {
       }
     } while (previousFirstGameIdx !== null && indices[0] === previousFirstGameIdx);
     this.gameSongIndices = indices;
-    
+
     // 3. Victory track: choose a new one different from the previous match
     if (previousVictoryIdx !== undefined) {
       do {
@@ -605,16 +607,16 @@ export class GameRoom {
     // Lobby inactivity timeout
     if (now - this.lobbyOpenTime > LOBBY_TIMEOUT) {
       console.log(`[Lobby Timeout] Room ${this.id} has been waiting in lobby for over 10 minutes (or test timeout). Closing.`);
-      this.io.to(this.id).emit('room:error', { 
+      this.io.to(this.id).emit('room:error', {
         message: 'La sala ha sido cerrada debido a inactividad prolongada (máximo 10 minutos). / The room has been closed due to prolonged inactivity (10 minutes maximum).'
       });
-      
+
       // Kick all players to trigger automatic cleanup
       const allPlayers = this.players.getAll();
       for (const player of allPlayers) {
         this.kickPlayer(player.id, 'lobbyTimeoutReason');
       }
-      
+
       // Notify registry to close and destroy this room
       this.onClose?.(this.id);
       return;
@@ -626,7 +628,7 @@ export class GameRoom {
       if (now - hostLastActive > HOST_AFK_LIMIT) {
         console.log(`[Lobby AFK] Host "${host.name}" is AFK in room ${this.id}. Kicking.`);
         this.kickPlayer(this.hostId, 'afkKickReason');
-        
+
         if (this.players.count() === 0) {
           this.onClose?.(this.id);
           return;
@@ -648,7 +650,7 @@ export class GameRoom {
   private checkAutoStart() {
     if (this.status !== 'waiting') return;
     const { meetsThreshold } = this.players.getReadyStatus();
-    
+
     if (meetsThreshold) {
       if (this.countdownType === null && this.autoStartSilentTimeout === null) {
         console.log(`[Lobby] Ready threshold met in room ${this.id}. Starting 20s silent auto-start timer...`);
@@ -677,17 +679,17 @@ export class GameRoom {
     this.countdownType = isAuto ? 'auto' : 'manual';
 
     // Broadcast the initial tick
-    this.io.to(this.id).emit('room:auto_start_countdown', { 
-      seconds: this.countdownSeconds, 
-      isAuto 
+    this.io.to(this.id).emit('room:auto_start_countdown', {
+      seconds: this.countdownSeconds,
+      isAuto
     });
 
     this.countdownInterval = setInterval(() => {
       this.countdownSeconds--;
       if (this.countdownSeconds > 0) {
-        this.io.to(this.id).emit('room:auto_start_countdown', { 
-          seconds: this.countdownSeconds, 
-          isAuto 
+        this.io.to(this.id).emit('room:auto_start_countdown', {
+          seconds: this.countdownSeconds,
+          isAuto
         });
       }
     }, 1000);
@@ -700,7 +702,7 @@ export class GameRoom {
       if (this.players.count() >= 2 && (meetsThreshold || !isAuto)) {
         this.status = 'playing';
         console.log(`[Game] Room ${this.id} started automatically/manually with ${this.players.count()} players.`);
-        
+
         for (const player of this.players.getAll()) {
           player.lives = this.settings.maxLives ?? 3;
         }
