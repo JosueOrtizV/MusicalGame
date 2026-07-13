@@ -74,6 +74,7 @@ export const en = {
   hostBadge: 'Host',
   youBadge: '(You)',
   playerJoined: '{name} joined the room',
+  playerLeft: '{name} left the room',
   ready: 'Ready',
   notReady: 'Waiting',
   readyBtn: 'Ready!',

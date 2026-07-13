@@ -241,15 +241,43 @@ export function RoomLobby() {
     };
   }, [room?.players, localPlayerId, isLockerOpen, draftCosmetics]);
 
-  useEffect(() => {
-    if (!room) return;
-    const currentPlayers = room.players;
-    const prevIds = new Set(prevPlayersRef.current.map((p) => p.id));
+  const isFirstRenderRef = useRef(true);
 
+  useEffect(() => {
+    if (!room) {
+      isFirstRenderRef.current = true;
+      prevPlayersRef.current = [];
+      return;
+    }
+
+    const currentPlayers = room.players;
+
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      prevPlayersRef.current = currentPlayers;
+      return;
+    }
+
+    const prevIds = new Set(prevPlayersRef.current.map((p) => p.id));
+    const currentIds = new Set(currentPlayers.map((p) => p.id));
+
+    const removeToastsMatching = useToastStore.getState().removeToastsMatching;
+
+    // Players who joined
     const newPlayers = currentPlayers.filter((p) => !prevIds.has(p.id));
     newPlayers.forEach((p) => {
       if (p.id !== localPlayerId) {
+        removeToastsMatching((toast) => toast.message.includes(p.name));
         addToast(t('playerJoined', { name: p.name }), 'success');
+      }
+    });
+
+    // Players who left
+    const leftPlayers = prevPlayersRef.current.filter((p) => !currentIds.has(p.id));
+    leftPlayers.forEach((p) => {
+      if (p.id !== localPlayerId) {
+        removeToastsMatching((toast) => toast.message.includes(p.name));
+        addToast(t('playerLeft', { name: p.name }), 'info');
       }
     });
 

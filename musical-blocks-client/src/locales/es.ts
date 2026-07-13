@@ -76,6 +76,7 @@ export const es: Translations = {
   hostBadge: 'Anfitrión',
   youBadge: '(Tú)',
   playerJoined: '{name} se ha unido',
+  playerLeft: '{name} ha salido de la sala',
   ready: 'Listo',
   notReady: 'Esperando',
   readyBtn: '¡Estoy listo!',

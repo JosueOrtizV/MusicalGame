@@ -219,15 +219,6 @@ export const useGameStore = create<GameStore>()(
           if (room.sessionToken) {
             s.sessionToken = room.sessionToken;
           }
-
-          // Sync localCosmetics primaryColor with authoritative player cosmetics from the server if they differ (color conflict resolution)
-          const me = room.players.find((p) => p.id === s.localPlayerId);
-          if (me && me.cosmetics) {
-            // Sincronizar ÚNICAMENTE el color de la ficha de lobby si el servidor nos asignó uno diferente por estar ocupado
-            if (me.cosmetics.primaryColor && me.cosmetics.primaryColor !== s.localCosmetics.primaryColor) {
-              s.localCosmetics.primaryColor = me.cosmetics.primaryColor;
-            }
-          }
           
 
           

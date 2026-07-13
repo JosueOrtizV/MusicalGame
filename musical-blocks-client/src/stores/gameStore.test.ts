@@ -119,8 +119,8 @@ describe('gameStore', () => {
     expect(state.room).toEqual(mockRoom);
     // Should navigate to lobby since local player is in the room list and joining from home screen
     expect(state.screen).toBe('lobby');
-    // Conflict resolution: local primaryColor updated to server color
-    expect(state.localCosmetics.primaryColor).toBe('#00FF00');
+    // Conflict resolution: local primaryColor is NOT overwritten in local profile persistence
+    expect(state.localCosmetics.primaryColor).toBe('#FF0000');
   });
 
   test('setGameState updates state and handles transitions based on phase', () => {

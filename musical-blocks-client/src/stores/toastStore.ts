@@ -12,6 +12,7 @@ interface ToastState {
   toasts: Toast[];
   addToast: (message: string, type?: ToastType) => void;
   removeToast: (id: string) => void;
+  removeToastsMatching: (predicate: (toast: Toast) => boolean) => void;
 }
 
 export const useToastStore = create<ToastState>((set) => ({
@@ -31,4 +32,6 @@ export const useToastStore = create<ToastState>((set) => ({
   },
   removeToast: (id) =>
     set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
+  removeToastsMatching: (predicate) =>
+    set((state) => ({ toasts: state.toasts.filter((t) => !predicate(t)) })),
 }));
