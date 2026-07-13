@@ -34,17 +34,17 @@ const SPECTATOR_MOUSE_CONFIG = {
   RIGHT: THREE.MOUSE.ROTATE
 };
 
-function CinematicCamera({ 
-  isSpectator, 
+function CinematicCamera({
+  isSpectator,
   containerRef,
   wasAliveThisRound
-}: { 
-  isSpectator: boolean; 
+}: {
+  isSpectator: boolean;
   containerRef: React.RefObject<HTMLDivElement | null>;
   wasAliveThisRound: boolean;
 }) {
   const { size, camera } = useThree();
-  
+
   // Game state subscriptions
   const phase = useGameStore((s) => s.gameState?.phase || 'LOBBY');
   const localPlayerId = useGameStore((s) => s.localPlayerId);
@@ -117,7 +117,7 @@ function CinematicCamera({
         const rect = container.getBoundingClientRect();
         const relativeX = e.clientX - rect.left;
         const relativeY = e.clientY - rect.top;
-        
+
         // Prevent starting camera rotation on active mobile control zones (bottom-left and bottom-right)
         const inJoystickArea = relativeX < 180 && relativeY > rect.height - 180;
         const inDashArea = relativeX > rect.width - 140 && relativeY > rect.height - 140;
@@ -166,7 +166,7 @@ function CinematicCamera({
             const dx = touches[0].x - touches[1].x;
             const dy = touches[0].y - touches[1].y;
             const currentDistance = Math.sqrt(dx * dx + dy * dy);
-            
+
             const deltaDist = currentDistance - lastPinchDistanceRef.current;
             lastPinchDistanceRef.current = currentDistance;
 
@@ -233,7 +233,7 @@ function CinematicCamera({
       window.removeEventListener('pointerup', onPointerUp, { capture: true });
       window.removeEventListener('pointercancel', onPointerUp, { capture: true });
       container.removeEventListener('wheel', onWheel);
-      
+
       if (document.pointerLockElement === container) {
         document.exitPointerLock();
       }
@@ -263,7 +263,7 @@ function CinematicCamera({
 
   // Store camera target lookAt using a ref to interpolate smoothly
   const currentLookAtRef = useRef(new THREE.Vector3(0, 0, 0));
-  
+
   // Track phase changes to trigger starting sweep
   const prevPhaseRef = useRef<string | null>(null);
 
@@ -309,7 +309,7 @@ function CinematicCamera({
 
     const time = performance.now() / 1000;
     const isPortrait = size.width < size.height;
-    
+
     // Default base camera parameters
     const basePosVec = new THREE.Vector3(
       isPortrait ? 0 : CAMERA_POSITION[0],
@@ -328,7 +328,7 @@ function CinematicCamera({
     if (isGameplay && localPlayerId) {
       const gameState = useGameStore.getState().gameState;
       const localPlayer = gameState?.players.find(p => p.id === localPlayerId);
-      
+
       const isEliminatingOrRoundEnd = phase === 'ELIMINATING' || phase === 'ROUND_END';
       const shouldFollow = localPlayer && (localPlayer.isAlive || (wasAliveThisRound && isEliminatingOrRoundEnd));
 
@@ -337,7 +337,7 @@ function CinematicCamera({
         const halfGrid = (GRID_SIZE / 2 - 0.5) * BLOCK_SIZE;
         const playerWorldX = localPlayer.position.x * BLOCK_SIZE - halfGrid;
         const playerWorldZ = localPlayer.position.z * BLOCK_SIZE - halfGrid;
-        
+
         if (cameraMode === 'static') {
           yawRef.current = THREE.MathUtils.lerp(yawRef.current, 0, 0.05);
           pitchRef.current = THREE.MathUtils.lerp(pitchRef.current, Math.PI * 0.3, 0.05);
@@ -348,16 +348,16 @@ function CinematicCamera({
         const yaw = yawRef.current;
         const pitch = pitchRef.current;
         const dist = distRef.current;
-        
+
         const targetCamX = playerWorldX + Math.sin(yaw) * Math.cos(pitch) * dist;
         const targetCamY = Math.sin(pitch) * dist;
         const targetCamZ = playerWorldZ + Math.cos(yaw) * Math.cos(pitch) * dist;
-        
+
         targetCameraPos.set(targetCamX, targetCamY, targetCamZ);
         targetLookAt.set(playerWorldX, 0.5, playerWorldZ);
         targetFov = FOLLOW_CAM_FOV;
       }
-    } else if (phase === 'LOBBY' || phase === 'GAME_OVER') {
+    } else if (phase === 'LOBBY') {
       // Gentle floating orbiting view in Lobby to make the 3D scene feel organic
       const orbitSpeed = 0.12;
       const radius = isPortrait ? 22 : 17;
@@ -367,33 +367,60 @@ function CinematicCamera({
         Math.cos(time * orbitSpeed) * radius
       );
       targetLookAt.set(0, -0.5, 0);
+    } else if (phase === 'GAME_OVER') {
+      const gameState = useGameStore.getState().gameState;
+      const winner = gameState?.players.find((p) => p.id === gameState?.winnerId);
+
+      if (winner) {
+        // Calculate winner world position
+        const halfGrid = (GRID_SIZE / 2 - 0.5) * BLOCK_SIZE;
+        const winnerWorldX = winner.position.x * BLOCK_SIZE - halfGrid;
+        const winnerWorldZ = winner.position.z * BLOCK_SIZE - halfGrid;
+
+        // Position camera south of winner, looking directly at the winner's center
+        const camDistZ = 7.5;
+        const camDistY = 5.0;
+
+        targetCameraPos.set(winnerWorldX, camDistY, winnerWorldZ + camDistZ);
+        targetLookAt.set(winnerWorldX, 0.5, winnerWorldZ);
+        targetFov = 60;
+      } else {
+        // Fixed isometric arena overview when no winner (tie / sudden death wipeout)
+        // On mobile (isPortrait), aspect ratio is narrow (< 0.55), so we scale up
+        // radius to 35 and height to 28 so the entire 12x12 grid fits in portrait mode.
+        const radius = isPortrait ? 35 : 18;
+        const height = isPortrait ? 28 : 15;
+        targetCameraPos.set(0, height, radius);
+        targetLookAt.set(0, -0.5, 0);
+        targetFov = isPortrait ? 55 : 55;
+      }
     } else if (phase === 'STARTING') {
       if (lastFrameTimeRef.current === 0) {
         lastFrameTimeRef.current = time;
         startingElapsedRef.current = 0;
       }
-      
+
       const delta = time - lastFrameTimeRef.current;
       lastFrameTimeRef.current = time;
-      
+
       // Cap delta to prevent huge jumps during loading spikes or tab-out freezes
       const cappedDelta = Math.min(delta, 0.05);
       startingElapsedRef.current += cappedDelta;
-      
+
       const duration = 4.0; // 4 seconds duration matching server
       const elapsed = startingElapsedRef.current;
       const t = Math.min(elapsed / duration, 1.0);
-      
+
       const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic deceleration
-      
+
       const startAngle = Math.PI * 0.5 + Math.PI; // Start 180 degrees offset (behind the arena)
       const targetAngle = Math.PI * 0.5; // End at standard front-side angle
       const angle = THREE.MathUtils.lerp(startAngle, targetAngle, ease);
-      
+
       const baseRadius = Math.sqrt(basePosVec.x * basePosVec.x + basePosVec.z * basePosVec.z);
       const radius = THREE.MathUtils.lerp(baseRadius * 1.8, baseRadius, ease);
       const y = THREE.MathUtils.lerp(basePosVec.y * 1.8, basePosVec.y, ease);
-      
+
       targetCameraPos.set(
         Math.cos(angle) * radius,
         y,
@@ -415,7 +442,7 @@ function CinematicCamera({
         isFirstStartingFrameRef.current = false;
       } else {
         camera.position.lerp(targetCameraPos, lerpFactor);
-        
+
         if (Math.abs(camera.fov - targetFov) > 0.05) {
           camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, lerpFactor);
           camera.updateProjectionMatrix();
@@ -430,12 +457,12 @@ function CinematicCamera({
     if (phase === 'ANNOUNCING' || phase === 'ELIMINATING') {
       const timeLeft = useGameStore.getState().gameState?.timeLeft ?? 99;
       const isUrgent = phase === 'ANNOUNCING' && timeLeft <= 3;
-      
+
       // Fine-tuned, extremely subtle intensities requested by user to achieve a perfect balance
       const intensity = phase === 'ELIMINATING' ? 0.007 : (isUrgent ? 0.004 : 0.001);
       const speed = phase === 'ELIMINATING' ? 18 : 12;
       const tShake = time * speed;
-      
+
       if (intensity > 0) {
         shakeX = Math.sin(tShake * 1.1) * intensity;
         shakeY = Math.cos(tShake * 1.3) * intensity;
@@ -451,7 +478,7 @@ function CinematicCamera({
 
     if (!(phase === 'STARTING' && isFirstStartingFrameRef.current)) {
       currentLookAtRef.current.lerp(targetLookAt, lerpFactor);
-      
+
       const finalLookAt = currentLookAtRef.current.clone();
       if (shakeX !== 0 || shakeY !== 0 || shakeZ !== 0) {
         finalLookAt.x += shakeX * 0.5;
@@ -578,7 +605,7 @@ function VictoryCelebration({ winnerId, players }: { winnerId: string | null; pl
         count: 75,
         type: 'voxel_burst'
       });
-      
+
       // Secondary minor burst for extra volume and depth after a 180ms delay
       setTimeout(() => {
         spawnParticles({
@@ -629,21 +656,21 @@ export function GameCanvas() {
   // Track if the player started this round alive (queried from store)
   const wasAliveThisRound = useGameStore((s) => s.wasAliveThisRound);
 
-  // Spectator detection (dead, spectating, or free camera during victory celebration!)
+  // Spectator detection (dead or spectating during gameplay)
   const isSpectator = useMemo(() => {
     if (!gameState) return false;
-    if (gameState.phase === 'GAME_OVER') return true; // Unlock OrbitControls camera for everyone on victory celebration!
+    if (gameState.phase === 'GAME_OVER') return false; // Driven by CinematicCamera for victory/tie framing!
     const localPlayer = gameState.players.find((p) => p.id === localPlayerId);
-    
+
     // During ELIMINATING or ROUND_END, if the player was alive earlier in this round, 
     // keep them in follow-camera mode so they can see their own character fall.
     const isEliminatingOrRoundEnd = gameState.phase === 'ELIMINATING' || gameState.phase === 'ROUND_END';
     const justDied = isEliminatingOrRoundEnd && wasAliveThisRound && (!localPlayer || !localPlayer.isAlive);
-    
+
     if (justDied) {
       return false;
     }
-    
+
     return gameState.phase !== 'LOBBY' && (!localPlayer || !localPlayer.isAlive);
   }, [gameState, localPlayerId, wasAliveThisRound]);
 
@@ -681,10 +708,10 @@ export function GameCanvas() {
         eventSource={containerRef as unknown as HTMLElement}
         eventPrefix="client"
       >
-        <CinematicCamera 
-          isSpectator={isSpectator} 
-          containerRef={containerRef} 
-          wasAliveThisRound={wasAliveThisRound} 
+        <CinematicCamera
+          isSpectator={isSpectator}
+          containerRef={containerRef}
+          wasAliveThisRound={wasAliveThisRound}
         />
         <Suspense fallback={null}>
 
