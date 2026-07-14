@@ -140,7 +140,7 @@ export function useSinglePlayerGame() {
       onRoundStart: (round: number, duration: number, blocks: GameBlock[][], playerPos: GridPosition) => {
         updateGameState('DANCING', duration, blocks, playerPos);
       },
-      onAnnounce: (_winnerColor: BlockColor) => {
+      onAnnounce: () => {
         updateGameState('ANNOUNCING');
       },
       onEliminate: (eliminated: Array<{ row: number; col: number }>, lives: number, isAlive: boolean) => {

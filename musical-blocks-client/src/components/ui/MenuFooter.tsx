@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { useGameStore } from '@/src/stores/gameStore';

@@ -45,7 +45,6 @@ export function GameOverScreen() {
 // ---------------------------------------------------------------------------
 export function SinglePlayerEndScreen() {
   const store = useGameStore();
-  const router = useRouter();
   const { t } = useTranslation();
   const spLastScore = store.spLastScore;
   const spLastRounds = store.spLastRounds;

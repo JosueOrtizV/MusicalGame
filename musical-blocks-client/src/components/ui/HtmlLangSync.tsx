@@ -1,26 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { useGameStore } from '@/src/stores/gameStore';
 import { useSocket } from '@/src/hooks/useSocket';
+
+const emptySubscribe = (callback: () => void) => {
+  return useGameStore.persist.onFinishHydration(callback);
+};
 
 export function HtmlLangSync() {
   const language = useGameStore((s) => s.language);
   const hasSetLanguage = useGameStore((s) => s.hasSetLanguage);
-  const [hydrated, setHydrated] = useState(false);
   
-  useSocket();
+  const hydrated = useSyncExternalStore(
+    emptySubscribe,
+    () => useGameStore.persist.hasHydrated(),
+    () => false
+  );
 
-  useEffect(() => {
-    if (useGameStore.persist.hasHydrated()) {
-      setHydrated(true);
-    } else {
-      const unsub = useGameStore.persist.onFinishHydration(() => {
-        setHydrated(true);
-      });
-      return () => unsub();
-    }
-  }, []);
+  useSocket();
 
   useEffect(() => {
     if (hydrated && !hasSetLanguage) {

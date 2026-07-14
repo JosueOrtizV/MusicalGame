@@ -16,15 +16,12 @@ import {
   BackArrowIcon, 
   ShirtIcon, 
   PaletteIcon, 
-  CheckIcon, 
-  HourglassIcon,
   JoystickIcon,
   SnowflakeIcon,
   LightningIcon,
   StopwatchIcon,
   HeartIcon,
   GlassesIcon,
-  UsersIcon,
   SkullIcon,
   DoveIcon
 } from './Icons';

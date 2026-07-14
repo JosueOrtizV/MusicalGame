@@ -109,12 +109,17 @@ function Spotlight({ position, colorIndex, orbitIndex, showStateRef, winnerColor
     });
   }, []);
 
-  // Connect spotlight to its target on mount
+  // Connect spotlight to its target on mount and cleanup materials on unmount
   useEffect(() => {
     if (spotLightRef.current && targetRef.current) {
       spotLightRef.current.target = targetRef.current;
     }
-  }, []);
+    return () => {
+      accentMaterial.dispose();
+      lensMaterial.dispose();
+      volumetricMaterial.dispose();
+    };
+  }, [accentMaterial, lensMaterial, volumetricMaterial]);
 
   // Update position targets, colors, and intensities in the R3F loop
   useFrame((state) => {

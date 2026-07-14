@@ -145,8 +145,9 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
     return () => {
       geometry.dispose();
       material.dispose();
+      if (voxelTexture) voxelTexture.dispose();
     };
-  }, [geometry, material]);
+  }, [geometry, material, voxelTexture]);
 
   // Update instance matrices and colors when blocks change
   // Handle state updates from the server: reset heights and spawn elimination particles
@@ -174,12 +175,16 @@ export function BlockGrid({ blocks, winnerColor, phase, round, isBlackout }: Blo
     });
   }, [blocks]);
 
+  // Hoist objects to prevent per-frame GC allocations
+  const tempMatrix = useMemo(() => new THREE.Matrix4(), []);
+  const tempColor = useMemo(() => new THREE.Color(), []);
+
   // Audio-reactive arena loop inside the render loop
   useFrame((state, delta) => {
     if (!meshRef.current) return;
     const mesh = meshRef.current;
-    const matrix = new THREE.Matrix4();
-    const color = new THREE.Color();
+    const matrix = tempMatrix;
+    const color = tempColor;
     const halfGrid = (GRID_SIZE / 2 - 0.5) * BLOCK_SIZE;
 
     // Read current state securely from refs

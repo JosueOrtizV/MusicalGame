@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { getSocket, setClockOffset } from '@/src/lib/socketClient';
 import { useGameStore } from '@/src/stores/gameStore';
 import { useToastStore } from '@/src/stores/toastStore';
 
 import { en } from '@/src/locales/en';
 import { es } from '@/src/locales/es';
-import { Room, GameState, BlockColor, GameBlock, ChatMessage, GridPosition } from '@/src/shared/types';
+import { Room, GameState, BlockColor, GameBlock, ChatMessage } from '@/src/shared/types';
 
 // ---------------------------------------------------------------------------
 //  useSocket — connects to server, wires all ServerEvents → Zustand store

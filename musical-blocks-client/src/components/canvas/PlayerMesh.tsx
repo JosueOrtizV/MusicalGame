@@ -254,9 +254,6 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
     return () => {
       clonedScene.traverse((node) => {
         if (node instanceof THREE.Mesh) {
-          if (node.geometry) {
-            node.geometry.dispose();
-          }
           if (node.material) {
             const materials = Array.isArray(node.material) ? node.material : [node.material];
             materials.forEach((mat) => mat.dispose());

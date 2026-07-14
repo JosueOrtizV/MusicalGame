@@ -228,7 +228,7 @@ export function RoomLobby() {
       const settingsToApply = { ...savedHostSettings, maxPlayers: finalMaxPlayers };
       getSocket().emit('host:update_settings', { settings: settingsToApply });
     }
-  }, [isHost, room?.id, room?.players.length]);
+  }, [isHost, room]);
 
   const previewPlayer = useMemo(() => {
     const localPlayer = room?.players.find((p) => p.id === localPlayerId);

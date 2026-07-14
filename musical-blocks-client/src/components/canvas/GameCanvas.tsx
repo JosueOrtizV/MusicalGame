@@ -561,6 +561,13 @@ function NeonGrid() {
     opacity: 0.08, // globally subtle; vertex colors do the radial work
   }), []);
 
+  useEffect(() => {
+    return () => {
+      geometry.dispose();
+      mat.dispose();
+    };
+  }, [geometry, mat]);
+
   return <lineSegments geometry={geometry} material={mat} />;
 }
 

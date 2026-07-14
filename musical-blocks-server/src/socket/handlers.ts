@@ -26,6 +26,35 @@ function validateName(name: unknown): { ok: true; name: string } | { ok: false; 
   return { ok: true, name: trimmed };
 }
 
+const VALID_DIRECTIONS = new Set([
+  'UP','DOWN','LEFT','RIGHT',
+  'UP_LEFT','UP_RIGHT','DOWN_LEFT','DOWN_RIGHT',
+  'DASH_UP','DASH_DOWN','DASH_LEFT','DASH_RIGHT',
+  'DASH_UP_LEFT','DASH_UP_RIGHT','DASH_DOWN_LEFT','DASH_DOWN_RIGHT'
+]);
+
+function validateDirection(dir: unknown): dir is Direction {
+  return typeof dir === 'string' && VALID_DIRECTIONS.has(dir);
+}
+
+function validateSettings(s: unknown): s is RoomSettings {
+  if (!s || typeof s !== 'object') return false;
+  const obj = s as Record<string, unknown>;
+  if (typeof obj.maxColors !== 'number') return false;
+  if (typeof obj.gameSpeed !== 'string') return false;
+  if (typeof obj.maxLives !== 'number') return false;
+  if (typeof obj.maxPlayers !== 'number') return false;
+  if (typeof obj.collisions !== 'boolean') return false;
+  if (typeof obj.suddenDeathMode !== 'string') return false;
+  return true;
+}
+
+function validateCosmetics(c: unknown): c is PlayerCosmetics {
+  if (!c || typeof c !== 'object') return false;
+  if (JSON.stringify(c).length > 2048) return false;
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 //  registerHandlers — wires all Socket.io events for one socket
 // ---------------------------------------------------------------------------
@@ -94,6 +123,11 @@ export function registerHandlers(
       { playerName, visibility }: { playerName: string; visibility: RoomVisibility },
       cb: (room: Room) => void,
     ) => {
+      if (typeof visibility !== 'string' || (visibility !== 'public' && visibility !== 'private')) {
+        socket.emit('room:error', { message: 'Invalid room visibility.' });
+        return;
+      }
+
       const nameResult = validateName(playerName);
       if (!nameResult.ok) {
         socket.emit('room:error', { message: nameResult.error });
@@ -102,6 +136,7 @@ export function registerHandlers(
 
       leaveCurrentRoom(socket, registry);
       const room = registry.create(sid, nameResult.name, visibility);
+      registry.setPlayerRoom(sid, room.id);
       socket.join(room.id);
       const token = generateSessionToken(sid, nameResult.name);
       const roomData = room.toRoom();
@@ -129,6 +164,7 @@ export function registerHandlers(
       let target = registry.findAvailablePublicRoom();
       if (!target) {
         target = registry.create(sid, nameResult.name, 'public');
+        registry.setPlayerRoom(sid, target.id);
         socket.join(target.id);
         const token = generateSessionToken(sid, nameResult.name);
         const roomData = target.toRoom();
@@ -144,6 +180,7 @@ export function registerHandlers(
         return;
       }
 
+      registry.setPlayerRoom(sid, target.id);
       socket.join(target.id);
       const token = generateSessionToken(sid, nameResult.name);
       const roomData = target.toRoom();
@@ -160,6 +197,11 @@ export function registerHandlers(
       { playerName, code }: { playerName: string; code: string },
       cb: (room: Room | null, error?: string) => void,
     ) => {
+      if (typeof code !== 'string') {
+        cb(null, 'Invalid room code.');
+        return;
+      }
+
       const nameResult = validateName(playerName);
       if (!nameResult.ok) {
         cb(null, nameResult.error);
@@ -179,6 +221,7 @@ export function registerHandlers(
         return;
       }
 
+      registry.setPlayerRoom(sid, room.id);
       socket.join(room.id);
       const token = generateSessionToken(sid, nameResult.name);
       const roomData = room.toRoom();
@@ -195,6 +238,7 @@ export function registerHandlers(
 
   // ---- Ready toggle --------------------------------------------------------
   socket.on('player:ready', ({ ready }: { ready: boolean; token?: string }) => {
+    if (typeof ready !== 'boolean') return;
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
     room.setPlayerReady(sid, ready);
@@ -202,6 +246,7 @@ export function registerHandlers(
 
   // ---- Update cosmetics ----------------------------------------------------
   socket.on('player:update_cosmetics', ({ cosmetics }: { cosmetics: PlayerCosmetics; token?: string }) => {
+    if (!validateCosmetics(cosmetics)) return;
     const room = registry.getRoomBySocketId(sid);
     if (!room) {
       console.log(`[Server Error] player:update_cosmetics failed - Room not found for player ${sid}`);
@@ -270,6 +315,7 @@ export function registerHandlers(
 
   // ---- Host kicks player ----------------------------------------------------
   socket.on('host:kick_player', ({ playerId }: { playerId: string; token?: string }) => {
+    if (typeof playerId !== 'string') return;
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
     
@@ -283,6 +329,7 @@ export function registerHandlers(
 
   // ---- Host updates settings -----------------------------------------------
   socket.on('host:update_settings', ({ settings }: { settings: RoomSettings; token?: string }) => {
+    if (!validateSettings(settings)) return;
     const room = registry.getRoomBySocketId(sid);
     if (!room) return;
 
@@ -295,6 +342,7 @@ export function registerHandlers(
 
   // ---- Player movement -----------------------------------------------------
   socket.on('player:move', ({ direction, timestamp }: { direction: Direction; timestamp: number; token?: string }) => {
+    if (!validateDirection(direction) || typeof timestamp !== 'number' || isNaN(timestamp)) return;
     const now = Date.now();
     if (now - moveWindowStart > MOVE_WINDOW_MS) {
       moveWindowStart = now;
@@ -315,6 +363,7 @@ export function registerHandlers(
 
   // ---- Chat ----------------------------------------------------------------
   socket.on('chat:send', ({ text }: { text: string; token?: string }) => {
+    if (typeof text !== 'string') return;
     const now = Date.now();
     if (now - chatWindowStart > CHAT_WINDOW_MS) {
       chatWindowStart = now;
@@ -349,6 +398,7 @@ function leaveCurrentRoom(socket: TypedSocket, registry: RoomRegistry): void {
   if (!room) return;
   const roomId = room.id;
   room.removePlayer(socket.id);
+  registry.removePlayerRoom(socket.id);
   socket.leave(roomId);
   if (room.isEmpty()) {
     registry.scheduleCleanup(roomId);

@@ -132,16 +132,24 @@ export class PlayerManager {
     const serverNow = Date.now();
     const lag = serverNow - clientTimestamp;
 
-    // Reject extreme lag or future timestamps (allow 2s in either direction)
-    if (Math.abs(lag) > LAG_TOLERANCE_MS) {
+    if (Math.abs(lag) > 5000) {
       securityLogger.warn({
-        event: 'SUSPICIOUS_LAG',
+        event: 'HARD_LAG_REJECTION',
         playerId: socketId,
         playerName: player.name,
         lagMs: lag,
-        toleranceMs: LAG_TOLERANCE_MS
-      }, 'Suspicious player lag deviation detected (potential time-sync exploitation)');
+      }, 'Hard lag rejection: >5s (potential exploitation or unplayable)');
       return false;
+    }
+    
+    if (Math.abs(lag) > LAG_TOLERANCE_MS) {
+      securityLogger.info({
+        event: 'SOFT_LAG_WARNING',
+        playerId: socketId,
+        playerName: player.name,
+        lagMs: lag,
+      }, 'Soft lag warning: 2-5s (mobile/satellite)');
+      // Still accept the move but flag the player for monitoring
     }
     
     const isDash = direction.startsWith('DASH_');

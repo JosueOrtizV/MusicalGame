@@ -1,0 +1,42 @@
+# Production Caddyfile for VoxelRave Game Server
+
+# Frontend Website
+voxelrave.com {
+    reverse_proxy client:3000
+    
+    # Enable compression
+    encode zstd gzip
+    
+    # Basic Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        -Server
+    }
+}
+
+# Backend API and WebSockets
+api.voxelrave.com {
+    # Proxy all traffic to the Node.js Fastify/Socket.io backend
+    reverse_proxy server:3001 {
+        # Enable WebSocket support
+        header_up Upgrade {>Upgrade}
+        header_up Connection {>Connection}
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Enable compression
+    encode zstd gzip
+    
+    # Basic Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        -Server
+    }
+}

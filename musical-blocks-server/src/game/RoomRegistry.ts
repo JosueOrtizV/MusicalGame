@@ -13,6 +13,7 @@ import { GameRoom } from './GameRoom';
 // ---------------------------------------------------------------------------
 export class RoomRegistry {
   private rooms: Map<string, GameRoom> = new Map();
+  private playerRoomMap: Map<string, string> = new Map();
   private readonly CLEANUP_DELAY_MS = 5_000;
 
   constructor(private readonly io: SocketServer<ClientEvents, ServerEvents>) {}
@@ -78,10 +79,18 @@ export class RoomRegistry {
     return this.rooms.get(code.toUpperCase());
   }
 
+  setPlayerRoom(socketId: string, roomId: string): void {
+    this.playerRoomMap.set(socketId, roomId);
+  }
+
+  removePlayerRoom(socketId: string): void {
+    this.playerRoomMap.delete(socketId);
+  }
+
   getRoomBySocketId(socketId: string): GameRoom | undefined {
-    for (const room of this.rooms.values()) {
-      const found = room.toRoom().players.find((p) => p.id === socketId);
-      if (found) return room;
+    const roomId = this.playerRoomMap.get(socketId);
+    if (roomId) {
+      return this.rooms.get(roomId);
     }
     return undefined;
   }

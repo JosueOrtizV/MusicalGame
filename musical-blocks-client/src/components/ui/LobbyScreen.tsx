@@ -8,7 +8,6 @@ import { Room, RoomSummary } from '@/src/shared/types';
 
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { SpinnerIcon, MusicIcon, LockIcon, GlobeIcon } from './Icons';
-import { useSinglePlayerGame } from '@/src/hooks/useSinglePlayerGame';
 import { fetchTopScores, LeaderboardEntry } from '@/src/lib/supabase/leaderboard';
 
 // ---------------------------------------------------------------------------

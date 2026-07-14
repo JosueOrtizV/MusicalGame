@@ -11,18 +11,20 @@ import { securityLogger } from './utils/logger';
 // ---------------------------------------------------------------------------
 const PORT   = parseInt(process.env.PORT ?? '3001', 10);
 const CLIENT = process.env.CLIENT_ORIGIN ?? 'http://localhost:3000';
+const isProd = process.env.NODE_ENV === 'production';
+const ALLOWED_ORIGINS = isProd ? [CLIENT] : '*';
 
 // ---------------------------------------------------------------------------
 //  Fastify
 // ---------------------------------------------------------------------------
 const app = Fastify({
-  logger: {
-    transport: { target: 'pino-pretty' },
-  },
+  logger: isProd
+    ? { level: process.env.LOG_LEVEL || 'info' }
+    : { transport: { target: 'pino-pretty' } },
 });
 
 app.register(cors, {
-  origin: '*', // Allow any origin for LAN testing
+  origin: ALLOWED_ORIGINS,
   methods: ['GET', 'POST', 'OPTIONS'],
 });
 
@@ -31,20 +33,37 @@ app.register(cors, {
 // ---------------------------------------------------------------------------
 const io = new SocketServer<ClientEvents, ServerEvents>({
   cors: {
-    origin: '*', // Allow any origin for LAN testing
+    origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST'],
   },
   transports: ['websocket', 'polling'],
+  pingTimeout: 20000,
+  pingInterval: 25000,
+  maxHttpBufferSize: 1e5,
+  connectTimeout: 10000,
+  allowEIO3: false,
 });
 
 const registry = new RoomRegistry(io);
 
 // ---------------------------------------------------------------------------
-//  Connection IP Rate Limiting Middleware (10 connections/IP/minute)
+//  Connection IP Rate Limiting Middleware (20 connections/IP/minute)
 // ---------------------------------------------------------------------------
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const MAX_CONNECTIONS_PER_WINDOW = 10;
+const MAX_CONNECTIONS_PER_WINDOW = 20;
 const ipConnections = new Map<string, number[]>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, timestamps] of ipConnections.entries()) {
+    const valid = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    if (valid.length === 0) {
+      ipConnections.delete(ip);
+    } else {
+      ipConnections.set(ip, valid);
+    }
+  }
+}, 60_000);
 
 function getClientIp(socket: any): string {
   const xForwardedFor = socket.handshake.headers['x-forwarded-for'];

@@ -67,7 +67,7 @@ export function TermsClient() {
               4. DISPONIBILIDAD DEL SERVICIO
             </h2>
             <p>
-              Los servicios multijugador se proporcionan "tal cual" y "según disponibilidad". <strong className="text-[#ffabf3]">VoxelRave Studios</strong> no garantiza que los servidores estén en línea las 24 horas del día. Nos reservamos el derecho de reiniciar, suspender temporalmente o suspender indefinidamente los servidores por mantenimiento, actualizaciones o razones técnicas sin previo aviso.
+              Los servicios multijugador se proporcionan &quot;tal cual&quot; y &quot;según disponibilidad&quot;. <strong className="text-[#ffabf3]">VoxelRave Studios</strong> no garantiza que los servidores estén en línea las 24 horas del día. Nos reservamos el derecho de reiniciar, suspender temporalmente o suspender indefinidamente los servidores por mantenimiento, actualizaciones o razones técnicas sin previo aviso.
             </p>
           </section>
 
@@ -156,7 +156,7 @@ export function TermsClient() {
               4. SERVICE AVAILABILITY
             </h2>
             <p>
-              Multiplayer services are provided "as is" and "as available". <strong className="text-[#ffabf3]">VoxelRave Studios</strong> does not guarantee that the servers will be online 24/7. We reserve the right to restart, temporarily suspend, or indefinitely suspend the servers for maintenance, updates, or technical reasons without prior notice.
+              Multiplayer services are provided &quot;as is&quot; and &quot;as available&quot;. <strong className="text-[#ffabf3]">VoxelRave Studios</strong> does not guarantee that the servers will be online 24/7. We reserve the right to restart, temporarily suspend, or indefinitely suspend the servers for maintenance, updates, or technical reasons without prior notice.
             </p>
           </section>
 

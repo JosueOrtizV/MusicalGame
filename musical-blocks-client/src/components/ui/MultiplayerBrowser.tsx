@@ -32,18 +32,6 @@ const AddCircleIcon = ({ size = 24, className }: { size?: number; className?: st
   </svg>
 );
 
-const LanIcon = ({ size = 24, className }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
-    <path d="M13 3H11V7H13V3ZM21 9H17V11H13V13H15V19H9V13H11V11H7V9H3V15H7V13H9V15H15V13H17V15H21V9ZM5 11H7V13H5V11ZM19 11H17V13H19V11Z" fill="currentColor" />
-  </svg>
-);
-
-const GroupsIcon = ({ size = 24, className }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
-    <path d="M12 6C13.1 6 14 5.1 14 4C14 2.9 13.1 2 12 2C10.9 2 10 2.9 10 4C10 5.1 10.9 6 12 6ZM8 10C8.6 10 9 9.6 9 9C9 8.4 8.6 8 8 8C7.4 8 7 8.4 7 9C7 9.6 7.4 10 8 10ZM16 10C16.6 10 17 9.6 17 9C17 8.4 16.6 8 16 8C15.4 8 15 8.4 15 9C15 9.6 15.4 10 16 10ZM12 8C10.3 8 7 8.8 7 10.5V12H17V10.5C17 8.8 13.7 8 12 8ZM4 12V14H6V12H4ZM20 12V14H18V12H20Z" fill="currentColor" />
-  </svg>
-);
-
 // ---------------------------------------------------------------------------
 //  MultiplayerBrowser — browse/create/join rooms (used at /multiplayer)
 // ---------------------------------------------------------------------------

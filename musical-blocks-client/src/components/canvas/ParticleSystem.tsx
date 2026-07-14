@@ -143,7 +143,10 @@ export function ParticleSystem() {
     };
 
     window.addEventListener('spawn-particles', handleSpawn);
-    return () => window.removeEventListener('spawn-particles', handleSpawn);
+    return () => {
+      window.removeEventListener('spawn-particles', handleSpawn);
+      particleData.lifetimes.fill(0);
+    };
   }, []);
 
   // Update loop

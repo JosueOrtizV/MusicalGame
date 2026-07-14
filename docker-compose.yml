@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: musical-blocks-server/Dockerfile
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - LOG_LEVEL=info
+      # Caddy will proxy traffic to this instance.
+      # The CLIENT_ORIGIN is the public URL of the frontend (e.g., https://voxelrave.com).
+      - CLIENT_ORIGIN=${CLIENT_ORIGIN:-https://voxelrave.com}
+    ports:
+      - "3001:3001"
+    # Ensure network matches if caddy runs here
+    networks:
+      - voxelrave_net
+
+  client:
+    build:
+      context: .
+      dockerfile: musical-blocks-client/Dockerfile
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      # Important: Inform the client where to connect to the backend over WSS
+      - NEXT_PUBLIC_SOCKET_URL=wss://api.voxelrave.com
+    ports:
+      - "3000:3000"
+    networks:
+      - voxelrave_net
+
+  # Optional Caddy Reverse Proxy for automatic HTTPS
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - voxelrave_net
+    depends_on:
+      - server
+      - client
+
+networks:
+  voxelrave_net:
+
+volumes:
+  caddy_data:
+  caddy_config:

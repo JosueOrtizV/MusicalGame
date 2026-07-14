@@ -194,7 +194,13 @@ export class GameRoom {
       }
     }
 
-    if (this.loop.isRunning() && this.players.getAlive().length <= 1) {
+    // CRITICAL: Only check game-ending conditions if the loop is running
+    // AND the phase is NOT in the middle of a transition (ELIMINATING)
+    if (
+      this.loop.isRunning() && 
+      this.currentPhase !== 'ELIMINATING' && 
+      this.players.getAlive().length <= 1
+    ) {
       this.loop.stop();
       const winner = this.players.getWinner();
       this.status = 'finished';
@@ -476,6 +482,7 @@ export class GameRoom {
     this.loop.stop();
     if (this.afkInterval) clearInterval(this.afkInterval);
     this.cancelCountdown();
+    if (this.gameOverTimeout) clearTimeout(this.gameOverTimeout);
   }
 
   private gameOverTimeout: NodeJS.Timeout | null = null;

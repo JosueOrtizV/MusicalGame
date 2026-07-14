@@ -42,10 +42,10 @@ describe('gameStore', () => {
     const originalCosmetics = useGameStore.getState().localCosmetics;
     expect(originalCosmetics.companionType).toBe('none');
 
-    useGameStore.getState().updateLocalCosmetics({ companionType: 'kitty', primaryColor: '#FF0000' });
+    useGameStore.getState().updateLocalCosmetics({ companionType: 'orb', primaryColor: '#FF0000' });
 
     const newCosmetics = useGameStore.getState().localCosmetics;
-    expect(newCosmetics.companionType).toBe('kitty');
+    expect(newCosmetics.companionType).toBe('orb');
     expect(newCosmetics.primaryColor).toBe('#FF0000');
     // Ensure rest of cosmetics are preserved
     expect(newCosmetics.headphonesEnabled).toBe(originalCosmetics.headphonesEnabled);
@@ -91,6 +91,7 @@ describe('gameStore', () => {
           lives: 3,
           isReady: false,
           isHost: true,
+          hasReturnedToLobby: true,
           color: '#00FF00',
           position: { x: 0, z: 0 },
           cosmetics: {
@@ -110,7 +111,15 @@ describe('gameStore', () => {
       ],
       visibility: 'public',
       maxPlayers: 8,
-      speed: 'NORMAL'
+      gameState: null,
+      settings: {
+        maxColors: 6,
+        gameSpeed: 'NORMAL',
+      },
+      lobbySongIndex: 0,
+      gameSongIndices: [0, 1, 2],
+      victorySongIndex: 0,
+      cancellationCount: 0,
     };
 
     useGameStore.getState().setRoom(mockRoom);
@@ -132,6 +141,7 @@ describe('gameStore', () => {
       phase: 'DANCING',
       round: 1,
       timeLeft: 15,
+      isBlackout: false,
       winnerColor: null,
       blocks: [],
       players: [
@@ -142,6 +152,7 @@ describe('gameStore', () => {
           lives: 3,
           isReady: true,
           isHost: true,
+          hasReturnedToLobby: true,
           color: '#00FF00',
           position: { x: 0, z: 0 },
           cosmetics: {
@@ -160,8 +171,6 @@ describe('gameStore', () => {
         }
       ],
       winnerId: null,
-      isChaosMode: false,
-      speed: 'NORMAL'
     };
 
     useGameStore.getState().setGameState(mockGameState);

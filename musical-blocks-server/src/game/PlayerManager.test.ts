@@ -84,12 +84,12 @@ describe('PlayerManager', () => {
     
     const now = Date.now();
     
-    // Reject excessive lag (past client timestamp)
-    let isValid = playerManager.validateMove('socket-1', 'UP', now - (LAG_TOLERANCE_MS + 100), gridManager);
+    // Reject excessive lag (past client timestamp > 5000ms)
+    let isValid = playerManager.validateMove('socket-1', 'UP', now - 5500, gridManager);
     expect(isValid).toBe(false);
     
-    // Reject future client timestamp
-    isValid = playerManager.validateMove('socket-1', 'UP', now + (LAG_TOLERANCE_MS + 100), gridManager);
+    // Reject future client timestamp > 5000ms
+    isValid = playerManager.validateMove('socket-1', 'UP', now + 5500, gridManager);
     expect(isValid).toBe(false);
   });
 
