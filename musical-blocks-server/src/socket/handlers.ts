@@ -44,7 +44,8 @@ function validateSettings(s: unknown): s is RoomSettings {
   if (typeof obj.gameSpeed !== 'string') return false;
   if (typeof obj.maxLives !== 'number') return false;
   if (typeof obj.maxPlayers !== 'number') return false;
-  if (typeof obj.collisions !== 'boolean') return false;
+  if (obj.enableCollisions !== undefined && typeof obj.enableCollisions !== 'boolean') return false;
+  if (obj.collisions !== undefined && typeof obj.collisions !== 'boolean') return false;
   if (typeof obj.suddenDeathMode !== 'string') return false;
   return true;
 }

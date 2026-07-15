@@ -25,6 +25,13 @@ export const spawnParticles = (detail: SpawnParticlesEvent) => {
   }
 };
 
+// Global helper to instantly clear all active particles
+export const clearParticles = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('clear-particles'));
+  }
+};
+
 // ---------------------------------------------------------------------------
 //  Particle System Component
 // ---------------------------------------------------------------------------
@@ -59,11 +66,18 @@ const material = new THREE.PointsMaterial({
   depthWrite: false,
 });
 
+let forceClear = false;
+
 export function ParticleSystem() {
   const pointsRef = useRef<THREE.Points>(null);
 
-  // Event listener to add particles
+  // Event listener to add / clear particles
   useEffect(() => {
+    // Ensure particles are completely cleared when the component mounts
+    particleData.lifetimes.fill(0);
+    particleData.positions.fill(-999);
+    geometry.attributes.position.needsUpdate = true;
+
     const handleSpawn = (e: Event) => {
       const { x, y, z, color, count, type } = (e as CustomEvent<SpawnParticlesEvent>).detail;
       const typeCode = type === 'burst' ? 0 : type === 'dust' ? 1 : type === 'confetti' ? 2 : 3;
@@ -142,10 +156,18 @@ export function ParticleSystem() {
       }
     };
 
+    const handleClear = () => {
+      forceClear = true;
+    };
+
     window.addEventListener('spawn-particles', handleSpawn);
+    window.addEventListener('clear-particles', handleClear);
     return () => {
       window.removeEventListener('spawn-particles', handleSpawn);
+      window.removeEventListener('clear-particles', handleClear);
       particleData.lifetimes.fill(0);
+      particleData.positions.fill(-999);
+      geometry.attributes.position.needsUpdate = true;
     };
   }, []);
 
@@ -153,6 +175,13 @@ export function ParticleSystem() {
   useFrame((_, delta) => {
     if (!pointsRef.current) return;
     let needsUpdate = false;
+
+    if (forceClear) {
+      particleData.lifetimes.fill(0);
+      particleData.positions.fill(-999);
+      forceClear = false;
+      needsUpdate = true;
+    }
 
     for (let i = 0; i < MAX_PARTICLES; i++) {
       if (particleData.lifetimes[i] > 0) {

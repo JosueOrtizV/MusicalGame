@@ -250,7 +250,10 @@ export class PlayerManager {
   resetAlive(): void {
     for (const player of this.players.values()) {
       player.isAlive = true;
-      player.isReady = player.isHost;
+      if (player.isHost) {
+        player.isReady = true;
+      }
+      // Preserve existing player.isReady state for non-hosts who hit Ready while waiting for room reset
       player.hasReturnedToLobby = true;
       player.lastActivityTime = Date.now();
     }

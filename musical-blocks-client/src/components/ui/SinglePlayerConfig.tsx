@@ -6,16 +6,16 @@ import { useGameStore } from '@/src/stores/gameStore';
 import { useToastStore } from '@/src/stores/toastStore';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Stars, Sparkles, Float } from '@react-three/drei';
 import { PlayerMesh } from '../canvas/PlayerMesh';
 import { PLAYER_COLORS, PlayerCosmetics, Player, RoomSettings } from '@/src/shared/types';
-import { 
-  MusicIcon, 
-  TrophyIcon, 
-  PlayArrowIcon, 
-  BackArrowIcon, 
-  ShirtIcon, 
-  PaletteIcon, 
+import {
+  MusicIcon,
+  TrophyIcon,
+  PlayArrowIcon,
+  BackArrowIcon,
+  ShirtIcon,
+  PaletteIcon,
   JoystickIcon,
   SnowflakeIcon,
   LightningIcon,
@@ -444,9 +444,9 @@ export function SinglePlayerConfig() {
                             (spSettings.maxColors === 8) ? '#eab308' :
                               '#ef4444',
                         boxShadow: `0 0 6px ${(spSettings.maxColors === 4) ? '#22c55e' :
-                            (spSettings.maxColors === 6) ? '#3b82f6' :
-                              (spSettings.maxColors === 8) ? '#eab308' :
-                                '#ef4444'
+                          (spSettings.maxColors === 6) ? '#3b82f6' :
+                            (spSettings.maxColors === 8) ? '#eab308' :
+                              '#ef4444'
                           }`
                       }}
                     />
@@ -459,13 +459,12 @@ export function SinglePlayerConfig() {
                       {t(spDifficulty)}
                     </span>
                   </div>
-                  <div className={`tooltip-box tooltip-${
-                    (spSettings.maxColors === 4) ? 'green' :
+                  <div className={`tooltip-box tooltip-${(spSettings.maxColors === 4) ? 'green' :
                       (spSettings.maxColors === 6) ? 'blue' :
                         (spSettings.maxColors === 8) ? 'amber' :
                           'rose'
-                  }`}>
-                    <span style={{ 
+                    }`}>
+                    <span style={{
                       color: (spSettings.maxColors === 4) ? '#22c55e' :
                         (spSettings.maxColors === 6) ? '#00fbfb' :
                           (spSettings.maxColors === 8) ? '#eab308' :
@@ -507,10 +506,9 @@ export function SinglePlayerConfig() {
                       </>
                     )}
                   </div>
-                  <div className={`tooltip-box tooltip-${
-                    spSpeed === 'CHILL' ? 'blue' :
+                  <div className={`tooltip-box tooltip-${spSpeed === 'CHILL' ? 'blue' :
                       spSpeed === 'TURBO' ? 'amber' : 'blue'
-                  }`}>
+                    }`}>
                     {spSpeed === 'CHILL' ? t('speedChillDesc') :
                       spSpeed === 'TURBO' ? t('speedTurboDesc') : t('speedNormalDesc')
                     }
@@ -1097,7 +1095,7 @@ export function SinglePlayerConfig() {
                 <TrophyIcon size={22} className="text-glow-magenta" />
                 <h2>{t('globalLeaderboard')}</h2>
               </div>
-              
+
               {/* Score Multiplier Help Tooltip */}
               <div className="relative group/tooltip">
                 <button
@@ -1244,12 +1242,70 @@ export function SinglePlayerConfig() {
 
                       {previewPlayer && (
                         <Canvas camera={{ position: [1, 0.3, 2.8], fov: 55 }}>
-                          <ambientLight intensity={0.7} />
-                          <directionalLight position={[2, 5, 2]} intensity={1.5} castShadow />
-                          <pointLight position={[-3, 3, -3]} intensity={0.5} />
+                          <color attach="background" args={['#060713']} />
+                          <ambientLight intensity={1.4} />
+                          <directionalLight position={[3, 6, 4]} intensity={2.5} castShadow />
+                          <directionalLight position={[-3, 4, -2]} intensity={1.5} color="#00f3ff" />
+                          <pointLight position={[0, -0.2, 1]} intensity={1.0} color="#ff007f" />
+
+                          {/* Stars & Neon Sparkles Atmosphere */}
+                          <Stars radius={40} depth={15} count={1200} factor={4} saturation={0} fade speed={1.5} />
+                          <Sparkles count={35} scale={[4, 4, 4]} size={2.5} speed={0.4} opacity={0.6} color="#00f3ff" />
+                          <Sparkles count={25} scale={[4, 4, 4]} size={2} speed={0.3} opacity={0.5} color="#ff007f" />
+
+                          {/* Mini In-Game Voxel Arena Stage (3x3 Grid) */}
                           <group position={[0, -0.35, 0]}>
+                            {/* Arena placed exactly at y = -0.45 to match player's feet offset */}
+                            <group position={[0, -0.45, 0]}>
+                              {[
+                                { x: -0.36, z: -0.36, color: '#00f3ff' },
+                                { x: 0, z: -0.36, color: '#7c3aed' },
+                                { x: 0.36, z: -0.36, color: '#ff007f' },
+                                { x: -0.36, z: 0, color: '#ff9900' },
+                                { x: 0, z: 0, color: '#f43f5e' }, // Center block 
+                                { x: 0.36, z: 0, color: '#10b981' },
+                                { x: -0.36, z: 0.36, color: '#ff007f' },
+                                { x: 0, z: 0.36, color: '#3b82f6' },
+                                { x: 0.36, z: 0.36, color: '#a855f7' },
+                              ].map((b, i) => (
+                                <group key={i} position={[b.x, 0, b.z]}>
+                                  {/* Bright Colored Voxel Block Base */}
+                                  <mesh position={[0, -0.05, 0]}>
+                                    <boxGeometry args={[0.34, 0.1, 0.34]} />
+                                    <meshStandardMaterial color={b.color} emissive={b.color} emissiveIntensity={0.3} roughness={0.4} metalness={0.2} />
+                                  </mesh>
+                                  {/* Bright Cap for top face glow */}
+                                  <mesh position={[0, 0.001, 0]}>
+                                    <boxGeometry args={[0.34, 0.002, 0.34]} />
+                                    <meshBasicMaterial color={b.color} />
+                                  </mesh>
+                                </group>
+                              ))}
+                            </group>
+
                             <PlayerMesh player={previewPlayer} isLocal={true} isPreview={true} previewAnimType={previewAnimType} />
                           </group>
+
+                          {/* Floating In-Game Voxel Blocks */}
+                          <Float speed={2} rotationIntensity={1} floatIntensity={1}>
+                            <mesh position={[-1.5, 0.8, -1.2]} rotation={[0.4, 0.2, 0.5]}>
+                              <boxGeometry args={[0.22, 0.22, 0.22]} />
+                              <meshStandardMaterial color="#ff007f" emissive="#ff007f" emissiveIntensity={0.6} roughness={0.3} />
+                            </mesh>
+                          </Float>
+                          <Float speed={1.5} rotationIntensity={1.2} floatIntensity={0.8}>
+                            <mesh position={[1.5, 1.1, -1.5]} rotation={[0.2, -0.5, 0.1]}>
+                              <boxGeometry args={[0.2, 0.2, 0.2]} />
+                              <meshStandardMaterial color="#00f3ff" emissive="#00f3ff" emissiveIntensity={0.6} roughness={0.3} />
+                            </mesh>
+                          </Float>
+                          <Float speed={2.2} rotationIntensity={0.8} floatIntensity={1.2}>
+                            <mesh position={[-1.2, -0.2, -1.0]} rotation={[-0.3, 0.6, -0.2]}>
+                              <boxGeometry args={[0.18, 0.18, 0.18]} />
+                              <meshStandardMaterial color="#7c3aed" emissive="#7c3aed" emissiveIntensity={0.5} roughness={0.3} />
+                            </mesh>
+                          </Float>
+
                           <OrbitControls
                             enableZoom={true}
                             enablePan={false}
@@ -1272,8 +1328,8 @@ export function SinglePlayerConfig() {
                     <div className="flex border-b border-white/10 mb-4 w-full gap-2 p-1 bg-black/40 rounded-lg">
                       <button
                         className={`flex-1 py-2 md:py-3 px-1 md:px-4 font-mono text-[9px] md:text-xs font-extrabold uppercase tracking-normal md:tracking-widest flex items-center justify-center gap-1 md:gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'equip'
-                            ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]'
-                            : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
+                          ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]'
+                          : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
                           }`}
                         onClick={() => { setLockerTab('equip'); setPreviewAnimType(null); }}
                         type="button"
@@ -1286,8 +1342,8 @@ export function SinglePlayerConfig() {
                       </button>
                       <button
                         className={`flex-1 py-2 md:py-3 px-1 md:px-4 font-mono text-[9px] md:text-xs font-extrabold uppercase tracking-normal md:tracking-widest flex items-center justify-center gap-1 md:gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'colors'
-                            ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]'
-                            : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
+                          ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]'
+                          : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
                           }`}
                         onClick={() => { setLockerTab('colors'); setPreviewAnimType(null); }}
                         type="button"
@@ -1299,8 +1355,8 @@ export function SinglePlayerConfig() {
                       </button>
                       <button
                         className={`flex-1 py-2 md:py-3 px-1 md:px-4 font-mono text-[9px] md:text-xs font-extrabold uppercase tracking-normal md:tracking-widest flex items-center justify-center gap-1 md:gap-2 cursor-pointer transition-all duration-200 rounded-md ${lockerTab === 'anims'
-                            ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]'
-                            : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
+                          ? 'text-cyan-400 bg-cyan-500/10 border-b-2 border-cyan-400 text-shadow-[0_0_8px_rgba(0,243,255,0.4)] shadow-[inset_0_0_10px_rgba(0,243,255,0.05)]'
+                          : 'text-neutral-400 border-b-2 border-transparent hover:bg-white/5 hover:text-white'
                           }`}
                         onClick={() => { setLockerTab('anims'); setPreviewAnimType('dance'); }}
                         type="button"
@@ -1316,6 +1372,48 @@ export function SinglePlayerConfig() {
                     <div className="locker-tab-content-scroll">
                       {lockerTab === 'equip' && (
                         <div className="flex flex-col gap-5 fade-in">
+                          {/* Base Model */}
+                          <div className="locker-modal-section">
+                            <h3 className="locker-modal-section-title flex items-center gap-2">
+                              <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              <span>{lang === 'es' ? 'Modelo Base' : 'Base Model'}</span>
+                            </h3>
+                            <div className="locker-modal-options-grid">
+                              <button
+                                className={`locker-modal-option-btn ${activeCosmetics.modelType === 'default' ? 'active' : ''}`}
+                                onClick={() => updateDraftCosmetics({ modelType: 'default' })}
+                                type="button"
+                              >
+                                <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span className="locker-modal-option-name">Cyber-DJ</span>
+                              </button>
+                              <button
+                                className={`locker-modal-option-btn ${activeCosmetics.modelType === 'retro_cyber_bot' ? 'active' : ''}`}
+                                onClick={() => updateDraftCosmetics({ modelType: 'retro_cyber_bot' })}
+                                type="button"
+                              >
+                                <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 3v2m6-2v2M9 5a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V7a2 2 0 00-2-2H9z" />
+                                </svg>
+                                <span className="locker-modal-option-name">Retro Cyber Bot</span>
+                              </button>
+                              <button
+                                className={`locker-modal-option-btn ${(activeCosmetics.modelType || 'sound_monster') === 'sound_monster' ? 'active' : ''}`}
+                                onClick={() => updateDraftCosmetics({ modelType: 'sound_monster' })}
+                                type="button"
+                              >
+                                <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+                                </svg>
+                                <span className="locker-modal-option-name">Sound Monster</span>
+                              </button>
+                            </div>
+                          </div>
+
                           {/* Accessories */}
                           <div className="locker-modal-section">
                             <h3 className="locker-modal-section-title flex items-center gap-2">
@@ -1325,18 +1423,20 @@ export function SinglePlayerConfig() {
                               <span>{lang === 'es' ? 'Accesorios' : 'Accessories'}</span>
                             </h3>
                             <div className="locker-modal-toggles-grid">
-                              <button
-                                className={`locker-modal-toggle-card ${activeCosmetics.headphonesEnabled ? 'active' : ''}`}
-                                onClick={() => updateDraftCosmetics({ headphonesEnabled: !activeCosmetics.headphonesEnabled })}
-                                type="button"
-                              >
-                                <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V9a6 6 0 00-12 0v10a2 2 0 002 2z" />
-                                </svg>
-                                <span className="locker-modal-toggle-label">
-                                  {lang === 'es' ? 'Auriculares Beat-Sync' : 'Beat-Sync Headphones'}
-                                </span>
-                              </button>
+                              {activeCosmetics.modelType !== 'sound_monster' && (
+                                <button
+                                  className={`locker-modal-toggle-card ${activeCosmetics.headphonesEnabled ? 'active' : ''}`}
+                                  onClick={() => updateDraftCosmetics({ headphonesEnabled: !activeCosmetics.headphonesEnabled })}
+                                  type="button"
+                                >
+                                  <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V9a6 6 0 00-12 0v10a2 2 0 002 2z" />
+                                  </svg>
+                                  <span className="locker-modal-toggle-label">
+                                    {lang === 'es' ? 'Auriculares Beat-Sync' : 'Beat-Sync Headphones'}
+                                  </span>
+                                </button>
+                              )}
                               <button
                                 className={`locker-modal-toggle-card ${activeCosmetics.backpackEnabled ? 'active' : ''}`}
                                 onClick={() => updateDraftCosmetics({ backpackEnabled: !activeCosmetics.backpackEnabled })}
@@ -1459,15 +1559,44 @@ export function SinglePlayerConfig() {
                               {(() => {
                                 const takenColors: string[] = [];
 
-                                const colorItems: { key: keyof PlayerCosmetics; label: string; active: boolean; fallback: string }[] = [
-                                  { key: 'primaryColor', label: lang === 'es' ? 'Traje (Principal)' : 'Suit (Primary)', active: true, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
-                                  { key: 'shoesColor', label: lang === 'es' ? 'Zapatos' : 'Shoes', active: true, fallback: '#ffe600' },
-                                  { key: 'visorColor', label: lang === 'es' ? 'Visor' : 'Visor', active: true, fallback: '#00f3ff' },
-                                  { key: 'heartColor', label: lang === 'es' ? 'Corazón' : 'Heart', active: true, fallback: '#ff007f' },
-                                  { key: 'headphonesColor', label: lang === 'es' ? 'Auriculares' : 'Headphones', active: activeCosmetics.headphonesEnabled, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
-                                  { key: 'backpackColor', label: lang === 'es' ? 'Mochila' : 'Backpack', active: activeCosmetics.backpackEnabled, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
-                                  { key: 'companionColor', label: lang === 'es' ? 'Mascota' : 'Cyber Pet', active: activeCosmetics.companionType !== 'none', fallback: previewPlayer?.color || PLAYER_COLORS[0] },
-                                ];
+                                const modelType = activeCosmetics.modelType || 'sound_monster';
+
+                                let colorItems: { key: keyof PlayerCosmetics; label: string; active: boolean; fallback: string }[] = [];
+
+                                if (modelType === 'default') {
+                                  colorItems = [
+                                    { key: 'primaryColor', label: lang === 'es' ? 'Traje (Principal)' : 'Suit (Primary)', active: true, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                    { key: 'visorColor', label: lang === 'es' ? 'Visor' : 'Visor', active: true, fallback: '#00f3ff' },
+                                    { key: 'heartColor', label: lang === 'es' ? 'Corazón' : 'Heart', active: true, fallback: '#ff007f' },
+                                    { key: 'wristbandColor', label: lang === 'es' ? 'Pulsera' : 'Wristband', active: true, fallback: '#ff007f' },
+                                    { key: 'beltColor', label: lang === 'es' ? 'Cinturón' : 'Belt', active: true, fallback: '#ff007f' },
+                                    { key: 'shoesColor', label: lang === 'es' ? 'Zapatos' : 'Shoes', active: true, fallback: '#ffe600' },
+                                    { key: 'headphonesColor', label: lang === 'es' ? 'Auriculares' : 'Headphones', active: activeCosmetics.headphonesEnabled, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                    { key: 'backpackColor', label: lang === 'es' ? 'Mochila' : 'Backpack', active: activeCosmetics.backpackEnabled, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                    { key: 'companionColor', label: lang === 'es' ? 'Mascota' : 'Cyber Pet', active: activeCosmetics.companionType !== 'none', fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                  ];
+                                } else if (modelType === 'retro_cyber_bot') {
+                                  colorItems = [
+                                    { key: 'primaryColor', label: lang === 'es' ? 'Traje (Principal)' : 'Suit (Primary)', active: true, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                    { key: 'visorColor', label: lang === 'es' ? 'Casco' : 'Helmet', active: true, fallback: '#00f3ff' },
+                                    { key: 'heartColor', label: lang === 'es' ? 'Pecho' : 'Chest', active: true, fallback: '#ff007f' },
+                                    { key: 'wristbandColor', label: lang === 'es' ? 'Hombreras y Rodilleras' : 'Shoulders & Knees', active: true, fallback: '#ff007f' },
+                                    { key: 'shoesColor', label: lang === 'es' ? 'Zapatos' : 'Shoes', active: true, fallback: '#ffe600' },
+                                    { key: 'headphonesColor', label: lang === 'es' ? 'Auriculares' : 'Headphones', active: activeCosmetics.headphonesEnabled, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                    { key: 'backpackColor', label: lang === 'es' ? 'Mochila' : 'Backpack', active: activeCosmetics.backpackEnabled, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                    { key: 'companionColor', label: lang === 'es' ? 'Mascota' : 'Cyber Pet', active: activeCosmetics.companionType !== 'none', fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                  ];
+                                } else {
+                                  colorItems = [
+                                    { key: 'primaryColor', label: lang === 'es' ? 'Traje Principal' : 'Suit (Primary)', active: true, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                    { key: 'visorColor', label: lang === 'es' ? 'Bocinas' : 'Speakers', active: true, fallback: '#00f3ff' },
+                                    { key: 'heartColor', label: lang === 'es' ? 'Ecualizador y Ojos' : 'Equalizer & Eyes', active: true, fallback: '#ff007f' },
+                                    { key: 'wristbandColor', label: lang === 'es' ? 'Display LED, Puños y Tweeters' : 'LED Display, Fists & Tweeters', active: true, fallback: '#ff007f' },
+                                    { key: 'shoesColor', label: lang === 'es' ? 'Zapatos' : 'Shoes', active: true, fallback: '#ffe600' },
+                                    { key: 'backpackColor', label: lang === 'es' ? 'Mochila' : 'Backpack', active: activeCosmetics.backpackEnabled, fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                    { key: 'companionColor', label: lang === 'es' ? 'Mascota' : 'Cyber Pet', active: activeCosmetics.companionType !== 'none', fallback: previewPlayer?.color || PLAYER_COLORS[0] },
+                                  ];
+                                }
 
                                 return colorItems
                                   .filter(item => item.active)

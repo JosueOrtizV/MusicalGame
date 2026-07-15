@@ -22,10 +22,6 @@ export function useSocket() {
       if (socket.connected) socket.disconnect();
       return;
     }
-
-    // Connect
-    if (!socket.connected) socket.connect();
-
     const onConnect = () => {
       const wasInRoom = !!useGameStore.getState().room;
       
@@ -61,6 +57,9 @@ export function useSocket() {
       const rtt = Date.now() - clientTime;
       setClockOffset(serverTime - (clientTime + rtt / 2));
       store.setLatency(rtt);
+      if (!useGameStore.getState().isConnected) {
+        store.setConnected(true);
+      }
     };
 
     // ---- Room events -------------------------------------------------------
@@ -149,7 +148,7 @@ export function useSocket() {
       useGameStore.getState().addChatMessage(message);
     };
 
-    // Register all listeners
+    // Register all listeners BEFORE checking connection state
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('connect_error', onConnectError);
@@ -164,6 +163,13 @@ export function useSocket() {
     socket.on('game:player_died', onGamePlayerDied);
     socket.on('game:over', onGameOver);
     socket.on('chat:broadcast', onChatBroadcast);
+
+    // If socket is already connected, invoke onConnect handler immediately
+    if (socket.connected) {
+      onConnect();
+    } else {
+      socket.connect();
+    }
 
     // Dynamic latency checks (5s interval, pauses when tab is hidden)
     const interval = setInterval(() => {

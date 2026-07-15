@@ -134,6 +134,7 @@ export const useGameStore = create<GameStore>()(
         ];
         const randomColor = colors[Math.floor(Math.random() * colors.length)] || '#39FF14';
         return {
+          modelType: 'sound_monster',
           companionType: 'none',
           headphonesEnabled: true,
           backpackEnabled: true,
@@ -198,7 +199,7 @@ export const useGameStore = create<GameStore>()(
       cameraYaw: 0,
       dashCooldownEnd: 0,
       isPointerLocked: false,
-      cameraMode: 'movable',
+      cameraMode: 'static',
       hasSelectedCameraMode: false,
       mobileControlType: 'joystick',
       wasAliveThisRound: false,

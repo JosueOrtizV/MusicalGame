@@ -49,6 +49,7 @@ export interface GridPosition {
 }
 
 export interface PlayerCosmetics {
+  modelType?: 'default' | 'retro_cyber_bot' | 'sound_monster';
   companionType: 'cassette' | 'floppy' | 'orb' | 'none';
   headphonesEnabled: boolean;
   backpackEnabled: boolean;
@@ -57,6 +58,8 @@ export interface PlayerCosmetics {
   shoesColor?: string;
   visorColor?: string;
   heartColor?: string;
+  wristbandColor?: string;
+  beltColor?: string;
   headphonesColor?: string;
   backpackColor?: string;
   companionColor?: string;

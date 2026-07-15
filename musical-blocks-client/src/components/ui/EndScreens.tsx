@@ -53,6 +53,18 @@ export function SinglePlayerEndScreen() {
   const isSubmittingScore = store.isSubmittingScore;
   const isNewHighScore = spLastScore > 0 && spLastScore === store.spHighScore;
 
+  // Release pointer lock immediately on Game Over so the mouse cursor is freed to click UI buttons
+  useEffect(() => {
+    if (typeof document !== 'undefined' && document.pointerLockElement) {
+      try {
+        document.exitPointerLock();
+      } catch (err) {
+        console.debug('Exit pointer lock failed on singleplayer end screen:', err);
+      }
+    }
+    useGameStore.setState({ isPointerLocked: false });
+  }, []);
+
   return (
     <div className="overlay overlay--winner" role="dialog" aria-modal="true">
       <div className="confetti-bg" aria-hidden="true" />
@@ -83,15 +95,17 @@ export function SinglePlayerEndScreen() {
           </p>
 
           {isSubmittingScore ? (
-            <div style={{ 
-              marginTop: '1rem', 
-              fontFamily: 'var(--font-retro)', 
-              fontSize: '0.85rem', 
-              color: '#38bdf8', 
-              letterSpacing: '0.05em',
-              animation: 'pulse 1.5s infinite' 
-            }}>
-              {store.language === 'es' ? '[ VERIFICANDO RANGO GLOBAL... ]' : '[ VERIFYING GLOBAL RANK... ]'}
+            <div className="rank-loading-container">
+              <div className="equalizer-bars" aria-hidden="true">
+                <div className="equalizer-bar" />
+                <div className="equalizer-bar" />
+                <div className="equalizer-bar" />
+                <div className="equalizer-bar" />
+                <div className="equalizer-bar" />
+              </div>
+              <div className="rank-loading-text">
+                {store.language === 'es' ? '[ CALCULANDO RANGO GLOBAL... ]' : '[ CALCULATING GLOBAL RANK... ]'}
+              </div>
             </div>
           ) : spLastRank !== null ? (
             <div style={{ 
@@ -174,7 +188,7 @@ export function SinglePlayerEndScreen() {
               className="lobby-btn lobby-btn--secondary"
               style={{ cursor: 'pointer' }}
               onClick={() => {
-                useGameStore.setState({ screen: 'home' });
+                useGameStore.setState({ screen: 'home', gameState: null });
               }}
             >
               {t('backToMenu')}
@@ -204,6 +218,15 @@ export function WinnerScreen() {
 
   // Delay victory card appearance so the 3D winner celebration is fully visible first
   useEffect(() => {
+    if (typeof document !== 'undefined' && document.pointerLockElement) {
+      try {
+        document.exitPointerLock();
+      } catch (err) {
+        console.debug('Exit pointer lock failed on winner screen:', err);
+      }
+    }
+    useGameStore.setState({ isPointerLocked: false });
+
     const timer = setTimeout(() => {
       setIsCardVisible(true);
     }, 4500); // 4.5s delay of pure unobstructed 3D celebration

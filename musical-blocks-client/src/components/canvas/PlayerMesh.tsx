@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { Text, useGLTF, useAnimations, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { Player } from '@/src/shared/types';
+import { Player, PlayerCosmetics } from '@/src/shared/types';
 import { BLOCK_SIZE, LERP_SPEED } from '@/src/lib/constants';
 import { spawnParticles } from './ParticleSystem';
 import { useGameStore } from '@/src/stores/gameStore';
@@ -18,7 +18,7 @@ interface PlayerMeshProps {
   previewAnimType?: 'dance' | 'idle' | 'celebrate' | null;
 }
 
-const PLAYER_Y_OFFSET = 0.45; // sits on top of block
+const PLAYER_Y_OFFSET = 0.59; // sits on top of block (block height 0.28 / 2 = 0.14 top surface offset)
 
 // ---------------------------------------------------------------------------
 //  PlayerMesh — voxel character loading 3D GLB with 6 custom animations
@@ -78,11 +78,16 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
 
   // Extract and default player cosmetics
   const cosmetics = useMemo(() => {
-    return player.cosmetics || {
+    const defaults: PlayerCosmetics = {
       companionType: 'none',
       headphonesEnabled: false,
       backpackEnabled: false,
-      skinMaterial: 'matte'
+      skinMaterial: 'matte',
+      modelType: 'sound_monster',
+    };
+    return {
+      ...defaults,
+      ...player.cosmetics
     };
   }, [player.cosmetics]);
 
@@ -102,13 +107,15 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
     if (cosmetics.danceStyle && cosmetics.danceStyle !== 'random') {
       return cosmetics.danceStyle;
     }
+    // Calculate deterministic index per player using ID + song sequence
     let hash = 0;
-    const seed = player.id + gameSongIndicesStr;
-    for (let i = 0; i < seed.length; i++) {
-      hash += seed.charCodeAt(i);
+    const key = `${player.id}-${gameSongIndicesStr}`;
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash << 5) - hash + key.charCodeAt(i);
+      hash |= 0;
     }
-    const dances = ['dance', 'dance2', 'dance3', 'dance4'];
-    return dances[hash % dances.length];
+    const danceOptions = ['dance', 'dance2', 'dance3', 'dance4'];
+    return danceOptions[Math.abs(hash) % danceOptions.length];
   }, [player.id, gameSongIndicesStr, cosmetics.danceStyle]);
 
   // Assign an idle animation (idle or idle2) based on custom cosmetics selection or match seed
@@ -117,11 +124,12 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
       return cosmetics.idleStyle;
     }
     let hash = 0;
-    const seed = player.id + gameSongIndicesStr;
-    for (let i = 0; i < seed.length; i++) {
-      hash += seed.charCodeAt(i);
+    const key = `idle-${player.id}-${gameSongIndicesStr}`;
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash << 5) - hash + key.charCodeAt(i);
+      hash |= 0;
     }
-    return hash % 2 === 0 ? 'idle' : 'idle2';
+    return Math.abs(hash) % 2 === 0 ? 'idle' : 'idle2';
   }, [player.id, gameSongIndicesStr, cosmetics.idleStyle]);
 
   // Assign a victory/celebrate animation (celebrate or celebrate2) based on custom cosmetics selection or match seed
@@ -130,16 +138,17 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
       return cosmetics.celebrateStyle;
     }
     let hash = 0;
-    const seed = player.id + gameSongIndicesStr;
-    for (let i = 0; i < seed.length; i++) {
-      hash += seed.charCodeAt(i);
+    const key = `celebrate-${player.id}-${gameSongIndicesStr}`;
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash << 5) - hash + key.charCodeAt(i);
+      hash |= 0;
     }
-    return hash % 2 === 0 ? 'celebrate' : 'celebrate2';
+    return Math.abs(hash) % 2 === 0 ? 'celebrate' : 'celebrate2';
   }, [player.id, gameSongIndicesStr, cosmetics.celebrateStyle]);
 
 
   // Read companionType from dynamic player cosmetics
-  const companionType = useMemo(() => {
+  const activeCompanionType = useMemo(() => {
     return cosmetics.companionType;
   }, [cosmetics.companionType]);
 
@@ -151,7 +160,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
 
   // Death animation state
   const wasAlive = useRef(player.isAlive);
-  const isDead = !player.isAlive;
+  const isDead = isPreview ? false : !player.isAlive;
 
   // Initialize group position once on mount so we don't snap/override in JSX
   const positionInitialized = useRef(false);
@@ -163,8 +172,15 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
     }
   }, [targetX, targetZ, isPreview]);
 
-  // Load the cyber voxel player model
-  const { scene: rawScene, animations } = useGLTF('/models/player.glb?v=5');
+  // Load the selected cyber voxel player model
+  const selectedModelType = player.cosmetics?.modelType || 'sound_monster';
+  const modelPath = selectedModelType === 'retro_cyber_bot'
+    ? '/models/retro_cyber_bot.glb?v=6'
+    : selectedModelType === 'default'
+    ? '/models/player.glb?v=6'
+    : '/models/sound_monster.glb?v=6';
+
+  const { scene: rawScene, animations } = useGLTF(modelPath);
   
   // Clone the scene and deep clone its materials so each player has independent bones and materials
   const clonedScene = useMemo(() => {
@@ -268,7 +284,8 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
     if (typeof window === 'undefined') return;
 
     const initialPl = playerRef.current;
-    const initialCos = cosmeticsRef.current;
+    const rawInitialCos = cosmeticsRef.current;
+    const initialCos = { ...rawInitialCos, modelType: rawInitialCos?.modelType || 'sound_monster' };
 
     // 1. Create albedo (color) canvas
     const colorCanvas = document.createElement('canvas');
@@ -290,9 +307,21 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
     ctx.fillStyle = initialCos.visorColor ?? '#00f3ff';
     ctx.fillRect(4, 0, 4, 4);
 
-    // Draw reactor / soles (8,0 to 11,3) - dynamic reactor!
+    // Draw reactor / heart (8,0 to 11,3)
     ctx.fillStyle = initialCos.heartColor ?? '#ff007f';
     ctx.fillRect(8, 0, 4, 4);
+
+    // Draw wristband rest state
+    ctx.fillStyle = '#1a1a24';
+    ctx.fillRect(8, 4, 4, 4);
+    ctx.fillStyle = initialCos.wristbandColor ?? '#ff007f';
+    ctx.fillRect(9, 5, 2, 2);
+
+    // Draw belt rest state
+    ctx.fillStyle = '#1a1a24';
+    ctx.fillRect(0, 8, 4, 4);
+    ctx.fillStyle = initialCos.beltColor ?? '#ff007f';
+    ctx.fillRect(1, 9, 2, 2);
 
     // Draw headphones (12,0 to 15,3) - high-contrast crisp white!
     ctx.fillStyle = '#ffffff';
@@ -306,7 +335,11 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
     ctx.fillStyle = '#0e0e14';
     ctx.fillRect(4, 4, 4, 4);
 
-    // 2. Create emissive canvas (only visor and heart/soles glow)
+    // Draw gold chain (12,4 to 15,7) - bright gold metal!
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(12, 4, 4, 4);
+
+    // 2. Create emissive canvas (only visor, heart/soles, and gold chain glow)
     const emissiveCanvas = document.createElement('canvas');
     emissiveCanvas.width = 16;
     emissiveCanvas.height = 16;
@@ -321,20 +354,91 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
     eCtx.fillStyle = initialCos.visorColor ?? '#00f3ff';
     eCtx.fillRect(4, 0, 4, 4);
 
-    // Reactor / soles glow dynamically (8,0 to 11,3)
+    // Heart glows dynamically (8,0 to 11,3)
     eCtx.fillStyle = initialCos.heartColor ?? '#ff007f';
     eCtx.fillRect(8, 0, 4, 4);
 
-    // Neon holographic skin: fill the ENTIRE canvas with player.color first,
-    // then overlay visor and reactor on top so they still show through!
+    // Wristband rest state glow
+    eCtx.fillStyle = '#000000';
+    eCtx.fillRect(8, 4, 4, 4);
+    eCtx.fillStyle = initialCos.wristbandColor ?? '#ff007f';
+    eCtx.fillRect(9, 5, 2, 2);
+
+    // Belt rest state glow (only if not sound_monster, otherwise it's equalizer)
+    eCtx.fillStyle = '#000000';
+    eCtx.fillRect(0, 8, 4, 4);
+    if (initialCos.modelType !== 'sound_monster') {
+      eCtx.fillStyle = initialCos.beltColor ?? '#ff007f';
+      eCtx.fillRect(1, 9, 2, 2);
+    } else {
+      // Sound Monster Ecualizador init
+      eCtx.fillStyle = initialCos.heartColor ?? '#ff007f';
+      eCtx.fillRect(0, 11, 4, 1);
+    }
+
+    if (initialCos.modelType === 'sound_monster') {
+      // Bocinas static init
+      eCtx.fillStyle = initialCos.visorColor ?? '#00f3ff';
+      eCtx.fillRect(12, 8, 4, 4);
+      
+      // Shoes heartbeat init (overwrite the standard shoes color mapping below)
+      eCtx.fillStyle = '#000000';
+      eCtx.fillRect(0, 4, 4, 4);
+      eCtx.fillStyle = initialCos.shoesColor ?? '#ffe600';
+      eCtx.fillRect(1, 5, 2, 2);
+    }
+
+    // Gold chain emissive glow (12,4 to 15,7)
+    eCtx.fillStyle = '#ffd700';
+    eCtx.fillRect(12, 4, 4, 4);
+
+    // Neon holographic skin: fill body pixels with player.color,
+    // but preserve dark jacket/suit structure and accessories so details are crisp!
     if (initialCos.skinMaterial === 'neon') {
       eCtx.fillStyle = initialPl.color;
       eCtx.fillRect(0, 0, 16, 16); // whole body glows in player color
-      // Re-draw visor (cyan) and reactor (magenta) ON TOP so they remain visible
+      
+      // Preserve dark jacket, belt, shoulder pads & knee guards contrast (4,4)
+      eCtx.fillStyle = '#05050a';
+      eCtx.fillRect(4, 4, 4, 4);
+
+      // Re-draw visor, reactor, wristband, belt, gold chain, and headphones ON TOP so they remain crisp
+      eCtx.fillStyle = '#000000';
+      eCtx.fillRect(8, 4, 4, 4); // Wristband dark bg
+      eCtx.fillRect(0, 8, 4, 4); // Belt dark bg
+      
+      eCtx.fillStyle = initialCos.wristbandColor ?? '#ff007f';
+      eCtx.fillRect(9, 5, 2, 2);
+
+      if (initialCos.modelType !== 'sound_monster') {
+        eCtx.fillStyle = initialCos.beltColor ?? '#ff007f';
+        eCtx.fillRect(1, 9, 2, 2);
+      } else {
+        eCtx.fillStyle = initialCos.heartColor ?? '#ff007f';
+        eCtx.fillRect(0, 11, 4, 1);
+      }
+
       eCtx.fillStyle = initialCos.visorColor ?? '#00f3ff';
       eCtx.fillRect(4, 0, 4, 4);
       eCtx.fillStyle = initialCos.heartColor ?? '#ff007f';
       eCtx.fillRect(8, 0, 4, 4);
+      eCtx.fillStyle = '#ffffff';
+      eCtx.fillRect(12, 0, 4, 4);
+      
+      if (initialCos.modelType === 'sound_monster') {
+        eCtx.fillStyle = initialCos.visorColor ?? '#00f3ff';
+        eCtx.fillRect(12, 8, 4, 4);
+        eCtx.fillStyle = '#000000';
+        eCtx.fillRect(0, 4, 4, 4);
+        eCtx.fillStyle = initialCos.shoesColor ?? '#ffe600';
+        eCtx.fillRect(1, 5, 2, 2);
+      } else {
+        eCtx.fillStyle = initialCos.shoesColor ?? '#ffe600';
+        eCtx.fillRect(0, 4, 4, 4);
+      }
+
+      eCtx.fillStyle = '#ffd700';
+      eCtx.fillRect(12, 4, 4, 4);
     }
 
     // 3. Create shoes albedo (color) canvas
@@ -570,7 +674,8 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
     const g = groupRef.current;
     const phase = useGameStore.getState().gameState?.phase ?? 'LOBBY';
     const activePl = playerRef.current;
-    const activeCos = cosmeticsRef.current;
+    const rawActiveCos = cosmeticsRef.current;
+    const activeCos = { ...rawActiveCos, modelType: rawActiveCos?.modelType || 'sound_monster' };
     const companionType = activeCos.companionType;
 
     // Throttle dynamic canvas textures upload to GPU to 30 FPS (33ms) to save huge bandwidth
@@ -830,7 +935,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
         // 3a. Digital Foot footprints
         spawnParticles({
           x: g.position.x + (Math.random() - 0.5) * 0.05,
-          y: g.position.y - 0.42, // soles of their feet
+          y: g.position.y - 0.45, // soles of their feet on top of block (0.59 - 0.45 = 0.14)
           z: g.position.z + (Math.random() - 0.5) * 0.05,
           color: activePl.color,
           count: 1,
@@ -876,8 +981,10 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
       const time = state.clock.elapsedTime;
       const visorColor = activeCos.visorColor ?? '#00f3ff';
       const heartColor = activeCos.heartColor ?? '#ff007f';
+      const wristbandColor = activeCos.wristbandColor ?? '#ff007f';
+      const beltColor = activeCos.beltColor ?? '#ff007f';
       const shoesColor = activeCos.shoesColor ?? '#ffe600';
-      const suitColor = activePl.color;
+      const suitColor = activeCos.primaryColor ?? activePl.color;
 
       // 4a. Visor rendering base background (DARK, not glowing solid visorColor!)
       ctx.fillStyle = '#1a1a24'; // suit background (dark slate)
@@ -891,9 +998,17 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
       ctx.fillStyle = '#1a1a24';
       ctx.fillRect(4, 0, 4, 4);
 
-      // Reactor / soles (8,0 to 11,3)
+      // Reactor / heart (8,0 to 11,3)
       ctx.fillStyle = heartColor;
       ctx.fillRect(8, 0, 4, 4);
+
+      // Wristband (8,4 to 11,7)
+      ctx.fillStyle = wristbandColor;
+      ctx.fillRect(8, 4, 4, 4);
+
+      // Belt (0,8 to 3,11)
+      ctx.fillStyle = beltColor;
+      ctx.fillRect(0, 8, 4, 4);
 
       // Headphones (12,0 to 15,3) - white
       ctx.fillStyle = '#ffffff';
@@ -907,38 +1022,158 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
       ctx.fillStyle = '#0e0e14';
       ctx.fillRect(4, 4, 4, 4);
 
-      // Base emissive mapping (All black by default except visor and reactor active pixels)
-      eCtx.fillStyle = '#000000'; // black = no glow
-      eCtx.fillRect(0, 0, 16, 16);
+      // Gold chain (12,4 to 15,7) - bright metallic gold!
+      ctx.fillStyle = '#ffd700';
+      ctx.fillRect(12, 4, 4, 4);
 
-      // Neon holographic skin glow
+      // Base emissive mapping
       if (activeCos.skinMaterial === 'neon') {
+        // Neon holographic skin glow
         eCtx.fillStyle = suitColor;
         eCtx.fillRect(0, 0, 16, 16); // whole body glows in player color
-        // Overlays
-        eCtx.fillStyle = '#000000'; // visor and reactor are drawn dark initially to allow dynamic glows
+        
+        // Preserve dark jacket, shoulder pads & knee guards contrast (4,4)
+        eCtx.fillStyle = '#05050a';
+        eCtx.fillRect(4, 4, 4, 4);
+
+        // Overlays: visor and reactor are drawn dark initially to allow dynamic glows
+        eCtx.fillStyle = '#000000';
         eCtx.fillRect(4, 0, 4, 4);
         eCtx.fillRect(8, 0, 4, 4);
+      } else {
+        // All black by default
+        eCtx.fillStyle = '#000000'; // black = no glow
+        eCtx.fillRect(0, 0, 16, 16);
+      }
+
+      const isDeactivated = !isPreview && (nextAnim === 'death' || phase === 'ELIMINATING');
+
+      // Wristband & Belt dynamic pulse
+      ctx.fillStyle = '#1a1a24';
+      ctx.fillRect(8, 4, 4, 4);
+      ctx.fillRect(0, 8, 4, 4);
+      eCtx.fillStyle = '#000000';
+      eCtx.fillRect(8, 4, 4, 4);
+      eCtx.fillRect(0, 8, 4, 4);
+
+      if (isDeactivated) {
+        // Red deactivated error state for wristband & belt
+        ctx.fillStyle = '#ff0055'; eCtx.fillStyle = '#ff0055';
+        ctx.fillRect(9, 5, 2, 2);
+        eCtx.fillRect(9, 5, 2, 2);
+
+        if (activeCos.modelType !== 'sound_monster') {
+          ctx.fillStyle = '#ff0055'; eCtx.fillStyle = '#ff0055';
+          ctx.fillRect(1, 9, 2, 2);
+          eCtx.fillRect(1, 9, 2, 2);
+        }
+      } else if (beatPulse > 0.45) {
+        // Pulsing expanded shape for wristband
+        ctx.fillStyle = wristbandColor; eCtx.fillStyle = wristbandColor;
+        ctx.fillRect(9, 4, 2, 1); ctx.fillRect(8, 5, 4, 2); ctx.fillRect(9, 7, 2, 1);
+        eCtx.fillRect(9, 4, 2, 1); eCtx.fillRect(8, 5, 4, 2); eCtx.fillRect(9, 7, 2, 1);
+
+        // Pulsing expanded shape for belt (only if not sound_monster)
+        if (activeCos.modelType !== 'sound_monster') {
+          ctx.fillStyle = beltColor; eCtx.fillStyle = beltColor;
+          ctx.fillRect(1, 8, 2, 1); ctx.fillRect(0, 9, 4, 2); ctx.fillRect(1, 11, 2, 1);
+          eCtx.fillRect(1, 8, 2, 1); eCtx.fillRect(0, 9, 4, 2); eCtx.fillRect(1, 11, 2, 1);
+        }
+      } else {
+        // Rest state core
+        ctx.fillStyle = wristbandColor; eCtx.fillStyle = wristbandColor;
+        ctx.fillRect(9, 5, 2, 2);
+        eCtx.fillRect(9, 5, 2, 2);
+
+        if (activeCos.modelType !== 'sound_monster') {
+          ctx.fillStyle = beltColor; eCtx.fillStyle = beltColor;
+          ctx.fillRect(1, 9, 2, 2);
+          eCtx.fillRect(1, 9, 2, 2);
+        }
+      }
+
+      if (activeCos.modelType === 'sound_monster') {
+        if (isDeactivated) {
+          // [12,8,16,12] Bocinas Static Error Red
+          ctx.fillStyle = '#ff0055'; eCtx.fillStyle = '#ff0055';
+          ctx.fillRect(12, 8, 4, 4);
+          eCtx.fillRect(12, 8, 4, 4);
+
+          // [0,8,4,12] Ecualizador - Flatline Red Monitor Line
+          ctx.fillStyle = '#ff0055'; eCtx.fillStyle = '#ff0055';
+          ctx.fillRect(0, 11, 4, 1);
+          eCtx.fillRect(0, 11, 4, 1);
+
+          // [0,4,4,8] Zapatos Heartbeat Static Red
+          ctx.fillStyle = '#1a1a24'; eCtx.fillStyle = '#000000';
+          ctx.fillRect(0, 4, 4, 4); eCtx.fillRect(0, 4, 4, 4);
+          ctx.fillStyle = '#ff0055'; eCtx.fillStyle = '#ff0055';
+          ctx.fillRect(1, 5, 2, 2); eCtx.fillRect(1, 5, 2, 2);
+        } else {
+          // [12,8,16,12] Bocinas Static
+          ctx.fillStyle = visorColor; eCtx.fillStyle = visorColor;
+          ctx.fillRect(12, 8, 4, 4);
+          eCtx.fillRect(12, 8, 4, 4);
+
+          // [0,8,4,12] Ecualizador (Uses heartColor)
+          const eqH0 = Math.max(1, Math.floor(1 + beatPulse * 3));
+          const eqH1 = Math.max(1, Math.floor(1 + (Math.sin(time * 12) * 0.5 + 0.5) * 3));
+          const eqH2 = Math.max(1, Math.floor(1 + (Math.cos(time * 10) * 0.5 + 0.5) * 3));
+          const eqH3 = Math.max(1, Math.floor(1 + beatPulse * 3));
+
+          ctx.fillStyle = heartColor; eCtx.fillStyle = heartColor;
+          for (let y = 0; y < eqH0; y++) { ctx.fillRect(0, 11 - y, 1, 1); eCtx.fillRect(0, 11 - y, 1, 1); }
+          for (let y = 0; y < eqH1; y++) { ctx.fillRect(1, 11 - y, 1, 1); eCtx.fillRect(1, 11 - y, 1, 1); }
+          for (let y = 0; y < eqH2; y++) { ctx.fillRect(2, 11 - y, 1, 1); eCtx.fillRect(2, 11 - y, 1, 1); }
+          for (let y = 0; y < eqH3; y++) { ctx.fillRect(3, 11 - y, 1, 1); eCtx.fillRect(3, 11 - y, 1, 1); }
+
+          // [0,4,4,8] Zapatos Heartbeat (Uses shoesColor)
+          ctx.fillStyle = '#1a1a24'; eCtx.fillStyle = '#000000';
+          ctx.fillRect(0, 4, 4, 4); eCtx.fillRect(0, 4, 4, 4);
+          ctx.fillStyle = shoesColor; eCtx.fillStyle = shoesColor;
+          if (beatPulse > 0.45) {
+            ctx.fillRect(1, 4, 2, 1); ctx.fillRect(0, 5, 4, 2); ctx.fillRect(1, 7, 2, 1);
+            eCtx.fillRect(1, 4, 2, 1); eCtx.fillRect(0, 5, 4, 2); eCtx.fillRect(1, 7, 2, 1);
+          } else {
+            ctx.fillRect(1, 5, 2, 2); eCtx.fillRect(1, 5, 2, 2);
+          }
+        }
+      }
+
+      // Gold chain subtle emissive sheen
+      eCtx.fillStyle = '#ffd700';
+      eCtx.fillRect(12, 4, 4, 4);
+
+      if (activeCos.skinMaterial === 'neon') {
+        // Preserve headphones, shoes and Gold Chain overlays in neon mode!
+        eCtx.fillStyle = '#ffffff';
+        eCtx.fillRect(12, 0, 4, 4);
+        eCtx.fillStyle = isDeactivated ? '#ff0055' : shoesColor;
+        eCtx.fillRect(0, 4, 4, 4);
+        eCtx.fillStyle = '#ffd700';
+        eCtx.fillRect(12, 4, 4, 4);
       }
 
       // Visor animation overlays (glowing active pixels drawn on top of dark visor background)
-      if (nextAnim === 'death' || phase === 'ELIMINATING') {
-        // x_x eyes
-        ctx.fillStyle = '#ff0055';
-        eCtx.fillStyle = '#ff0055';
-        ctx.fillRect(4, 1, 1, 1);
-        ctx.fillRect(7, 1, 1, 1);
-        ctx.fillRect(5, 2, 1, 1);
-        ctx.fillRect(6, 2, 1, 1);
-        ctx.fillRect(4, 3, 1, 1);
-        ctx.fillRect(7, 3, 1, 1);
+      if (isDeactivated) {
+        if (activeCos.modelType !== 'sound_monster') {
+          // x_x eyes for visor models
+          ctx.fillStyle = '#ff0055';
+          eCtx.fillStyle = '#ff0055';
+          ctx.fillRect(4, 1, 1, 1);
+          ctx.fillRect(7, 1, 1, 1);
+          ctx.fillRect(5, 2, 1, 1);
+          ctx.fillRect(6, 2, 1, 1);
+          ctx.fillRect(4, 3, 1, 1);
+          ctx.fillRect(7, 3, 1, 1);
 
-        eCtx.fillRect(4, 1, 1, 1);
-        eCtx.fillRect(7, 1, 1, 1);
-        eCtx.fillRect(5, 2, 1, 1);
-        eCtx.fillRect(6, 2, 1, 1);
-        eCtx.fillRect(4, 3, 1, 1);
-        eCtx.fillRect(7, 3, 1, 1);
+          eCtx.fillRect(4, 1, 1, 1);
+          eCtx.fillRect(7, 1, 1, 1);
+          eCtx.fillRect(5, 2, 1, 1);
+          eCtx.fillRect(6, 2, 1, 1);
+          eCtx.fillRect(4, 3, 1, 1);
+          eCtx.fillRect(7, 3, 1, 1);
+        }
       } 
       else if (nextAnim.startsWith('celebrate') || phase === 'GAME_OVER') {
         // Heart symbol <3 pulsing
@@ -1006,22 +1241,29 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
       eCtx.fillStyle = '#000000';
       eCtx.fillRect(8, 0, 4, 4);
 
-      ctx.fillStyle = heartColor;
-      eCtx.fillStyle = heartColor;
-
-      if (beatPulse > 0.45) {
-        // Pulsing larger arc reactor shape
-        ctx.fillRect(9, 0, 2, 1);
-        ctx.fillRect(8, 1, 4, 2);
-        ctx.fillRect(9, 3, 2, 1);
-
-        eCtx.fillRect(9, 0, 2, 1);
-        eCtx.fillRect(8, 1, 4, 2);
-        eCtx.fillRect(9, 3, 2, 1);
-      } else {
-        // Rest state core
+      if (isDeactivated) {
+        ctx.fillStyle = '#ff0055';
+        eCtx.fillStyle = '#ff0055';
         ctx.fillRect(9, 1, 2, 2);
         eCtx.fillRect(9, 1, 2, 2);
+      } else {
+        ctx.fillStyle = heartColor;
+        eCtx.fillStyle = heartColor;
+
+        if (beatPulse > 0.45) {
+          // Pulsing larger arc reactor shape
+          ctx.fillRect(9, 0, 2, 1);
+          ctx.fillRect(8, 1, 4, 2);
+          ctx.fillRect(9, 3, 2, 1);
+
+          eCtx.fillRect(9, 0, 2, 1);
+          eCtx.fillRect(8, 1, 4, 2);
+          eCtx.fillRect(9, 3, 2, 1);
+        } else {
+          // Rest state core
+          ctx.fillRect(9, 1, 2, 2);
+          eCtx.fillRect(9, 1, 2, 2);
+        }
       }
 
       // 4c. Redraw independent neon shoe soles canvas (restoring pixel-art pulse: 2x2 core to 4x4 expanded cross)
@@ -1030,10 +1272,11 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
       shoesECtx.fillStyle = '#000000';
       shoesECtx.fillRect(0, 0, 16, 16);
 
-      shoesCtx.fillStyle = shoesColor;
-      shoesECtx.fillStyle = shoesColor;
+      const activeShoesColor = isDeactivated ? '#ff0055' : shoesColor;
+      shoesCtx.fillStyle = activeShoesColor;
+      shoesECtx.fillStyle = activeShoesColor;
 
-      if (beatPulse > 0.45) {
+      if (!isDeactivated && beatPulse > 0.45) {
         // Expand to full cross shape (4x4) at beat pulse peaks
         shoesCtx.fillRect(9, 0, 2, 1);
         shoesCtx.fillRect(8, 1, 4, 2);
@@ -1043,7 +1286,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
         shoesECtx.fillRect(8, 1, 4, 2);
         shoesECtx.fillRect(9, 3, 2, 1);
       } else {
-        // Core central 2x2 shape in idle rest state
+        // Core central 2x2 shape in idle rest state / deactivated
         shoesCtx.fillRect(9, 1, 2, 2);
         shoesECtx.fillRect(9, 1, 2, 2);
       }
@@ -1057,7 +1300,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
             sole.material.color.set('#ffffff'); // reset color to white so texture shoesColor is fully vibrant
           }
           sole.material.emissive.set('#ffffff'); // enable full texture emission color
-          sole.material.emissiveIntensity = 1.0 + beatPulse * 0.4; // Max 1.4 to avoid overexposure!
+          sole.material.emissiveIntensity = isDeactivated ? 1.0 : 1.0 + beatPulse * 0.4;
         }
       });
 
@@ -1266,7 +1509,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
         <primitive object={clonedScene} scale={0.96} position={[0, 0, 0]} />
 
         {/* Declarative Procedural Cyber-Headphones */}
-        {player.isAlive && cosmetics.headphonesEnabled && (
+        {player.isAlive && cosmetics.headphonesEnabled && cosmetics.modelType !== 'sound_monster' && (
           <group ref={headphoneRef}>
             {/* 1. Headband (Upgraded Voxel Headband with mechanical plates) */}
             <group position={[0, 0.48, 0]}>
@@ -1636,9 +1879,9 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
       </group>
 
       {/* Floating Retro Cyber Companion Accessory */}
-      {player.isAlive && companionType !== 'none' && (
+      {player.isAlive && activeCompanionType !== 'none' && (
         <group ref={companionRef}>
-          {companionType === 'cassette' && (
+          {activeCompanionType === 'cassette' && (
             <group>
               {/* Cassette Main Body */}
               <mesh castShadow receiveShadow>
@@ -1671,7 +1914,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
             </group>
           )}
 
-          {companionType === 'floppy' && (
+          {activeCompanionType === 'floppy' && (
             <group>
               {/* Main Floppy Shell */}
               <mesh castShadow receiveShadow>
@@ -1708,7 +1951,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
             </group>
           )}
 
-          {companionType === 'orb' && (
+          {activeCompanionType === 'orb' && (
             <group>
               {/* Central Core Energy Sphere */}
               <mesh ref={orbCoreRef} castShadow>
@@ -1767,5 +2010,7 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
   );
 }
 
-useGLTF.preload('/models/player.glb?v=5');
+useGLTF.preload('/models/player.glb?v=6');
+useGLTF.preload('/models/retro_cyber_bot.glb?v=6');
+useGLTF.preload('/models/sound_monster.glb?v=6');
 

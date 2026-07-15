@@ -64,7 +64,13 @@ export function RoomClient() {
   // Auto-join room when socket connects and store is hydrated
   useEffect(() => {
     if (!isHydrated || !isConnected || !roomId) return;
-    // Already in this room
+    
+    // If we already attempted to join (successfully or not), don't try again automatically.
+    // This prevents a race condition where being kicked clears the room and triggers a re-join,
+    // which cancels the Next.js router navigation back to the lobby.
+    if (hasAttemptedJoinRef.current) return;
+
+    // Already in this room (fallback check)
     if (room && room.id.toUpperCase() === roomId.toUpperCase()) {
       hasAttemptedJoinRef.current = true;
       return;

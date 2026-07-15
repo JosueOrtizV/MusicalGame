@@ -3966,25 +3966,31 @@ body.game-starting .toast-container {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at center, rgba(217, 70, 239, 0.05) 0%, transparent 80%), rgba(2, 2, 8, 0.4);
-  border: 1px solid rgba(217, 70, 239, 0.15);
+  background: radial-gradient(ellipse at 50% 35%, rgba(124, 58, 237, 0.3) 0%, rgba(30, 27, 75, 0.6) 50%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1px solid rgba(217, 70, 239, 0.3);
   border-radius: var(--radius-lg);
   padding: 1rem;
   height: 100%;
   min-height: 0;
   max-height: 100%;
   box-sizing: border-box;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.4), 0 0 25px rgba(168, 85, 247, 0.2);
 }
 
 .locker-modal-canvas-container {
   width: 100%;
   flex: 1;
   min-height: 0;
-  background: rgba(2, 2, 6, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: #111827 !important;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(0, 243, 255, 0.3) 0%, rgba(124, 58, 237, 0.2) 60%, transparent 100%),
+    linear-gradient(rgba(0, 243, 255, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 243, 255, 0.15) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 40px 40px, 40px 40px !important;
+  border: 1px solid rgba(0, 243, 255, 0.4) !important;
   border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 243, 255, 0.3);
 }
 
 .locker-modal-hint {
@@ -4006,6 +4012,29 @@ body.game-starting .toast-container {
   max-height: 100%;
   overflow: hidden;
   /* FIXED PANEL, TABS REMAIN PINNED AT THE TOP */
+}
+
+/* Terminal Container with Soft Scanlines */
+.hud-terminal-container {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 0, 127, 0.25) !important;
+  background: radial-gradient(circle at 50% 35%, rgba(0, 243, 255, 0.1) 0%, rgba(4, 4, 14, 0.85) 100%) !important;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
+}
+
+.hud-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.15) 50%), repeating-linear-gradient(90deg,
+      rgba(255, 0, 0, 0.02),
+      rgba(0, 255, 0, 0.01),
+      rgba(0, 0, 255, 0.02));
+  background-size: 100% 4px, 6px 100%;
+  opacity: 0.15;
+  z-index: 2;
 }
 
 /* Scrollable Container for active Tab contents */
@@ -5671,8 +5700,88 @@ body:has(.leaderboard-modal-overlay) .leaderboard-btn-container {
     opacity: 0;
     transform: scale(0.6) translateY(10px);
   }
+
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+/* Musical Neon Equalizer Loader */
+.rank-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+
+.equalizer-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  height: 24px;
+}
+
+.equalizer-bar {
+  width: 5px;
+  border-radius: 3px;
+  animation: eqBounce 0.8s ease-in-out infinite alternate;
+}
+
+.equalizer-bar:nth-child(1) {
+  height: 60%;
+  background-color: #00f0ff;
+  box-shadow: 0 0 8px #00f0ff;
+  animation-delay: 0.1s;
+}
+
+.equalizer-bar:nth-child(2) {
+  height: 100%;
+  background-color: #ff00ff;
+  box-shadow: 0 0 8px #ff00ff;
+  animation-delay: 0.35s;
+}
+
+.equalizer-bar:nth-child(3) {
+  height: 40%;
+  background-color: #eab308;
+  box-shadow: 0 0 8px #eab308;
+  animation-delay: 0.15s;
+}
+
+.equalizer-bar:nth-child(4) {
+  height: 85%;
+  background-color: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation-delay: 0.45s;
+}
+
+.equalizer-bar:nth-child(5) {
+  height: 50%;
+  background-color: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+  animation-delay: 0.25s;
+}
+
+@keyframes eqBounce {
+  0% {
+    height: 20%;
+    opacity: 0.5;
+  }
+
+  100% {
+    height: 100%;
+    opacity: 1;
+  }
+}
+
+.rank-loading-text {
+  font-family: var(--font-retro);
+  font-size: 0.78rem;
+  color: #38bdf8;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+  animation: pulse 1.5s ease-in-out infinite;
 }

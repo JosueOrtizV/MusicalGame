@@ -7,7 +7,7 @@ import { Stars, Environment, OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { BlockGrid } from './BlockGrid';
 import { PlayerMesh } from './PlayerMesh';
-import { ParticleSystem, spawnParticles } from './ParticleSystem';
+import { ParticleSystem, spawnParticles, clearParticles } from './ParticleSystem';
 import { StageShow } from './StageShow';
 import { useGameStore } from '@/src/stores/gameStore';
 import {
@@ -244,16 +244,23 @@ function CinematicCamera({
   // Separate effect to handle exiting pointer lock when transitioning out of gameplay or to static mode
   useEffect(() => {
     const isGameplay = phase === 'DANCING' || phase === 'ANNOUNCING' || phase === 'ELIMINATING' || phase === 'ROUND_END';
-    const container = containerRef.current;
     const isStatic = cameraMode === 'static';
-    if ((!isGameplay || isStatic) && container && document.pointerLockElement === container) {
+    if ((!isGameplay || isStatic) && typeof document !== 'undefined' && document.pointerLockElement) {
       try {
         document.exitPointerLock();
       } catch (err) {
         console.debug('Exit pointer lock failed:', err);
       }
+      useGameStore.setState({ isPointerLocked: false });
     }
-  }, [phase, cameraMode, containerRef]);
+  }, [phase, cameraMode]);
+
+  // Clear lingering victory confetti and fireworks when entering a new game round or returning to lobby
+  useEffect(() => {
+    if (phase === 'STARTING' || phase === 'LOBBY') {
+      clearParticles();
+    }
+  }, [phase]);
 
   // Keep track of intro starting sweep animation
   const startingStartTimeRef = useRef(0);

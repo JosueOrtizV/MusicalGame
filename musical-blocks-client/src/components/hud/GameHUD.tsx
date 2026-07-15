@@ -949,7 +949,7 @@ function CameraSelectionModal() {
   const setHasSelectedCameraMode = useGameStore((s) => s.setHasSelectedCameraMode);
   const setMobileControlType = useGameStore((s) => s.setMobileControlType);
   const { t } = useTranslation();
-  const [selectedMode, setSelectedMode] = useState<'movable' | 'static'>(cameraMode);
+  const [selectedMode, setSelectedMode] = useState<'movable' | 'static'>(cameraMode || 'static');
 
   const handleConfirm = () => {
     setCameraMode(selectedMode);
@@ -963,30 +963,32 @@ function CameraSelectionModal() {
         <h2 className="camera-select-title">{t('selectCameraTitle')}</h2>
         
         <div className="camera-select-cards">
-          <div 
-            className={`camera-select-card ${selectedMode === 'movable' ? 'active' : ''}`}
-            onClick={() => setSelectedMode('movable')}
-          >
-            <span className="camera-select-badge">{t('cameraModeRecommended')}</span>
-            <div className="camera-select-icon-wrapper">
-              <CameraMovableIcon size={28} />
-            </div>
-            <div className="camera-select-text-group">
-              <h3 className="camera-select-card-title">{t('cameraModeMovable')}</h3>
-              <p className="camera-select-card-desc">{t('cameraModeMovableDesc')}</p>
-            </div>
-          </div>
-
+          {/* Static Camera - Recommended (Left) */}
           <div 
             className={`camera-select-card ${selectedMode === 'static' ? 'active' : ''}`}
             onClick={() => setSelectedMode('static')}
           >
+            <span className="camera-select-badge">{t('cameraModeRecommended')}</span>
             <div className="camera-select-icon-wrapper">
               <CameraStaticIcon size={28} />
             </div>
             <div className="camera-select-text-group">
               <h3 className="camera-select-card-title">{t('cameraModeStatic')}</h3>
               <p className="camera-select-card-desc">{t('cameraModeStaticDesc')}</p>
+            </div>
+          </div>
+
+          {/* Movable / Free Camera (Right) */}
+          <div 
+            className={`camera-select-card ${selectedMode === 'movable' ? 'active' : ''}`}
+            onClick={() => setSelectedMode('movable')}
+          >
+            <div className="camera-select-icon-wrapper">
+              <CameraMovableIcon size={28} />
+            </div>
+            <div className="camera-select-text-group">
+              <h3 className="camera-select-card-title">{t('cameraModeMovable')}</h3>
+              <p className="camera-select-card-desc">{t('cameraModeMovableDesc')}</p>
             </div>
           </div>
         </div>
