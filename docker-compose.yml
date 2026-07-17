@@ -15,6 +15,12 @@ services:
       - CLIENT_ORIGIN=${CLIENT_ORIGIN:-https://voxelrave.com}
     expose:
       - "3001"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3001/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     # Ensure network matches if caddy runs here
     networks:
       - voxelrave_net
@@ -30,6 +36,12 @@ services:
       - NEXT_PUBLIC_SOCKET_URL=wss://api.voxelrave.com
     expose:
       - "3000"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/', (res) => process.exit(res.statusCode === 200 ? 0 : 1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       - voxelrave_net
 

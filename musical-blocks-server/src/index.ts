@@ -45,8 +45,8 @@ const io = new SocketServer<ClientEvents, ServerEvents>({
     methods: ['GET', 'POST'],
   },
   transports: ['websocket', 'polling'],
-  pingTimeout: 20000,
-  pingInterval: 25000,
+  pingTimeout: 10000,
+  pingInterval: 15000,
   maxHttpBufferSize: 1e5,
   connectTimeout: 10000,
   allowEIO3: false,
@@ -55,10 +55,14 @@ const io = new SocketServer<ClientEvents, ServerEvents>({
 const registry = new RoomRegistry(io);
 
 // ---------------------------------------------------------------------------
-//  Connection IP Rate Limiting Middleware (20 connections/IP/minute)
+//  Adaptive Connection IP Rate Limiting Middleware (CGNAT Aware)
+//  - Burst limit: max 15 connections per 5s window (blocks rapid socket spam)
+//  - Capacity limit: max 60 connections per 60s window (supports CGNAT/shared IPs)
 // ---------------------------------------------------------------------------
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const MAX_CONNECTIONS_PER_WINDOW = 20;
+const BURST_WINDOW_MS = 5 * 1000;
+const MAX_CONNECTIONS_PER_WINDOW = 60;
+const MAX_BURST_CONNECTIONS = 15;
 const ipConnections = new Map<string, number[]>();
 
 setInterval(() => {
@@ -92,8 +96,15 @@ io.use((socket, next) => {
   let timestamps = ipConnections.get(ip) || [];
   timestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
   
+  const burstCount = timestamps.filter(t => now - t < BURST_WINDOW_MS).length;
+  
+  if (burstCount >= MAX_BURST_CONNECTIONS) {
+    securityLogger.warn({ ip, burstCount }, 'Rate limit exceeded: Connection burst blocked');
+    return next(new Error('Rate limit exceeded. Too many rapid connection attempts.'));
+  }
+  
   if (timestamps.length >= MAX_CONNECTIONS_PER_WINDOW) {
-    securityLogger.warn({ ip, count: timestamps.length }, 'Rate limit exceeded: IP connection spam blocked');
+    securityLogger.warn({ ip, count: timestamps.length }, 'Rate limit exceeded: IP connection limit reached');
     return next(new Error('Rate limit exceeded. Please wait a minute before reconnecting.'));
   }
   
