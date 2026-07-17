@@ -21,6 +21,16 @@ interface PlayerMeshProps {
 const PLAYER_Y_OFFSET = 0.59; // sits on top of block (block height 0.28 / 2 = 0.14 top surface offset)
 
 // ---------------------------------------------------------------------------
+//  Global Scratch Variables for useFrame (Prevents GC Allocations)
+// ---------------------------------------------------------------------------
+const _boneWorldPos = new THREE.Vector3();
+const _boneWorldQuat = new THREE.Quaternion();
+const _meshWorldQuat = new THREE.Quaternion();
+const _boneLocalQuat = new THREE.Quaternion();
+const _thrusterLeftPos = new THREE.Vector3();
+const _thrusterRightPos = new THREE.Vector3();
+
+// ---------------------------------------------------------------------------
 //  PlayerMesh — voxel character loading 3D GLB with 6 custom animations
 // ---------------------------------------------------------------------------
 export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType = null }: PlayerMeshProps) {
@@ -740,13 +750,6 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
       const beatProgress = elapsedBeats % 1;
       beatPulse = Math.pow(1 - beatProgress, 4); // exponential decay synth envelope
     }
-
-const _boneWorldPos = new THREE.Vector3();
-const _boneWorldQuat = new THREE.Quaternion();
-const _meshWorldQuat = new THREE.Quaternion();
-const _boneLocalQuat = new THREE.Quaternion();
-const _thrusterLeftPos = new THREE.Vector3();
-const _thrusterRightPos = new THREE.Vector3();
 
     // -------------------------------------------------------------------------
     //  1.5. Dynamic Skeletal Bone Attachments Alignment (Procedural Headphones & Backpack)
