@@ -14,9 +14,21 @@ export interface LeaderboardEntry {
   created_at: string;
 }
 
+export async function fetchStartToken(playerId: string): Promise<{ token: string; startTime: number } | null> {
+  try {
+    const res = await fetch(`/api/leaderboard/token?player_id=${encodeURIComponent(playerId)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return { token: data.token, startTime: data.startTime };
+  } catch {
+    return null;
+  }
+}
+
 export async function submitScore(
   entry: Omit<LeaderboardEntry, 'id' | 'created_at'> & {
     telemetry?: { startTime: number; rounds: Array<{ round: number; timestamp: number }> } | null;
+    token?: string | null;
   }
 ): Promise<{ success: boolean; globalRank?: number; diffRank?: number; error?: string }> {
   try {

@@ -6,6 +6,8 @@ import { RoomRegistry } from './game/RoomRegistry';
 import { registerHandlers } from './socket/handlers';
 import { securityLogger } from './utils/logger';
 
+import rateLimit from '@fastify/rate-limit';
+
 // ---------------------------------------------------------------------------
 //  Environment
 // ---------------------------------------------------------------------------
@@ -21,11 +23,17 @@ const app = Fastify({
   logger: isProd
     ? { level: process.env.LOG_LEVEL || 'info' }
     : { transport: { target: 'pino-pretty' } },
+  trustProxy: '172.16.0.0/12',
 });
 
 app.register(cors, {
   origin: ALLOWED_ORIGINS,
   methods: ['GET', 'POST', 'OPTIONS'],
+});
+
+app.register(rateLimit, {
+  max: 30,
+  timeWindow: '1 minute',
 });
 
 // ---------------------------------------------------------------------------

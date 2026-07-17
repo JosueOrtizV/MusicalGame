@@ -2,16 +2,17 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useGameStore } from '@/src/stores/gameStore';
-import { GameState, GamePhase, BlockColor, GameBlock, Player, Direction, GameSpeed, GridPosition, RoomSettings } from '@/src/shared/types';
+import { GameState, GamePhase, GameBlock, Player, Direction, GameSpeed, GridPosition, RoomSettings } from '@/src/shared/types';
 import { ClientGridManager } from '../lib/ClientGridManager';
 import { ClientPlayerController } from '../lib/ClientPlayerController';
 import { ClientGameLoop } from '../lib/ClientGameLoop';
-import { submitScore } from '../lib/supabase/leaderboard';
+import { submitScore, fetchStartToken } from '../lib/supabase/leaderboard';
 
 export function useSinglePlayerGame() {
   const gridManager = useRef(new ClientGridManager());
   const playerController = useRef(new ClientPlayerController());
   const gameLoop = useRef<ClientGameLoop | null>(null);
+  const spTokenRef = useRef<string | null>(null);
   
   const [currentScore, setCurrentScore] = useState(0);
   const [currentRound, setCurrentRound] = useState(0);
@@ -101,7 +102,8 @@ export function useSinglePlayerGame() {
       max_lives: maxLives,
       sudden_death: suddenDeath,
       blind_mode: blindMode,
-      telemetry
+      telemetry,
+      token: spTokenRef.current
     }).then((res) => {
       if (res.success && res.globalRank !== undefined && res.diffRank !== undefined) {
         state.setSpLastRank(res.globalRank);
@@ -118,9 +120,17 @@ export function useSinglePlayerGame() {
 
   const startNewGame = useCallback((settings: RoomSettings) => {
     setIsGameOver(false);
+    spTokenRef.current = null;
     const state = useGameStore.getState();
     state.initSpPlayerId();
     state.setGameMode('singleplayer');
+
+    fetchStartToken(state.spPlayerId || 'anonymous').then((res) => {
+      if (res && gameLoop.current) {
+        spTokenRef.current = res.token;
+        gameLoop.current.overrideStartTime(res.startTime);
+      }
+    });
     
     // Clear connection and room status so we are fully offline
     useGameStore.setState({

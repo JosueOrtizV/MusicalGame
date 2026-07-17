@@ -1,4 +1,4 @@
-﻿import {
+import {
   GamePhase,
   BlockColor,
   GameSpeed,
@@ -76,6 +76,12 @@ export class ClientGameLoop {
     this.lastTime = performance.now();
     this.timer = setInterval(() => this.tick(), this.TICK_INTERVAL);
     this.transitionTo('STARTING');
+  }
+
+  overrideStartTime(startTime: number): void {
+    if (startTime > 0) {
+      this.telemetryStartTime = startTime;
+    }
   }
 
   stop(): void {

@@ -400,11 +400,16 @@ export class GameRoom {
       return;
     }
 
+    const sanitizedText = text
+      .trim()
+      .slice(0, 150)
+      .replace(/[<>&"'`\u200B-\u200D\u2028\u2029\u202A-\u202E\uFEFF]/g, '');
+
     const message: ChatMessage = {
       id: Math.random().toString(36).substring(2, 10) + Date.now().toString(36),
       senderId: player.id,
       senderName: player.name,
-      text: text.trim().slice(0, 150), // limit length
+      text: sanitizedText,
       timestamp: Date.now(),
     };
 
@@ -525,28 +530,34 @@ export class GameRoom {
 
     // 1. Lobby track: choose a new one different from the previous match
     if (previousLobbyIdx !== undefined) {
+      let attempts = 0;
       do {
         this.lobbySongIndex = Math.floor(Math.random() * 3);
-      } while (this.lobbySongIndex === previousLobbyIdx);
+        attempts++;
+      } while (this.lobbySongIndex === previousLobbyIdx && attempts < 10);
     } else {
       this.lobbySongIndex = Math.floor(Math.random() * 3);
     }
 
     // 2. Game tracks: shuffle 10 songs and guarantee the FIRST song playing is different
     const indices = Array.from({ length: 10 }, (_, i) => i);
+    let gameAttempts = 0;
     do {
       for (let i = indices.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [indices[i], indices[j]] = [indices[j], indices[i]];
       }
-    } while (previousFirstGameIdx !== null && indices[0] === previousFirstGameIdx);
+      gameAttempts++;
+    } while (previousFirstGameIdx !== null && indices[0] === previousFirstGameIdx && gameAttempts < 10);
     this.gameSongIndices = indices;
 
     // 3. Victory track: choose a new one different from the previous match
     if (previousVictoryIdx !== undefined) {
+      let vicAttempts = 0;
       do {
         this.victorySongIndex = Math.floor(Math.random() * 3);
-      } while (this.victorySongIndex === previousVictoryIdx);
+        vicAttempts++;
+      } while (this.victorySongIndex === previousVictoryIdx && vicAttempts < 10);
     } else {
       this.victorySongIndex = Math.floor(Math.random() * 3);
     }

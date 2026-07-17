@@ -741,6 +741,13 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
       beatPulse = Math.pow(1 - beatProgress, 4); // exponential decay synth envelope
     }
 
+const _boneWorldPos = new THREE.Vector3();
+const _boneWorldQuat = new THREE.Quaternion();
+const _meshWorldQuat = new THREE.Quaternion();
+const _boneLocalQuat = new THREE.Quaternion();
+const _thrusterLeftPos = new THREE.Vector3();
+const _thrusterRightPos = new THREE.Vector3();
+
     // -------------------------------------------------------------------------
     //  1.5. Dynamic Skeletal Bone Attachments Alignment (Procedural Headphones & Backpack)
     // -------------------------------------------------------------------------
@@ -748,37 +755,31 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
       // Align cyber-headphones with the Head bone
       if (headBoneRef.current && headphoneRef.current) {
         headBoneRef.current.updateWorldMatrix(true, false);
-        const worldPos = new THREE.Vector3();
-        const worldQuat = new THREE.Quaternion();
-        headBoneRef.current.getWorldPosition(worldPos);
-        headBoneRef.current.getWorldQuaternion(worldQuat);
+        headBoneRef.current.getWorldPosition(_boneWorldPos);
+        headBoneRef.current.getWorldQuaternion(_boneWorldQuat);
         
-        meshRef.current.worldToLocal(worldPos);
+        meshRef.current.worldToLocal(_boneWorldPos);
+        meshRef.current.getWorldQuaternion(_meshWorldQuat);
         
-        const parentWorldQuat = new THREE.Quaternion();
-        meshRef.current.getWorldQuaternion(parentWorldQuat);
-        const localQuat = parentWorldQuat.clone().invert().multiply(worldQuat);
+        _boneLocalQuat.copy(_meshWorldQuat).invert().multiply(_boneWorldQuat);
         
-        headphoneRef.current.position.copy(worldPos);
-        headphoneRef.current.quaternion.copy(localQuat);
+        headphoneRef.current.position.copy(_boneWorldPos);
+        headphoneRef.current.quaternion.copy(_boneLocalQuat);
       }
 
       // Align cyber-backpack with the Torso bone
       if (torsoBoneRef.current && backpackRef.current) {
         torsoBoneRef.current.updateWorldMatrix(true, false);
-        const worldPos = new THREE.Vector3();
-        const worldQuat = new THREE.Quaternion();
-        torsoBoneRef.current.getWorldPosition(worldPos);
-        torsoBoneRef.current.getWorldQuaternion(worldQuat);
+        torsoBoneRef.current.getWorldPosition(_boneWorldPos);
+        torsoBoneRef.current.getWorldQuaternion(_boneWorldQuat);
         
-        meshRef.current.worldToLocal(worldPos);
+        meshRef.current.worldToLocal(_boneWorldPos);
+        meshRef.current.getWorldQuaternion(_meshWorldQuat);
         
-        const parentWorldQuat = new THREE.Quaternion();
-        meshRef.current.getWorldQuaternion(parentWorldQuat);
-        const localQuat = parentWorldQuat.clone().invert().multiply(worldQuat);
+        _boneLocalQuat.copy(_meshWorldQuat).invert().multiply(_boneWorldQuat);
         
-        backpackRef.current.position.copy(worldPos);
-        backpackRef.current.quaternion.copy(localQuat);
+        backpackRef.current.position.copy(_boneWorldPos);
+        backpackRef.current.quaternion.copy(_boneLocalQuat);
       }
     }
 
@@ -944,16 +945,14 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
 
         // 3b. Dual Thruster Digital Exhaust particles
         if (leftNozzleRef.current && rightNozzleRef.current) {
-          const leftPos = new THREE.Vector3();
-          const rightPos = new THREE.Vector3();
-          leftNozzleRef.current.getWorldPosition(leftPos);
-          rightNozzleRef.current.getWorldPosition(rightPos);
+          leftNozzleRef.current.getWorldPosition(_thrusterLeftPos);
+          rightNozzleRef.current.getWorldPosition(_thrusterRightPos);
 
           // Left side: hot-pink trail (#ff007f)
           spawnParticles({
-            x: leftPos.x,
-            y: leftPos.y,
-            z: leftPos.z,
+            x: _thrusterLeftPos.x,
+            y: _thrusterLeftPos.y,
+            z: _thrusterLeftPos.z,
             color: '#ff007f',
             count: 1,
             type: 'dust'
@@ -961,9 +960,9 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
 
           // Right side: player themed color trail
           spawnParticles({
-            x: rightPos.x,
-            y: rightPos.y,
-            z: rightPos.z,
+            x: _thrusterRightPos.x,
+            y: _thrusterRightPos.y,
+            z: _thrusterRightPos.z,
             color: activePl.color,
             count: 1,
             type: 'dust'

@@ -25,6 +25,8 @@ const COLOR_HEX: Record<BlockColor, string> = {
   WHITE: '#ffffff',
 };
 
+const _tempColor = new THREE.Color();
+
 // ---------------------------------------------------------------------------
 //  Custom Volumetric Beam Shader Material
 //  Creates a cylinder beam that fades exponentially with height (soft projection)
@@ -169,29 +171,29 @@ function Spotlight({ position, colorIndex, orbitIndex, showStateRef, winnerColor
       activeColor = winnerColorHex;
     }
 
-    const threeColor = new THREE.Color(activeColor);
+    _tempColor.set(activeColor);
 
     // Update light and shader uniforms
     if (spotLightRef.current) {
-      spotLightRef.current.color.copy(threeColor);
+      spotLightRef.current.color.copy(_tempColor);
       // Dynamic pulse intensity synced to the beat
       spotLightRef.current.intensity = 15.0 + beatPulse * 45.0;
     }
 
     // Access and mutate shader properties using the ref to avoid local scope warnings
     if (beamMatRef.current) {
-      beamMatRef.current.uniforms.color.value.copy(threeColor);
+      beamMatRef.current.uniforms.color.value.copy(_tempColor);
       beamMatRef.current.uniforms.opacity.value = 0.08 + beatPulse * 0.22;
     }
 
     // Sync glowing camera-style lens to the beat
     if (lensMatRef.current) {
-      lensMatRef.current.color.copy(threeColor).multiplyScalar(4.0 + beatPulse * 8.0);
+      lensMatRef.current.color.copy(_tempColor).multiplyScalar(4.0 + beatPulse * 8.0);
     }
 
     // Sync side cyberpunk stripes, thrusters and hover rings to the beat
     if (accentMatRef.current) {
-      accentMatRef.current.color.copy(threeColor).multiplyScalar(2.0 + beatPulse * 4.0);
+      accentMatRef.current.color.copy(_tempColor).multiplyScalar(2.0 + beatPulse * 4.0);
     }
   });
 
@@ -396,23 +398,23 @@ function StageLaser({ origin, colorIndex, sweepIndex, showStateRef, winnerColorH
       color = winnerColorHex;
     }
 
-    const baseColor = new THREE.Color(color);
+    _tempColor.set(color);
 
     // Sync main laser line
     if (matRef.current) {
       // Extremely high emissive multiplication to force Bloom glow!
-      matRef.current.color.copy(baseColor).multiplyScalar(8.0 + beatPulse * 16.0);
+      matRef.current.color.copy(_tempColor).multiplyScalar(8.0 + beatPulse * 16.0);
       matRef.current.opacity = 0.3 + beatPulse * 0.7;
     }
 
     // Sync diode glow
     if (laserDiodeMatRef.current) {
-      laserDiodeMatRef.current.color.copy(baseColor).multiplyScalar(12.0 + beatPulse * 24.0);
+      laserDiodeMatRef.current.color.copy(_tempColor).multiplyScalar(12.0 + beatPulse * 24.0);
     }
 
     // Sync status band glow
     if (laserAccentMatRef.current) {
-      laserAccentMatRef.current.color.copy(baseColor).multiplyScalar(2.5 + beatPulse * 5.0);
+      laserAccentMatRef.current.color.copy(_tempColor).multiplyScalar(2.5 + beatPulse * 5.0);
     }
   });
 

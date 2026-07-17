@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useRef, useMemo, useEffect, useLayoutEffect } from 'react';
+import { Suspense, useRef, useMemo, useEffect } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Stars, Environment, OrbitControls } from '@react-three/drei';
@@ -43,7 +43,7 @@ function CinematicCamera({
   containerRef: React.RefObject<HTMLDivElement | null>;
   wasAliveThisRound: boolean;
 }) {
-  const { size, camera } = useThree();
+  const { size } = useThree();
 
   // Game state subscriptions
   const phase = useGameStore((s) => s.gameState?.phase || 'LOBBY');
@@ -263,7 +263,6 @@ function CinematicCamera({
   }, [phase]);
 
   // Keep track of intro starting sweep animation
-  const startingStartTimeRef = useRef(0);
   const isFirstStartingFrameRef = useRef(true);
   const lastFrameTimeRef = useRef(0);
   const startingElapsedRef = useRef(0);
@@ -271,36 +270,17 @@ function CinematicCamera({
   // Store camera target lookAt using a ref to interpolate smoothly
   const currentLookAtRef = useRef(new THREE.Vector3(0, 0, 0));
 
+  const basePosVecRef = useRef(new THREE.Vector3());
+  const baseLookAtVecRef = useRef(new THREE.Vector3());
+  const targetCameraPosRef = useRef(new THREE.Vector3());
+  const targetLookAtRef = useRef(new THREE.Vector3());
+  const finalLookAtRef = useRef(new THREE.Vector3());
+
   // Track phase changes to trigger starting sweep
-  const prevPhaseRef = useRef<string | null>(null);
-
-  useLayoutEffect(() => {
-    if (phase === 'STARTING') {
-      startingStartTimeRef.current = 0;
-      isFirstStartingFrameRef.current = true;
-      lastFrameTimeRef.current = 0;
-      startingElapsedRef.current = 0;
-
-      const isPortrait = typeof window !== 'undefined' ? window.innerWidth < window.innerHeight : false;
-      const basePosVec = new THREE.Vector3(
-        isPortrait ? 0 : CAMERA_POSITION[0],
-        isPortrait ? 18 : CAMERA_POSITION[1],
-        isPortrait ? 18 : CAMERA_POSITION[2]
-      );
-      const baseRadius = Math.sqrt(basePosVec.x * basePosVec.x + basePosVec.z * basePosVec.z);
-      const radius = baseRadius * 1.8;
-      const y = basePosVec.y * 1.8;
-
-      camera.position.set(0, y, -radius);
-      currentLookAtRef.current.set(0, 0, 0);
-      camera.lookAt(currentLookAtRef.current);
-      camera.updateProjectionMatrix();
-    }
-  }, [camera, phase]);
+  const prevPhaseRef = useRef<string>(phase);
 
   useEffect(() => {
-    if (phase === 'STARTING') {
-      startingStartTimeRef.current = 0; // Will be initialized on first useFrame tick
+    if (phase === 'STARTING' && prevPhaseRef.current !== 'STARTING') {
       isFirstStartingFrameRef.current = true;
       lastFrameTimeRef.current = 0;
       startingElapsedRef.current = 0;
@@ -318,16 +298,16 @@ function CinematicCamera({
     const isPortrait = size.width < size.height;
 
     // Default base camera parameters
-    const basePosVec = new THREE.Vector3(
+    basePosVecRef.current.set(
       isPortrait ? 0 : CAMERA_POSITION[0],
       isPortrait ? 18 : CAMERA_POSITION[1],
       isPortrait ? 18 : CAMERA_POSITION[2]
     );
     const baseFov = isPortrait ? 70 : CAMERA_FOV;
-    const baseLookAtVec = new THREE.Vector3(0, 0, 0);
+    baseLookAtVecRef.current.set(0, 0, 0);
 
-    const targetCameraPos = basePosVec.clone();
-    const targetLookAt = baseLookAtVec.clone();
+    targetCameraPosRef.current.copy(basePosVecRef.current);
+    targetLookAtRef.current.copy(baseLookAtVecRef.current);
     let targetFov = baseFov;
 
     const isGameplay = phase === 'DANCING' || phase === 'ANNOUNCING' || phase === 'ELIMINATING' || phase === 'ROUND_END';
@@ -360,20 +340,20 @@ function CinematicCamera({
         const targetCamY = Math.sin(pitch) * dist;
         const targetCamZ = playerWorldZ + Math.cos(yaw) * Math.cos(pitch) * dist;
 
-        targetCameraPos.set(targetCamX, targetCamY, targetCamZ);
-        targetLookAt.set(playerWorldX, 0.5, playerWorldZ);
+        targetCameraPosRef.current.set(targetCamX, targetCamY, targetCamZ);
+        targetLookAtRef.current.set(playerWorldX, 0.5, playerWorldZ);
         targetFov = FOLLOW_CAM_FOV;
       }
     } else if (phase === 'LOBBY') {
       // Gentle floating orbiting view in Lobby to make the 3D scene feel organic
       const orbitSpeed = 0.12;
       const radius = isPortrait ? 22 : 17;
-      targetCameraPos.set(
+      targetCameraPosRef.current.set(
         Math.sin(time * orbitSpeed) * radius,
         14.5 + Math.sin(time * 0.25) * 1.5,
         Math.cos(time * orbitSpeed) * radius
       );
-      targetLookAt.set(0, -0.5, 0);
+      targetLookAtRef.current.set(0, -0.5, 0);
     } else if (phase === 'GAME_OVER') {
       const gameState = useGameStore.getState().gameState;
       const winner = gameState?.players.find((p) => p.id === gameState?.winnerId);
@@ -388,8 +368,8 @@ function CinematicCamera({
         const camDistZ = 7.5;
         const camDistY = 5.0;
 
-        targetCameraPos.set(winnerWorldX, camDistY, winnerWorldZ + camDistZ);
-        targetLookAt.set(winnerWorldX, 0.5, winnerWorldZ);
+        targetCameraPosRef.current.set(winnerWorldX, camDistY, winnerWorldZ + camDistZ);
+        targetLookAtRef.current.set(winnerWorldX, 0.5, winnerWorldZ);
         targetFov = 60;
       } else {
         // Fixed isometric arena overview when no winner (tie / sudden death wipeout)
@@ -397,8 +377,8 @@ function CinematicCamera({
         // radius to 35 and height to 28 so the entire 12x12 grid fits in portrait mode.
         const radius = isPortrait ? 35 : 18;
         const height = isPortrait ? 28 : 15;
-        targetCameraPos.set(0, height, radius);
-        targetLookAt.set(0, -0.5, 0);
+        targetCameraPosRef.current.set(0, height, radius);
+        targetLookAtRef.current.set(0, -0.5, 0);
         targetFov = isPortrait ? 55 : 55;
       }
     } else if (phase === 'STARTING') {
@@ -424,16 +404,16 @@ function CinematicCamera({
       const targetAngle = Math.PI * 0.5; // End at standard front-side angle
       const angle = THREE.MathUtils.lerp(startAngle, targetAngle, ease);
 
-      const baseRadius = Math.sqrt(basePosVec.x * basePosVec.x + basePosVec.z * basePosVec.z);
+      const baseRadius = Math.sqrt(basePosVecRef.current.x * basePosVecRef.current.x + basePosVecRef.current.z * basePosVecRef.current.z);
       const radius = THREE.MathUtils.lerp(baseRadius * 1.8, baseRadius, ease);
-      const y = THREE.MathUtils.lerp(basePosVec.y * 1.8, basePosVec.y, ease);
+      const y = THREE.MathUtils.lerp(basePosVecRef.current.y * 1.8, basePosVecRef.current.y, ease);
 
-      targetCameraPos.set(
+      targetCameraPosRef.current.set(
         Math.cos(angle) * radius,
         y,
         Math.sin(angle) * radius
       );
-      targetLookAt.set(0, 0, 0);
+      targetLookAtRef.current.set(0, 0, 0);
     }
 
     // Apply linear interpolation (lerp) for buttery smooth motion
@@ -441,14 +421,14 @@ function CinematicCamera({
     if (camera instanceof THREE.PerspectiveCamera) {
       if (phase === 'STARTING' && isFirstStartingFrameRef.current) {
         // Instant snap on the very first frame to prevent ugly snapping slides from default mounting position
-        camera.position.copy(targetCameraPos);
+        camera.position.copy(targetCameraPosRef.current);
         camera.fov = targetFov;
         camera.updateProjectionMatrix();
-        currentLookAtRef.current.copy(targetLookAt);
+        currentLookAtRef.current.copy(targetLookAtRef.current);
         camera.lookAt(currentLookAtRef.current);
         isFirstStartingFrameRef.current = false;
       } else {
-        camera.position.lerp(targetCameraPos, lerpFactor);
+        camera.position.lerp(targetCameraPosRef.current, lerpFactor);
 
         if (Math.abs(camera.fov - targetFov) > 0.05) {
           camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, lerpFactor);
@@ -484,15 +464,15 @@ function CinematicCamera({
     }
 
     if (!(phase === 'STARTING' && isFirstStartingFrameRef.current)) {
-      currentLookAtRef.current.lerp(targetLookAt, lerpFactor);
+      currentLookAtRef.current.lerp(targetLookAtRef.current, lerpFactor);
 
-      const finalLookAt = currentLookAtRef.current.clone();
+      finalLookAtRef.current.copy(currentLookAtRef.current);
       if (shakeX !== 0 || shakeY !== 0 || shakeZ !== 0) {
-        finalLookAt.x += shakeX * 0.5;
-        finalLookAt.y += shakeY * 0.5;
-        finalLookAt.z += shakeZ * 0.5;
+        finalLookAtRef.current.x += shakeX * 0.5;
+        finalLookAtRef.current.y += shakeY * 0.5;
+        finalLookAtRef.current.z += shakeZ * 0.5;
       }
-      camera.lookAt(finalLookAt);
+      camera.lookAt(finalLookAtRef.current);
     }
   });
 
