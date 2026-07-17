@@ -9,6 +9,8 @@ export const en = {
   language: 'Language',
   volume: 'Volume',
   mute: 'Mute',
+  enterFullscreen: 'Fullscreen',
+  exitFullscreen: 'Exit Fullscreen',
   cameraMode: 'Camera Mode',
   cameraModeStatic: 'Static',
   cameraModeMovable: 'Movable',

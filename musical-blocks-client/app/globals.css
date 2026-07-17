@@ -272,7 +272,7 @@ input {
     radial-gradient(ellipse at 80% 0%, rgba(255, 0, 255, 0.06) 0%, transparent 50%),
     radial-gradient(ellipse at 50% 100%, rgba(160, 255, 0, 0.04) 0%, transparent 50%),
     #05050a;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* Animated neon scanline sweep on background */
@@ -745,6 +745,16 @@ select.lobby-input option {
     radial-gradient(ellipse at 20% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 0%, rgba(255, 0, 255, 0.06) 0%, transparent 50%),
     #05050a;
+  overflow-y: auto;
+}
+
+@media (max-height: 600px) and (orientation: landscape) {
+
+  .lobby-bg,
+  .room-lobby-bg {
+    align-items: flex-start;
+    padding: 20px 0;
+  }
 }
 
 .room-lobby-card {
@@ -1762,7 +1772,7 @@ select.lobby-input option {
 .hud-mute-btn {
   position: absolute;
   top: 1rem;
-  right: 4rem;
+  right: calc(1rem + 104px);
   /* Left of settings gear on PC */
   background: rgba(15, 15, 35, 0.75);
   border: 1px solid var(--c-border);
@@ -1795,7 +1805,7 @@ select.lobby-input option {
 .hud-camera-btn {
   position: absolute;
   top: 1rem;
-  right: 7rem;
+  right: calc(1rem + 156px);
   /* Left of mute button on PC */
   background: rgba(15, 15, 35, 0.75);
   border: 1px solid var(--c-border);
@@ -2765,9 +2775,22 @@ select.lobby-input option {
   }
 
   .lobby-logo,
-  .room-header {
+  .room-header,
+  .overlay-header {
     margin-bottom: 0 !important;
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .overlay-content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
 
   .logo-emoji {
@@ -2933,9 +2956,10 @@ select.lobby-input option {
   }
 
   .room-players {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 0.4rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+    gap: 0.35rem !important;
     max-height: 180px !important;
     padding-right: 0.3rem !important;
   }
@@ -3012,45 +3036,47 @@ select.lobby-input option {
   /* --- END SCREENS (Death / Victory) --- */
   .overlay-card {
     display: flex !important;
-    flex-direction: column !important;
-    padding: 0.6rem 1rem !important;
-    gap: 0.4rem !important;
+    flex-direction: row !important;
+    padding: 1.5rem !important;
+    gap: 1.5rem !important;
     align-items: center !important;
     width: 90vw !important;
     max-height: 95vh !important;
   }
 
   .overlay-header {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.1rem;
+    gap: 0.4rem;
     text-align: center;
   }
 
   .overlay-icon {
-    font-size: 1.6rem !important;
+    font-size: 2rem !important;
     margin-bottom: 0 !important;
   }
 
   .overlay-title {
-    font-size: 1.2rem !important;
+    font-size: 1.4rem !important;
     margin-bottom: 0 !important;
   }
 
   .overlay-sub {
-    font-size: 0.7rem !important;
+    font-size: 0.8rem !important;
     margin-bottom: 0 !important;
     opacity: 0.8;
   }
 
   .overlay-content-wrapper {
-    margin-top: 0.2rem !important;
+    flex: 1;
+    margin-top: 0 !important;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem !important;
-    width: 100%;
+    gap: 0.8rem !important;
     align-items: center;
+    justify-content: center;
   }
 
   .overlay-alive-list {
@@ -3099,32 +3125,22 @@ select.lobby-input option {
     padding: 0.15rem 0.6rem !important;
   }
 
-  /* Move color announcement almost to the bottom edge */
+  /* Color announcement below phase label and smaller */
   .hud-announce {
-    top: auto !important;
-    bottom: 0.15rem !important;
-    flex-direction: row !important;
-    /* Horizontal is better in landscape */
-    padding: 0.25rem 0.8rem !important;
-    gap: 0.6rem !important;
-    min-width: auto !important;
+    top: 4rem !important;
+    transform: translateX(-50%) scale(0.6) !important;
+    padding: 0.3rem 1.2rem !important;
+    gap: 1rem !important;
   }
 
-  .hud-announce-label {
-    font-family: var(--font-retro) !important;
-    font-size: 0.45rem !important;
-    margin-bottom: 0 !important;
-    white-space: nowrap !important;
+  /* Shrink round announcements and sudden death text */
+  .hud-banner {
+    padding: 0.5rem 1.5rem !important;
+    font-size: 1.2rem !important;
   }
 
-  .hud-color-block {
-    width: 16px !important;
-    height: 16px !important;
-  }
-
-  .hud-color-name {
-    font-family: var(--font-retro) !important;
-    font-size: 0.55rem !important;
+  .hud-banner-sub {
+    font-size: 0.65rem !important;
   }
 
   /* Compact D-pad */
@@ -3355,6 +3371,9 @@ select.lobby-input option {
   top: 1rem;
   right: 1rem;
   z-index: 20005;
+  display: flex;
+  gap: 8px;
+  flex-direction: row-reverse;
 }
 
 .settings-menu-btn {
@@ -3374,12 +3393,14 @@ select.lobby-input option {
   color: #ffabf3;
 }
 
-.settings-menu-btn:hover {
-  transform: rotate(-15deg) scale(1.1);
-  background: rgba(255, 171, 243, 0.15);
-  border-color: #ffabf3;
-  box-shadow: 0 0 15px rgba(255, 171, 243, 0.45);
-  color: #ffabf3;
+@media (hover: hover) {
+  .settings-menu-btn:hover {
+    transform: rotate(-15deg) scale(1.1);
+    background: rgba(255, 171, 243, 0.15);
+    border-color: #ffabf3;
+    box-shadow: 0 0 15px rgba(255, 171, 243, 0.45);
+    color: #ffabf3;
+  }
 }
 
 .settings-dropdown {
@@ -5176,6 +5197,19 @@ body.game-starting .toast-container {
   grid-row: 2;
 }
 
+/* Dash Button Size Responsive */
+.mobile-dash-btn {
+  width: 76px;
+  height: 76px;
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .mobile-dash-btn {
+    width: 60px;
+    height: 60px;
+  }
+}
+
 /* Single Player Score HUD Element */
 .hud-score {
   position: absolute;
@@ -5377,7 +5411,7 @@ body.game-starting .toast-container {
 .leaderboard-btn-container {
   position: fixed;
   top: 1rem;
-  right: calc(1rem + 54px);
+  right: calc(1rem + 104px);
   z-index: 20005;
 }
 
@@ -5398,18 +5432,20 @@ body.game-starting .toast-container {
   padding: 0;
 }
 
-.leaderboard-toggle-btn:hover {
-  transform: rotate(-15deg) scale(1.1);
-  background: rgba(0, 251, 251, 0.15);
-  border-color: #00fbfb;
-  box-shadow: 0 0 15px rgba(0, 251, 251, 0.45);
-  color: #00fbfb;
+@media (hover: hover) {
+  .leaderboard-toggle-btn:hover {
+    transform: rotate(-15deg) scale(1.1);
+    background: rgba(0, 251, 251, 0.15);
+    border-color: #00fbfb;
+    box-shadow: 0 0 15px rgba(0, 251, 251, 0.45);
+    color: #00fbfb;
+  }
 }
 
 @media (max-width: 768px) {
   .leaderboard-btn-container {
     top: 0.3rem !important;
-    right: calc(0.3rem + 46px) !important;
+    right: calc(0.3rem + 88px) !important;
     transform: scale(0.85) !important;
   }
 }
@@ -5417,7 +5453,7 @@ body.game-starting .toast-container {
 @media (max-height: 500px) and (orientation: landscape) {
   .leaderboard-btn-container {
     top: 0.3rem !important;
-    right: calc(0.3rem + 40px) !important;
+    right: calc(0.3rem + 80px) !important;
     transform: scale(0.75) !important;
   }
 }
@@ -5512,7 +5548,9 @@ body.game-starting .toast-container {
   border-color: rgba(0, 240, 255, 0.4) transparent transparent transparent;
 }
 
-.tooltip-container:hover .tooltip-box {
+.tooltip-container:hover .tooltip-box,
+.tooltip-container:focus .tooltip-box,
+.tooltip-container:focus-within .tooltip-box {
   opacity: 1;
   transform: translateX(-50%) translateY(0) scale(1);
   pointer-events: auto;
@@ -5653,7 +5691,9 @@ body.game-starting .toast-container {
   transform: none !important;
 }
 
-.tooltip-container.tooltip-align-left:hover .tooltip-box {
+.tooltip-container.tooltip-align-left:hover .tooltip-box,
+.tooltip-container.tooltip-align-left:focus .tooltip-box,
+.tooltip-container.tooltip-align-left:focus-within .tooltip-box {
   transform: translateY(0) scale(1) !important;
 }
 
@@ -5669,7 +5709,9 @@ body.game-starting .toast-container {
   transform: none !important;
 }
 
-.tooltip-container.tooltip-align-right:hover .tooltip-box {
+.tooltip-container.tooltip-align-right:hover .tooltip-box,
+.tooltip-container.tooltip-align-right:focus .tooltip-box,
+.tooltip-container.tooltip-align-right:focus-within .tooltip-box {
   transform: translateY(0) scale(1) !important;
 }
 
@@ -5784,4 +5826,368 @@ body:has(.leaderboard-modal-overlay) .leaderboard-btn-container {
   letter-spacing: 0.08em;
   text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
   animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Mobile Landscape Overlays & Modals Optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+  .overlay-card {
+    padding: 1rem 1.5rem !important;
+    max-width: 90vw !important;
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+  }
+
+  .overlay-title {
+    font-size: 1.3rem !important;
+    margin-top: 0.2rem !important;
+    margin-bottom: 0.2rem !important;
+  }
+
+  .overlay-sub {
+    font-size: 0.9rem !important;
+    margin-top: 0.3rem !important;
+  }
+
+  .overlay-icon svg {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Singleplayer Landscape Column Clearance */
+  .sp-config-col-right {
+    padding-top: 1.8rem !important;
+  }
+
+  .sp-cosmetics-btn,
+  .sp-settings-btn {
+    top: 0.4rem !important;
+    transform: scale(0.85);
+  }
+
+  .sp-cosmetics-btn {
+    right: 0.6rem !important;
+  }
+
+  .sp-settings-btn {
+    right: 2.8rem !important;
+  }
+
+  /* Multiplayer Browser Action Buttons Scale */
+  .mp-col-right .game-btn {
+    padding: 0.45rem 0.8rem !important;
+    font-size: 0.75rem !important;
+    min-height: 36px !important;
+  }
+
+  .mp-col-right .game-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  /* Room Lobby Mobile Landscape Only Overrides (Pure CSS - Desktop/Portrait Untouched) */
+  .room-content-wrapper {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  /* Reposition Start / Ready button to top action toolbar in landscape */
+  .room-actions #btn-start,
+  .room-actions #btn-ready {
+    position: absolute !important;
+    top: 0.6rem !important;
+    right: 5.5rem !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 0.2rem 0.85rem !important;
+    font-size: 0.75rem !important;
+    width: auto !important;
+    z-index: 30 !important;
+  }
+
+  .room-actions #btn-start svg,
+  .room-actions #btn-ready svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  /* Symmetrical spacing for top icons alongside start button */
+  .sp-cosmetics-btn {
+    top: 0.6rem !important;
+    right: 0.6rem !important;
+  }
+
+  .sp-settings-btn {
+    top: 0.6rem !important;
+    right: 3rem !important;
+  }
+
+  /* Center single column player cards list and compact items */
+  .room-players {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+    width: 100% !important;
+    max-width: 420px !important;
+    margin: 0 auto !important;
+    max-height: 180px !important;
+    padding-top: 1rem !important;
+    gap: 0.35rem !important;
+    overflow-y: auto !important;
+  }
+
+  .room-players>div {
+    padding: 0.35rem 0.75rem !important;
+    min-height: 38px !important;
+    width: 100% !important;
+  }
+
+  .room-actions {
+    width: 100% !important;
+    margin-top: 0.4rem !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  .room-footer-note {
+    margin-top: 0.2rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  .room-header {
+    margin-bottom: 6px !important;
+  }
+
+  .room-header h1 {
+    font-size: 1.3rem !important;
+  }
+
+  /* Compact Chips: Hide text labels in landscape mode */
+  .room-header .tooltip-container>div>span:not(.w-1\.5) {
+    display: none !important;
+  }
+
+  .room-header .tooltip-container>div {
+    padding: 4px 6px !important;
+  }
+
+  /* Hide Room ID decoration line on mobile landscape */
+  .room-actions+div,
+  .room-content-wrapper>div:last-child {
+    display: none !important;
+  }
+
+  /* Leaderboard Mobile Landscape Optimization */
+  .leaderboard-modal-card {
+    max-width: 440px !important;
+    max-height: 94vh !important;
+    padding: 10px 18px !important;
+  }
+
+  .leaderboard-modal-card .custom-scrollbar {
+    max-height: 140px !important;
+  }
+
+  /* Full Leaderboard Page Split Screen Landscape (LeaderboardClient.tsx) */
+  body:has(#leaderboard-page),
+  html:has(#leaderboard-page) {
+    overflow-y: auto !important;
+    height: auto !important;
+    min-height: 100% !important;
+  }
+
+  #leaderboard-page {
+    padding: 0.4rem 1rem !important;
+    max-height: 100dvh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .leaderboard-body {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+    width: 100% !important;
+    height: 100% !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+  }
+
+  .leaderboard-col-left {
+    width: 30% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+  }
+
+  .leaderboard-header {
+    margin-top: 0 !important;
+    margin-bottom: 0.2rem !important;
+    text-align: center !important;
+  }
+
+  .leaderboard-header h1 {
+    font-size: 0.95rem !important;
+    margin-bottom: 0 !important;
+    gap: 4px !important;
+  }
+
+  .leaderboard-header h1 svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .leaderboard-filters {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+    padding: 4px !important;
+  }
+
+  .leaderboard-filters button {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 4px 6px !important;
+    font-size: 9px !important;
+  }
+
+  .leaderboard-col-right {
+    width: 70% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    height: 100% !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+  }
+
+  .leaderboard-scroll {
+    width: 100% !important;
+    max-height: 190px !important;
+    height: 190px !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+  }
+
+  .leaderboard-scroll>div {
+    padding: 5px 10px !important;
+  }
+
+  .leaderboard-footer {
+    margin-top: 4px !important;
+    padding-top: 4px !important;
+  }
+
+  /* Move help button to footer area in landscape mode ONLY */
+  .leaderboard-help-wrapper {
+    top: auto !important;
+    bottom: 0.35rem !important;
+    right: 1.2rem !important;
+  }
+
+  .leaderboard-tooltip-box {
+    top: auto !important;
+    bottom: 1.8rem !important;
+    right: 0 !important;
+    max-height: 145px !important;
+    overflow-y: auto !important;
+    padding: 6px 10px !important;
+    font-size: 9px !important;
+  }
+
+  /* Leaderboard Score Details Popup Modal */
+  .leaderboard-detail-modal-card {
+    max-height: 94vh !important;
+    max-width: 320px !important;
+    padding: 0.5rem 1rem 0.8rem 1rem !important;
+    overflow-y: auto !important;
+  }
+
+  .leaderboard-detail-modal-card svg {
+    width: 22px !important;
+    height: 22px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .leaderboard-detail-modal-card h3 {
+    font-size: 0.75rem !important;
+    margin-bottom: 2px !important;
+  }
+
+  .leaderboard-detail-modal-card p.text-xl {
+    font-size: 1rem !important;
+    margin-bottom: 0.4rem !important;
+  }
+
+  .leaderboard-detail-modal-card .border-t {
+    padding-top: 0.4rem !important;
+    gap: 0.2rem !important;
+  }
+
+  .leaderboard-detail-modal-card .border-t>div {
+    padding-bottom: 2px !important;
+  }
+}
+
+/* Mobile Portrait Responsiveness for Full Leaderboard Page (Screen height > 500px, width < 640px) */
+@media (max-width: 640px) and (min-height: 501px) {
+  #leaderboard-page {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 100dvh !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  #leaderboard-page>div.start-container {
+    max-height: none !important;
+    margin-top: auto !important;
+    margin-bottom: auto !important;
+    padding: 0.75rem 0.75rem 0.5rem 0.75rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .leaderboard-header {
+    margin-top: 1.6rem !important;
+    margin-bottom: 0.5rem !important;
+    padding: 0 10px !important;
+  }
+
+  .leaderboard-header h1 {
+    font-size: 1.05rem !important;
+    line-height: 1.25 !important;
+    gap: 4px !important;
+  }
+
+  .leaderboard-header h1 svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .leaderboard-filters {
+    margin-bottom: 0.4rem !important;
+    padding: 2px !important;
+  }
+
+  .leaderboard-filters button {
+    padding: 4px 6px !important;
+    font-size: 8.5px !important;
+  }
+
+  .leaderboard-scroll {
+    flex: 1 !important;
+    max-height: 380px !important;
+    overflow-y: auto !important;
+    padding-bottom: 6px !important;
+  }
 }

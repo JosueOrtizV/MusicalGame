@@ -249,7 +249,7 @@ function PcDashIndicator() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 768);
+    const check = () => setIsMobile(window.matchMedia("(pointer: coarse)").matches || window.innerWidth <= 1024);
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
@@ -421,6 +421,7 @@ function DashButton({ onDash }: { onDash: () => void }) {
 
   return (
     <button
+      className="mobile-dash-btn"
       onPointerDown={handlePress}
       style={{
         pointerEvents: 'auto',
@@ -428,8 +429,6 @@ function DashButton({ onDash }: { onDash: () => void }) {
         background: 'linear-gradient(135deg, #f43f5e 0%, #be123c 100%)',
         border: '2px solid #ffffff',
         borderRadius: '50%',
-        width: '76px',
-        height: '76px',
         color: '#ffffff',
         display: 'flex',
         alignItems: 'center',
@@ -509,7 +508,7 @@ function MobileControls() {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+      setIsMobile(window.matchMedia("(pointer: coarse)").matches || window.innerWidth <= 1024);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -801,7 +800,7 @@ function PointerLockPrompt() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 768);
+    const check = () => setIsMobile(window.matchMedia("(pointer: coarse)").matches || window.innerWidth <= 1024);
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);

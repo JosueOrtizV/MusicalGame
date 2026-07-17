@@ -11,6 +11,8 @@ export const es: Translations = {
   language: 'Idioma',
   volume: 'Volumen',
   mute: 'Silencio',
+  enterFullscreen: 'Pantalla Completa',
+  exitFullscreen: 'Salir de Pantalla Completa',
   cameraMode: 'Modo de Cámara',
   cameraModeStatic: 'Estática',
   cameraModeMovable: 'Libre',

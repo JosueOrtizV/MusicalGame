@@ -128,6 +128,48 @@ export function HomeScreen() {
           opacity: 0.04;
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
+
+        @media (max-height: 500px) and (orientation: landscape) {
+          #game-app {
+            padding: 8px !important;
+            padding-bottom: 36px !important;
+            justify-content: center !important;
+          }
+          .start-container {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            max-width: 92vw !important;
+            padding: 16px 24px !important;
+            gap: 24px !important;
+          }
+          .header-section {
+            margin-bottom: 0 !important;
+            width: 45% !important;
+            text-align: left !important;
+          }
+          .header-section h1 {
+            font-size: 2.2rem !important;
+            margin-top: 0 !important;
+          }
+          .header-section .pt-8 {
+            padding-top: 0.5rem !important;
+            margin-top: 0.5rem !important;
+          }
+          .header-section h2 {
+            font-size: 1.2rem !important;
+            text-align: left !important;
+          }
+          .game-modes-container {
+            width: 52% !important;
+            margin-bottom: 0 !important;
+            gap: 12px !important;
+          }
+          .game-modes-container button {
+            min-height: 65px !important;
+          }
+        }
       `}</style>
 
       {/* CRT Scanlines */}
@@ -198,7 +240,7 @@ export function HomeScreen() {
         </div>
 
         {/* Game Modes options */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '20px' }}>
+        <div className="game-modes-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '20px' }}>
 
           {/* Single Player Card */}
           <button

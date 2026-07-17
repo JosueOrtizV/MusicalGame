@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useGameStore } from '@/src/stores/gameStore';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { getSocket } from '@/src/lib/socketClient';
-import { GearIcon, VolumeUpIcon, VolumeMuteIcon, GlobeIcon, CameraMovableIcon, CameraStaticIcon } from './Icons';
+import { GearIcon, VolumeUpIcon, VolumeMuteIcon, GlobeIcon, CameraMovableIcon, CameraStaticIcon, FullscreenIcon } from './Icons';
 
 export function SettingsMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,10 +23,11 @@ export function SettingsMenu() {
   const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+      setIsMobile(window.matchMedia("(pointer: coarse)").matches || window.innerWidth <= 1024);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -48,9 +49,31 @@ export function SettingsMenu() {
     };
   }, [isOpen]);
 
-  // Handle ESC key to open/close menu when in game
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch(err => {
+        console.warn(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+          setIsFullscreen(false);
+        });
+      }
+    }
+  };
+
+  // Handle F11 for Fullscreen and ESC key to open/close menu when in game
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F11') {
+        e.preventDefault();
+        toggleFullscreen();
+        return;
+      }
+
       if (e.key === 'Escape' && screen !== 'home') {
         // If there's an active lobby settings or avatar locker modal open, ignore Escape and yield control to the modal
         const hasOpenModal = document.querySelector('.settings-modal-overlay') || 
@@ -74,6 +97,14 @@ export function SettingsMenu() {
     setIsOpen(false);
   };
 
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   return (
     <div className="settings-menu-container" ref={menuRef}>
       <button 
@@ -86,6 +117,17 @@ export function SettingsMenu() {
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         <GearIcon size={18} />
+      </button>
+
+      {/* Fullscreen Button */}
+      <button 
+        className="settings-menu-btn" 
+        onClick={toggleFullscreen}
+        title={isFullscreen ? t('exitFullscreen') : t('enterFullscreen')}
+        aria-label={isFullscreen ? t('exitFullscreen') : t('enterFullscreen')}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        <FullscreenIcon size={18} />
       </button>
 
       {isOpen && (

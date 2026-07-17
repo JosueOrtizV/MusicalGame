@@ -347,10 +347,17 @@ export const useGameStore = create<GameStore>()(
       setSpLastDiffRank: (rank: number | null) => set((s) => { s.spLastDiffRank = rank; }),
       setIsSubmittingScore: (val: boolean) => set((s) => { s.isSubmittingScore = val; }),
       initSpPlayerId: () => set((s) => {
-        if (!s.spPlayerId) {
-          s.spPlayerId = typeof crypto !== 'undefined' && crypto.randomUUID 
-            ? crypto.randomUUID() 
-            : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!s.spPlayerId || !uuidRegex.test(s.spPlayerId)) {
+          if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            s.spPlayerId = crypto.randomUUID();
+          } else {
+            s.spPlayerId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+              const r = Math.random() * 16 | 0;
+              const v = c === 'x' ? r : (r & 0x3 | 0x8);
+              return v.toString(16);
+            });
+          }
         }
       }),
       setSpSettings: (settings) => set((s) => { s.spSettings = settings; }),

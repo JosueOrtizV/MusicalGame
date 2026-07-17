@@ -820,7 +820,6 @@ export function RoomLobby() {
                   </button>
                 )}
 
-
                 <p className={`room-footer-note ${autoStartSeconds ? 'auto-starting-note' : ''} text-center font-mono text-[9px] text-[#00fbfb]/60 uppercase tracking-wider mt-2`}>
                   {autoStartSeconds
                     ? t('autoStartingIn', { seconds: autoStartSeconds })

@@ -78,6 +78,27 @@ export const UserIcon: React.FC<IconProps> = ({ size = 24, className, ...props }
   </svg>
 );
 
+// FullscreenIcon - Expand to fullscreen
+export const FullscreenIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="square"
+    strokeLinejoin="miter"
+    className={className}
+    {...props}
+  >
+    <path d="M4 10V4h6" />
+    <path d="M14 4h6v6" />
+    <path d="M20 14v6h-6" />
+    <path d="M10 20H4v-6" />
+  </svg>
+);
+
 // 3. ShirtIcon - A voxel shirt silhouette
 export const ShirtIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
   <svg

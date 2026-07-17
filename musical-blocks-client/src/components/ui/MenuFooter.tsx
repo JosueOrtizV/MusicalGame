@@ -33,8 +33,8 @@ export function MenuFooter() {
       )}
 
       {/* Middle section: System details */}
-      <div className="hidden md:block text-[#dcbed4]/40">
-        Ver: 1.0.4-Beta // Build: 0x9a4f // {t('systemStatus')}: <span className="text-[#00fbfb]">{t('nominal')}</span>
+      <div className="hidden lg:block text-[#dcbed4]/40">
+        Ver: 1.0.0 // Build: 0x9a4f // {t('systemStatus')}: <span className="text-[#00fbfb]">{t('nominal')}</span>
       </div>
 
       {/* Right section: Links */}

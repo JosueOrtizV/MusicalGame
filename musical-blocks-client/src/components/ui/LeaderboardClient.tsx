@@ -25,8 +25,28 @@ export function LeaderboardClient({ initialScores }: LeaderboardClientProps) {
   const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState<DiffFilter>('all');
   const [selectedEntry, setSelectedEntry] = useState<LeaderboardEntry | null>(null);
+  const [showHelpTooltip, setShowHelpTooltip] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
 
   const isFirstRender = useRef(true);
+
+  // Close tooltip when clicking or tapping outside
+  useEffect(() => {
+    if (!showHelpTooltip) return;
+
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
+      if (tooltipRef.current && !tooltipRef.current.contains(e.target as Node)) {
+        setShowHelpTooltip(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showHelpTooltip]);
 
   // Load scores when filter changes (skip initial fetch for 'all' since we have initialScores)
   useEffect(() => {
@@ -58,8 +78,8 @@ export function LeaderboardClient({ initialScores }: LeaderboardClientProps) {
 
   return (
     <main
-      id="game-app"
-      className="relative min-h-[100dvh] overflow-y-auto flex flex-col justify-start md:justify-center items-center bg-[#1c0f1a] text-[#f4dcec] p-4 pt-14 md:pt-8 pb-28 md:pb-8 select-none"
+      id="leaderboard-page"
+      className="relative w-full min-h-[100dvh] h-full overflow-y-auto flex flex-col justify-center items-center bg-[#1c0f1a] text-[#f4dcec] p-4 pt-16 md:pt-8 pb-20 md:pb-8 select-none"
     >
       <FloatingMusicNotes />
 
@@ -113,6 +133,21 @@ export function LeaderboardClient({ initialScores }: LeaderboardClientProps) {
           border-radius: 4px;
         }
 
+        @media (max-height: 500px) and (orientation: landscape) {
+          #leaderboard-page {
+            padding: 6px !important;
+            padding-bottom: 28px !important;
+            justify-content: center !important;
+          }
+          .start-container {
+            max-width: 94vw !important;
+            padding: 12px 20px !important;
+          }
+          .leaderboard-scroll {
+            max-height: 200px !important;
+          }
+        }
+
         .noise-bg {
           position: fixed;
           inset: 0;
@@ -151,26 +186,32 @@ export function LeaderboardClient({ initialScores }: LeaderboardClientProps) {
       />
 
       {/* Main Card Container */}
-      <div className="relative bg-[#160a15] border-2 border-[#00fbfb]/30 shadow-[0_0_50px_rgba(0,251,251,0.1)] z-[60] start-container flex flex-col max-h-[calc(100dvh-130px)] md:max-h-none overflow-hidden">
+      <div className="relative bg-[#160a15] border-2 border-[#00fbfb]/30 shadow-[0_0_50px_rgba(0,251,251,0.1)] z-[60] start-container flex flex-col w-full">
 
         {/* Back Button */}
         <button
-          className="absolute top-5 left-5 text-[#00fbfb] font-retro text-xs md:text-sm font-bold uppercase tracking-widest bg-transparent border-none p-0 cursor-pointer z-20 flex items-center gap-2 hover:text-[#ffabf3] transition-all duration-300 group hover:drop-shadow-[0_0_8px_rgba(255,171,243,0.8)]"
+          className="absolute top-3.5 left-3.5 sm:top-5 sm:left-5 text-[#00fbfb] font-retro text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-widest bg-transparent border-none p-0 cursor-pointer z-20 flex items-center gap-1.5 hover:text-[#ffabf3] transition-all duration-300 group hover:drop-shadow-[0_0_8px_rgba(255,171,243,0.8)]"
           onClick={() => router.push('/singleplayer')}
         >
-          <BackArrowIcon size={20} className="group-hover:-translate-x-1 transition-transform text-glow-cyan" />
+          <BackArrowIcon size={16} className="group-hover:-translate-x-1 transition-transform text-glow-cyan sm:w-5 sm:h-5" />
           <span>{t('back').replace('← ', '')}</span>
         </button>
 
-        {/* Help Tooltip Button */}
-        <div className="absolute top-5 right-5 z-20 group/tooltip">
+        {/* Help Tooltip Button Container (Top-Right on Desktop/Portrait, moved to footer via CSS in Landscape) */}
+        <div ref={tooltipRef} className="leaderboard-help-wrapper absolute top-3 right-3 sm:top-4 sm:right-4 md:top-5 md:right-5 z-30 group/tooltip">
           <button
             type="button"
-            className="w-6 h-6 rounded-full border border-[#ffabf3]/40 flex items-center justify-center text-xs text-[#ffabf3]/60 hover:text-[#ffabf3] hover:border-[#ffabf3] font-mono font-bold cursor-help transition-all"
+            onClick={() => setShowHelpTooltip((prev) => !prev)}
+            className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-[#1b0a1a] border-2 border-[#ffabf3] flex items-center justify-center text-[10px] sm:text-xs md:text-sm text-[#ffabf3] hover:text-white hover:border-cyan-400 hover:bg-[#ffabf3]/20 font-mono font-extrabold cursor-pointer transition-all shadow-[0_0_10px_rgba(255,171,243,0.35)] hover:scale-110"
+            title={lang === 'es' ? 'Ver Multiplicadores' : 'View Multipliers'}
+            aria-label={lang === 'es' ? 'Ver Multiplicadores' : 'View Multipliers'}
           >
             ?
           </button>
-          <div className="absolute right-0 top-7 w-64 bg-[#120811] border border-[#ffabf3]/30 p-3 rounded shadow-2xl z-50 text-[10px] font-mono text-left text-white/90 hidden group-hover/tooltip:block pointer-events-none">
+          <div
+            className={`leaderboard-tooltip-box absolute right-0 top-9 md:top-10 w-64 bg-[#120811] border-2 border-[#ffabf3]/80 p-3.5 rounded-lg shadow-[0_0_25px_rgba(255,171,243,0.4)] z-50 text-[10px] font-mono text-left text-white/90 ${showHelpTooltip ? 'block pointer-events-auto' : 'hidden group-hover/tooltip:block pointer-events-none'
+              }`}
+          >
             <p className="text-[#ffabf3] font-bold mb-1.5 uppercase tracking-wider">
               {lang === 'es' ? 'MULTIPLICADORES DE PUNTOS' : 'SCORE MULTIPLIERS'}
             </p>
@@ -202,167 +243,177 @@ export function LeaderboardClient({ initialScores }: LeaderboardClientProps) {
           </div>
         </div>
 
+
+
         {/* Corner Brackets */}
         <div className="absolute -top-[2px] -left-[2px] w-5 h-5 border-t-4 border-l-4 border-[#00fbfb]"></div>
         <div className="absolute -top-[2px] -right-[2px] w-5 h-5 border-t-4 border-r-4 border-[#00fbfb]"></div>
         <div className="absolute -bottom-[2px] -left-[2px] w-5 h-5 border-b-4 border-l-4 border-[#00fbfb]"></div>
         <div className="absolute -bottom-[2px] -right-[2px] w-5 h-5 border-b-4 border-r-4 border-[#00fbfb]"></div>
 
-        {/* Logo / Header */}
-        <div className="text-center mt-2 mb-6 w-full">
-          <div className="flex items-center justify-center gap-1.5 mb-1 opacity-60">
-            <MusicIcon size={12} className="text-[#ffabf3] pixel-note" />
-            <span className="font-display text-[9px] tracking-[0.3em] text-[#f4dcec] uppercase">
-              Voxel Rave
-            </span>
-          </div>
-          <h1 className="font-display text-2xl md:text-3xl text-[#ffabf3] tracking-[0.2em] uppercase mb-1 text-glow-magenta flex items-center justify-center gap-3">
-            <TrophyIcon size={28} className="text-[#eaea00] text-glow-cyan" />
-            {t('globalLeaderboard')}
-          </h1>
-          <p className="font-mono text-[10px] text-[#00fbfb]/60 uppercase tracking-widest">
-            {lang === 'es' ? 'TOP 50 JUGADORES MUNDIALES' : 'TOP 50 WORLD RANKINGS'}
-          </p>
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="flex flex-wrap gap-1.5 justify-center mb-6 p-1 bg-black/40 rounded-lg border border-white/5">
-          {(['all', 'easy', 'normal', 'hard', 'expert'] as const).map((filter) => {
-            const filterLabels: Record<DiffFilter, string> = {
-              all: lang === 'es' ? 'Todos' : 'All',
-              easy: lang === 'es' ? 'Fácil' : 'Easy',
-              normal: lang === 'es' ? 'Normal' : 'Medium',
-              hard: lang === 'es' ? 'Difícil' : 'Hard',
-              expert: lang === 'es' ? 'Experto' : 'Expert',
-            };
-            const isActive = activeFilter === filter;
-
-            return (
-              <button
-                key={filter}
-                className={`py-1.5 px-3 font-mono text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all rounded-md ${isActive
-                    ? 'text-cyan-400 bg-cyan-500/10 border border-cyan-400/30 text-shadow-[0_0_8px_rgba(0,243,255,0.4)]'
-                    : 'text-neutral-400 border border-transparent hover:bg-white/5 hover:text-white'
-                  }`}
-                onClick={() => setActiveFilter(filter)}
-              >
-                {filterLabels[filter]}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Leaderboard Table List */}
-        <div className="flex-1 overflow-y-auto leaderboard-scroll pr-2 flex flex-col gap-1 w-full min-h-[150px] max-h-[360px] md:max-h-[460px]">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <div className="w-6 h-6 border-2 border-[#00fbfb] border-t-transparent rounded-full animate-spin"></div>
-              <p className="font-mono text-xs text-[#00fbfb]/60 text-center animate-pulse">{t('leaderboardLoading')}</p>
+        {/* Leaderboard Main Layout Body */}
+        <div className="leaderboard-body flex flex-col w-full flex-1">
+          {/* Left Column in Landscape / Top Header in Portrait */}
+          <div className="leaderboard-col-left flex flex-col items-center">
+            {/* Logo / Header */}
+            <div className="leaderboard-header text-center mt-2 mb-6 w-full">
+              <div className="flex items-center justify-center gap-1.5 mb-1 opacity-60">
+                <MusicIcon size={12} className="text-[#ffabf3] pixel-note" />
+                <span className="font-display text-[9px] tracking-[0.3em] text-[#f4dcec] uppercase">
+                  Voxel Rave
+                </span>
+              </div>
+              <h1 className="font-display text-2xl md:text-3xl text-[#ffabf3] tracking-[0.2em] uppercase mb-1 text-glow-magenta flex items-center justify-center gap-3">
+                <TrophyIcon size={28} className="text-[#eaea00] text-glow-cyan" />
+                {t('globalLeaderboard')}
+              </h1>
+              <p className="font-mono text-[10px] text-[#00fbfb]/60 uppercase tracking-widest">
+                {lang === 'es' ? 'TOP 50 JUGADORES MUNDIALES' : 'TOP 50 WORLD RANKINGS'}
+              </p>
             </div>
-          ) : leaderboard.length === 0 ? (
-            <p className="font-mono text-xs text-white/40 text-center py-16">
-              {lang === 'es' ? 'No hay récords registrados todavía.' : 'No records yet in this difficulty.'}
-            </p>
-          ) : (
-            leaderboard.map((entry, index) => {
-              const isRank1 = index === 0;
-              const isRank2 = index === 1;
-              const isRank3 = index === 2;
-              const isCurrentUser = entry.player_id === spPlayerId;
 
-              // Format date
-              const dateStr = entry.created_at
-                ? new Date(entry.created_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })
-                : '';
+            {/* Filter Tabs */}
+            <div className="leaderboard-filters flex flex-wrap gap-1.5 justify-center mb-6 p-1 bg-black/40 rounded-lg border border-white/5 w-full">
+              {(['all', 'easy', 'normal', 'hard', 'expert'] as const).map((filter) => {
+                const filterLabels: Record<DiffFilter, string> = {
+                  all: lang === 'es' ? 'Todos' : 'All',
+                  easy: lang === 'es' ? 'Fácil' : 'Easy',
+                  normal: lang === 'es' ? 'Normal' : 'Medium',
+                  hard: lang === 'es' ? 'Difícil' : 'Hard',
+                  expert: lang === 'es' ? 'Experto' : 'Expert',
+                };
+                const isActive = activeFilter === filter;
 
-              return (
-                <div
-                  key={entry.id}
-                  className={`flex justify-between items-center text-xs font-mono border transition-all cursor-pointer ${isCurrentUser
-                      ? 'bg-[#00fbfb]/15 border-[#00fbfb]/40 rounded hover:border-[#00fbfb] shadow-[0_0_10px_rgba(0,251,251,0.1)]'
-                      : 'bg-white/[0.01] hover:bg-white/[0.04] border-white/5 hover:border-cyan-400/30 rounded-sm'
-                    }`}
-                  style={{ padding: '10px 14px' }}
-                  onClick={() => setSelectedEntry(entry)}
-                >
-                  {/* Left Side: Rank + Name + Difficulty Tags */}
-                  <div className="flex items-center gap-3 overflow-hidden text-ellipsis whitespace-nowrap max-w-[70%]">
-                    <span
-                      className={`w-6 text-center font-bold font-display ${isRank1 ? 'text-[#eaea00] text-glow-cyan' : isRank2 ? 'text-[#cbd5e1]' : isRank3 ? 'text-[#b45309]' : 'text-white/40'
+                return (
+                  <button
+                    key={filter}
+                    className={`py-1.5 px-3 font-mono text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all rounded-md ${isActive
+                      ? 'text-cyan-400 bg-cyan-500/10 border border-cyan-400/30 text-shadow-[0_0_8px_rgba(0,243,255,0.4)]'
+                      : 'text-neutral-400 border border-transparent hover:bg-white/5 hover:text-white'
+                      }`}
+                    onClick={() => setActiveFilter(filter)}
+                  >
+                    {filterLabels[filter]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right Column in Landscape (Table List + Footer Note) */}
+          <div className="leaderboard-col-right flex flex-col flex-1 min-h-0 w-full">
+            <div className="flex-1 overflow-y-auto leaderboard-scroll pr-2 flex flex-col gap-1 w-full min-h-[150px] max-h-[360px] md:max-h-[460px]">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-3">
+                  <div className="w-6 h-6 border-2 border-[#00fbfb] border-t-transparent rounded-full animate-spin"></div>
+                  <p className="font-mono text-xs text-[#00fbfb]/60 text-center animate-pulse">{t('leaderboardLoading')}</p>
+                </div>
+              ) : leaderboard.length === 0 ? (
+                <p className="font-mono text-xs text-white/40 text-center py-16">
+                  {lang === 'es' ? 'No hay récords registrados todavía.' : 'No records yet in this difficulty.'}
+                </p>
+              ) : (
+                leaderboard.map((entry, index) => {
+                  const isRank1 = index === 0;
+                  const isRank2 = index === 1;
+                  const isRank3 = index === 2;
+                  const isCurrentUser = entry.player_id === spPlayerId;
+
+                  // Format date
+                  const dateStr = entry.created_at
+                    ? new Date(entry.created_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    })
+                    : '';
+
+                  return (
+                    <div
+                      key={entry.id}
+                      className={`flex justify-between items-center text-xs font-mono border transition-all cursor-pointer ${isCurrentUser
+                        ? 'bg-[#00fbfb]/15 border-[#00fbfb]/40 rounded hover:border-[#00fbfb] shadow-[0_0_10px_rgba(0,251,251,0.1)]'
+                        : 'bg-white/[0.01] hover:bg-white/[0.04] border-white/5 hover:border-cyan-400/30 rounded-sm'
                         }`}
+                      style={{ padding: '10px 14px' }}
+                      onClick={() => setSelectedEntry(entry)}
                     >
-                      {index + 1}
-                    </span>
-                    <div className="flex flex-col text-left overflow-hidden">
-                      <span className={`font-bold truncate ${isCurrentUser ? 'text-[#00fbfb]' : 'text-white/90'}`}>
-                        {entry.name}
-                      </span>
-                      <span className="text-[8px] text-white/40 uppercase tracking-wider flex items-center gap-1">
-                        <span>{lang === 'es' ? `Ronda ${entry.rounds}` : `Round ${entry.rounds}`}</span>
-
-                        <span className="hidden sm:inline">•</span>
+                      {/* Left Side: Rank + Name + Difficulty Tags */}
+                      <div className="flex items-center gap-3 overflow-hidden text-ellipsis whitespace-nowrap max-w-[70%]">
                         <span
-                          className="font-semibold hidden sm:inline"
-                          style={{
-                            color: entry.difficulty === 'easy' ? '#22c55e' :
-                                   entry.difficulty === 'normal' ? '#00fbfb' :
-                                   entry.difficulty === 'hard' ? '#eab308' :
-                                   entry.difficulty === 'expert' ? '#ef4444' : 'inherit'
-                          }}
+                          className={`w-6 text-center font-bold font-display ${isRank1 ? 'text-[#eaea00] text-glow-cyan' : isRank2 ? 'text-[#cbd5e1]' : isRank3 ? 'text-[#b45309]' : 'text-white/40'
+                            }`}
                         >
-                          {entry.difficulty === 'easy' ? (lang === 'es' ? '4 Colores' : '4 Colors') :
-                            entry.difficulty === 'normal' ? (lang === 'es' ? '6 Colores' : '6 Colors') :
-                              entry.difficulty === 'hard' ? (lang === 'es' ? '8 Colores' : '8 Colors') :
-                                entry.difficulty === 'expert' ? (lang === 'es' ? '10 Colores' : '10 Colors') :
-                                  entry.difficulty}
+                          {index + 1}
                         </span>
+                        <div className="flex flex-col text-left overflow-hidden">
+                          <span className={`font-bold truncate ${isCurrentUser ? 'text-[#00fbfb]' : 'text-white/90'}`}>
+                            {entry.name}
+                          </span>
+                          <span className="text-[8px] text-white/40 uppercase tracking-wider flex items-center gap-1">
+                            <span>{lang === 'es' ? `Ronda ${entry.rounds}` : `Round ${entry.rounds}`}</span>
 
-                        <span>•</span>
-                        <span
-                          className="font-semibold"
-                          style={{
-                            color: entry.speed === 'CHILL' ? '#38bdf8' :
-                                   entry.speed === 'NORMAL' ? '#3b82f6' :
-                                   entry.speed === 'TURBO' ? '#eab308' : 'inherit'
-                          }}
-                        >
-                          {entry.speed === 'CHILL' ? 'Chill' :
-                            entry.speed === 'NORMAL' ? 'Normal' :
-                              entry.speed === 'TURBO' ? 'Turbo' :
-                                entry.speed}
-                        </span>
+                            <span className="hidden sm:inline">•</span>
+                            <span
+                              className="font-semibold hidden sm:inline"
+                              style={{
+                                color: entry.difficulty === 'easy' ? '#22c55e' :
+                                  entry.difficulty === 'normal' ? '#00fbfb' :
+                                    entry.difficulty === 'hard' ? '#eab308' :
+                                      entry.difficulty === 'expert' ? '#ef4444' : 'inherit'
+                              }}
+                            >
+                              {entry.difficulty === 'easy' ? (lang === 'es' ? '4 Colores' : '4 Colors') :
+                                entry.difficulty === 'normal' ? (lang === 'es' ? '6 Colores' : '6 Colors') :
+                                  entry.difficulty === 'hard' ? (lang === 'es' ? '8 Colores' : '8 Colors') :
+                                    entry.difficulty === 'expert' ? (lang === 'es' ? '10 Colores' : '10 Colors') :
+                                      entry.difficulty}
+                            </span>
 
-                        {dateStr && (
-                          <>
                             <span>•</span>
-                            <span className="hidden xs:inline">{dateStr}</span>
-                          </>
-                        )}
+                            <span
+                              className="font-semibold"
+                              style={{
+                                color: entry.speed === 'CHILL' ? '#38bdf8' :
+                                  entry.speed === 'NORMAL' ? '#3b82f6' :
+                                    entry.speed === 'TURBO' ? '#eab308' : 'inherit'
+                              }}
+                            >
+                              {entry.speed === 'CHILL' ? 'Chill' :
+                                entry.speed === 'NORMAL' ? 'Normal' :
+                                  entry.speed === 'TURBO' ? 'Turbo' :
+                                    entry.speed}
+                            </span>
+
+                            {dateStr && (
+                              <>
+                                <span>•</span>
+                                <span className="hidden xs:inline">{dateStr}</span>
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right Side: Score */}
+                      <span
+                        className={`font-bold font-display text-sm ${isRank1 ? 'text-[#eaea00] text-glow-cyan' : 'text-[#ffabf3]'
+                          }`}
+                      >
+                        {entry.score.toLocaleString()}
                       </span>
                     </div>
-                  </div>
+                  );
+                })
+              )}
+            </div>
 
-                  {/* Right Side: Score */}
-                  <span
-                    className={`font-bold font-display text-sm ${isRank1 ? 'text-[#eaea00] text-glow-cyan' : 'text-[#ffabf3]'
-                      }`}
-                  >
-                    {entry.score.toLocaleString()}
-                  </span>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {/* Footer info message */}
-        <div className="mt-4 pt-3 border-t border-white/10 text-center flex-shrink-0">
-          <p className="font-mono text-[8px] md:text-[9px] text-[#ffabf3]/50 uppercase tracking-widest">
-            {lang === 'es' ? 'Toca cualquier fila para ver el desglose' : 'Tap any row to view full details'}
-          </p>
+            {/* Footer info message inside Right Column */}
+            <div className="leaderboard-footer mt-2 pt-2 border-t border-white/10 text-center flex-shrink-0">
+              <p className="font-mono text-[8px] md:text-[9px] text-[#ffabf3]/50 uppercase tracking-widest">
+                {lang === 'es' ? 'Toca cualquier fila para ver el desglose' : 'Tap any row to view full details'}
+              </p>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -374,7 +425,7 @@ export function LeaderboardClient({ initialScores }: LeaderboardClientProps) {
           onClick={() => setSelectedEntry(null)}
         >
           <div
-            className="bg-[#1b0a1a] border-2 border-[#ffabf3] p-6 w-full max-w-xs rounded relative shadow-[0_0_30px_rgba(255,171,243,0.3)] animate-[modal-glow-fade_0.2s_ease-out]"
+            className="leaderboard-detail-modal-card bg-[#1b0a1a] border-2 border-[#ffabf3] p-6 w-full max-w-xs rounded relative shadow-[0_0_30px_rgba(255,171,243,0.3)] animate-[modal-glow-fade_0.2s_ease-out]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Accent corners */}
@@ -411,9 +462,9 @@ export function LeaderboardClient({ initialScores }: LeaderboardClientProps) {
                     className="font-bold"
                     style={{
                       color: selectedEntry.difficulty === 'easy' ? '#22c55e' :
-                             selectedEntry.difficulty === 'normal' ? '#00fbfb' :
-                             selectedEntry.difficulty === 'hard' ? '#eab308' :
-                             selectedEntry.difficulty === 'expert' ? '#ef4444' : '#ffffff'
+                        selectedEntry.difficulty === 'normal' ? '#00fbfb' :
+                          selectedEntry.difficulty === 'hard' ? '#eab308' :
+                            selectedEntry.difficulty === 'expert' ? '#ef4444' : '#ffffff'
                     }}
                   >
                     {selectedEntry.difficulty === 'easy' ? (lang === 'es' ? '4 Colores (Fácil)' : '4 Colors (Easy)') :
@@ -429,8 +480,8 @@ export function LeaderboardClient({ initialScores }: LeaderboardClientProps) {
                     className="font-bold"
                     style={{
                       color: selectedEntry.speed === 'CHILL' ? '#38bdf8' :
-                             selectedEntry.speed === 'NORMAL' ? '#3b82f6' :
-                             selectedEntry.speed === 'TURBO' ? '#eab308' : '#ffffff'
+                        selectedEntry.speed === 'NORMAL' ? '#3b82f6' :
+                          selectedEntry.speed === 'TURBO' ? '#eab308' : '#ffffff'
                     }}
                   >
                     {selectedEntry.speed === 'CHILL' ? (lang === 'es' ? 'Chill (0.8x)' : 'Chill (0.8x)') :
@@ -449,12 +500,12 @@ export function LeaderboardClient({ initialScores }: LeaderboardClientProps) {
                     className="font-bold"
                     style={{
                       color: selectedEntry.sudden_death === 'OFF' ? '#10b981' :
-                             selectedEntry.sudden_death === 'CHAOS' ? '#f43f5e' : '#3b82f6'
+                        selectedEntry.sudden_death === 'CHAOS' ? '#f43f5e' : '#3b82f6'
                     }}
                   >
                     {selectedEntry.sudden_death === 'OFF' ? (lang === 'es' ? 'Desactivado' : 'Off') :
-                     selectedEntry.sudden_death === 'CHAOS' ? (lang === 'es' ? 'Caos' : 'Chaos') :
-                     (lang === 'es' ? 'Normal' : 'Normal')}
+                      selectedEntry.sudden_death === 'CHAOS' ? (lang === 'es' ? 'Caos' : 'Chaos') :
+                        (lang === 'es' ? 'Normal' : 'Normal')}
                   </span>
                 </div>
                 <div className="flex justify-between border-b border-white/5 pb-1">

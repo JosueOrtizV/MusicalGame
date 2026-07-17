@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/src/stores/gameStore';
 import { useToastStore } from '@/src/stores/toastStore';
@@ -110,6 +110,26 @@ export function SinglePlayerConfig() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [showSpHelpTooltip, setShowSpHelpTooltip] = useState(false);
+  const spTooltipRef = useRef<HTMLDivElement>(null);
+
+  // Close singleplayer modal tooltip when clicking or tapping outside
+  useEffect(() => {
+    if (!showSpHelpTooltip) return;
+
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
+      if (spTooltipRef.current && !spTooltipRef.current.contains(e.target as Node)) {
+        setShowSpHelpTooltip(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showSpHelpTooltip]);
 
   // Locker states & methods
   const [isLockerOpen, setIsLockerOpen] = useState(false);
@@ -343,6 +363,45 @@ export function SinglePlayerConfig() {
             border-color: rgba(0, 251, 251, 0.4) !important;
             color: #00fbfb !important;
           }
+
+          @media (max-height: 500px) and (orientation: landscape) {
+            .sp-config-page {
+              padding: 6px !important;
+              padding-bottom: 28px !important;
+              justify-content: flex-start !important;
+            }
+            .sp-config-container {
+              max-width: 94vw !important;
+              padding: 14px 24px !important;
+            }
+            .sp-config-main-wrap {
+              display: flex !important;
+              flex-direction: row !important;
+              align-items: center !important;
+              justify-content: space-between !important;
+              gap: 24px !important;
+            }
+            .sp-config-col-left {
+              width: 48% !important;
+              margin-bottom: 0 !important;
+            }
+            .sp-config-col-right {
+              width: 48% !important;
+              margin-top: 0 !important;
+            }
+            .sp-header-box {
+              margin-top: 0 !important;
+              margin-bottom: 6px !important;
+            }
+            .sp-header-box h1 {
+              font-size: 1.3rem !important;
+              margin-bottom: 2px !important;
+            }
+            .sp-chips-box {
+              margin-top: 4px !important;
+              gap: 4px !important;
+            }
+          }
         `}</style>
 
         {/* CRT Scanlines */}
@@ -375,7 +434,7 @@ export function SinglePlayerConfig() {
 
 
         {/* Main Setup Card container (Desktop: Centered) */}
-        <div className="game-card game-card-cyan start-container flex flex-col justify-between p-6 md:p-8 z-20">
+        <div className="game-card game-card-cyan start-container sp-config-container flex flex-col justify-between p-6 md:p-8 z-20">
           {/* Back Button inside setup card */}
           <button
             className="absolute top-5 left-5 text-[#00fbfb] font-retro text-xs md:text-sm font-bold uppercase tracking-widest bg-transparent border-none p-0 cursor-pointer z-20 flex items-center gap-2 hover:text-[#ffabf3] transition-all duration-300 group hover:drop-shadow-[0_0_8px_rgba(255,171,243,0.8)]"
@@ -413,164 +472,163 @@ export function SinglePlayerConfig() {
           <div className="absolute -bottom-[2px] -left-[2px] w-5 h-5 border-b-4 border-l-4 border-[#00fbfb]"></div>
           <div className="absolute -bottom-[2px] -right-[2px] w-5 h-5 border-b-4 border-r-4 border-[#00fbfb]"></div>
 
-          <div className="flex flex-col gap-4">
-            {/* Header */}
-            <div className="text-center mt-2 mb-3">
-              {/* Micro-Branding Label */}
-              <div className="flex items-center justify-center gap-1.5 mb-1 opacity-60">
-                <MusicIcon size={12} className="text-[#ffabf3] pixel-note" />
-                <span className="font-display text-[9px] tracking-[0.3em] text-[#f4dcec] uppercase">
-                  Voxel Rave
-                </span>
-              </div>
-              <h1 className="font-display text-2xl md:text-3xl text-[#ffabf3] tracking-[0.2em] uppercase mb-1.5 text-glow-magenta">
-                {t('singlePlayer')}
-              </h1>
-              <p className="font-mono text-[10px] text-[#00fbfb]/60 uppercase tracking-widest">
-                {t('establishingNeuralLink')}
-              </p>
+          <div className="sp-config-main-wrap flex flex-col gap-4">
+            {/* Left Column in Landscape (Header, Chips, Name) */}
+            <div className="sp-config-col-left flex flex-col gap-3">
+              {/* Header */}
+              <div className="sp-header-box text-center mt-2 mb-2">
+                {/* Micro-Branding Label */}
+                <div className="flex items-center justify-center gap-1.5 mb-1 opacity-60">
+                  <MusicIcon size={12} className="text-[#ffabf3] pixel-note" />
+                  <span className="font-display text-[9px] tracking-[0.3em] text-[#f4dcec] uppercase">
+                    Voxel Rave
+                  </span>
+                </div>
+                <h1 className="font-display text-2xl md:text-3xl text-[#ffabf3] tracking-[0.2em] uppercase mb-1 text-glow-magenta">
+                  {t('singlePlayer')}
+                </h1>
+                <p className="font-mono text-[10px] text-[#00fbfb]/60 uppercase tracking-widest">
+                  {t('establishingNeuralLink')}
+                </p>
 
-              {/* Real-time Game Difficulty Status Chips */}
-              <div className="flex flex-wrap justify-center gap-2 mt-4 font-mono text-[9px] font-bold tracking-wider uppercase">
-                {/* Color/Difficulty Chip */}
-                {/* Color/Difficulty Chip */}
-                <div className="tooltip-container tooltip-align-left">
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#00fbfb]/30 rounded-sm">
-                    <span
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{
-                        backgroundColor: (spSettings.maxColors === 4) ? '#22c55e' :
-                          (spSettings.maxColors === 6) ? '#3b82f6' :
-                            (spSettings.maxColors === 8) ? '#eab308' :
-                              '#ef4444',
-                        boxShadow: `0 0 6px ${(spSettings.maxColors === 4) ? '#22c55e' :
+                {/* Real-time Game Difficulty Status Chips */}
+                <div className="sp-chips-box flex flex-wrap justify-center gap-2 mt-3 font-mono text-[9px] font-bold tracking-wider uppercase">
+                  {/* Color/Difficulty Chip */}
+                  <div className="tooltip-container tooltip-align-left" tabIndex={0}>
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#00fbfb]/30 rounded-sm">
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{
+                          backgroundColor: (spSettings.maxColors === 4) ? '#22c55e' :
+                            (spSettings.maxColors === 6) ? '#3b82f6' :
+                              (spSettings.maxColors === 8) ? '#eab308' :
+                                '#ef4444',
+                          boxShadow: `0 0 6px ${(spSettings.maxColors === 4) ? '#22c55e' :
+                            (spSettings.maxColors === 6) ? '#3b82f6' :
+                              (spSettings.maxColors === 8) ? '#eab308' :
+                                '#ef4444'
+                            }`
+                        }}
+                      />
+                      <span style={{
+                        color: (spSettings.maxColors === 4) ? '#22c55e' :
                           (spSettings.maxColors === 6) ? '#3b82f6' :
                             (spSettings.maxColors === 8) ? '#eab308' :
                               '#ef4444'
-                          }`
-                      }}
-                    />
-                    <span style={{
-                      color: (spSettings.maxColors === 4) ? '#22c55e' :
-                        (spSettings.maxColors === 6) ? '#3b82f6' :
-                          (spSettings.maxColors === 8) ? '#eab308' :
-                            '#ef4444'
-                    }}>
-                      {t(spDifficulty)}
-                    </span>
-                  </div>
-                  <div className={`tooltip-box tooltip-${(spSettings.maxColors === 4) ? 'green' :
-                      (spSettings.maxColors === 6) ? 'blue' :
-                        (spSettings.maxColors === 8) ? 'amber' :
-                          'rose'
-                    }`}>
-                    <span style={{
-                      color: (spSettings.maxColors === 4) ? '#22c55e' :
-                        (spSettings.maxColors === 6) ? '#00fbfb' :
-                          (spSettings.maxColors === 8) ? '#eab308' :
-                            '#ef4444',
-                      fontWeight: 'bold',
-                      textShadow: `0 0 5px ${(spSettings.maxColors === 4) ? '#22c55e' :
-                        (spSettings.maxColors === 6) ? '#00fbfb' :
-                          (spSettings.maxColors === 8) ? '#eab308' :
-                            '#ef4444'}`
-                    }}>
-                      {(spSettings.maxColors ?? 6)} {lang === 'es' ? 'Colores' : 'Colors'}
-                    </span>
-                    {' - '}
-                    {(spSettings.maxColors === 4) ? t('easyDesc') :
-                      (spSettings.maxColors === 6) ? t('normalDesc') :
-                        (spSettings.maxColors === 8) ? t('hardDesc') :
-                          t('extremeDesc')
-                    }
-                  </div>
-                </div>
-
-                {/* Speed Chip */}
-                <div className="tooltip-container">
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-white/10 rounded-sm">
-                    {spSpeed === 'CHILL' ? (
-                      <>
-                        <SnowflakeIcon size={10} className="text-[#38bdf8]" />
-                        <span className="text-[#38bdf8]">{t('speedChill')}</span>
-                      </>
-                    ) : spSpeed === 'TURBO' ? (
-                      <>
-                        <LightningIcon size={10} className="text-[#eab308]" />
-                        <span className="text-[#eab308]">{t('speedTurbo')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <StopwatchIcon size={10} className="text-[#3b82f6]" />
-                        <span className="text-[#3b82f6]">{t('speedNormal')}</span>
-                      </>
-                    )}
-                  </div>
-                  <div className={`tooltip-box tooltip-${spSpeed === 'CHILL' ? 'blue' :
-                      spSpeed === 'TURBO' ? 'amber' : 'blue'
-                    }`}>
-                    {spSpeed === 'CHILL' ? t('speedChillDesc') :
-                      spSpeed === 'TURBO' ? t('speedTurboDesc') : t('speedNormalDesc')
-                    }
-                  </div>
-                </div>
-
-                {/* Lives Chip */}
-                {spSettings.maxLives !== undefined && (
-                  <div className="tooltip-container tooltip-align-right">
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#f43f5e]/30 rounded-sm">
-                      <HeartIcon size={10} style={{ fill: '#f43f5e' }} className="text-[#f43f5e]" />
-                      <span className="text-[#f43f5e]">{spSettings.maxLives} {spSettings.maxLives === 1 ? (lang === 'es' ? 'Vida' : 'Life') : (lang === 'es' ? 'Vidas' : 'Lives')}</span>
+                      }}>
+                        {t(spDifficulty)}
+                      </span>
                     </div>
-                    <div className="tooltip-box tooltip-rose">
-                      {spSettings.maxLives === 1 ? t('lives1Desc') :
-                        spSettings.maxLives === 3 ? t('lives3Desc') :
-                          spSettings.maxLives === 5 ? t('lives5Desc') :
-                            (lang === 'es' ? `Inicias la partida con ${spSettings.maxLives} vidas.` : `You start the match with ${spSettings.maxLives} lives.`)
+                    <div className={`tooltip-box tooltip-${(spSettings.maxColors === 4) ? 'green' :
+                        (spSettings.maxColors === 6) ? 'blue' :
+                          (spSettings.maxColors === 8) ? 'amber' :
+                            'rose'
+                      }`}>
+                      <span style={{
+                        color: (spSettings.maxColors === 4) ? '#22c55e' :
+                          (spSettings.maxColors === 6) ? '#00fbfb' :
+                            (spSettings.maxColors === 8) ? '#eab308' :
+                              '#ef4444',
+                        fontWeight: 'bold',
+                        textShadow: `0 0 5px ${(spSettings.maxColors === 4) ? '#22c55e' :
+                          (spSettings.maxColors === 6) ? '#00fbfb' :
+                            (spSettings.maxColors === 8) ? '#eab308' :
+                              '#ef4444'}`
+                      }}>
+                        {(spSettings.maxColors ?? 6)} {lang === 'es' ? 'Colores' : 'Colors'}
+                      </span>
+                      {' - '}
+                      {(spSettings.maxColors === 4) ? t('easyDesc') :
+                        (spSettings.maxColors === 6) ? t('normalDesc') :
+                          (spSettings.maxColors === 8) ? t('hardDesc') :
+                            t('extremeDesc')
                       }
                     </div>
                   </div>
-                )}
 
-                {/* Blind Mode Chip */}
-                {spSettings.isBlindMode && (
-                  <div className="tooltip-container tooltip-align-right">
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#d946ef]/30 rounded-sm">
-                      <GlassesIcon size={10} className="text-[#d946ef]" />
-                      <span className="text-[#d946ef]">{t('blindModeLabel')}</span>
-                    </div>
-                    <div className="tooltip-box tooltip-purple">
-                      {t('blindModeDesc')}
-                    </div>
-                  </div>
-                )}
-
-                {/* Sudden Death Mode Chip */}
-                {spSettings.suddenDeathMode && spSettings.suddenDeathMode !== 'NORMAL' && (
-                  <div className="tooltip-container tooltip-align-right">
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-red-500/30 rounded-sm">
-                      {spSettings.suddenDeathMode === 'CHAOS' ? (
+                  {/* Speed Chip */}
+                  <div className="tooltip-container" tabIndex={0}>
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-white/10 rounded-sm">
+                      {spSpeed === 'CHILL' ? (
                         <>
-                          <SkullIcon size={10} className="text-[#f43f5e]" />
-                          <span className="text-[#f43f5e]">{t('sdChaos')}</span>
+                          <SnowflakeIcon size={10} className="text-[#38bdf8]" />
+                          <span className="text-[#38bdf8]">{t('speedChill')}</span>
+                        </>
+                      ) : spSpeed === 'TURBO' ? (
+                        <>
+                          <LightningIcon size={10} className="text-[#eab308]" />
+                          <span className="text-[#eab308]">{t('speedTurbo')}</span>
                         </>
                       ) : (
                         <>
-                          <DoveIcon size={10} className="text-[#10b981]" />
-                          <span className="text-[#10b981]">{t('sdOff')}</span>
+                          <StopwatchIcon size={10} className="text-[#3b82f6]" />
+                          <span className="text-[#3b82f6]">{t('speedNormal')}</span>
                         </>
                       )}
                     </div>
-                    <div className={`tooltip-box tooltip-${spSettings.suddenDeathMode === 'CHAOS' ? 'rose' : 'green'}`}>
-                      {spSettings.suddenDeathMode === 'CHAOS' ? t('sdChaosDesc') : t('sdOffDesc')}
+                    <div className={`tooltip-box tooltip-${spSpeed === 'CHILL' ? 'blue' :
+                        spSpeed === 'TURBO' ? 'amber' : 'blue'
+                      }`}>
+                      {spSpeed === 'CHILL' ? t('speedChillDesc') :
+                        spSpeed === 'TURBO' ? t('speedTurboDesc') : t('speedNormalDesc')
+                      }
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
 
-            {/* Setup Form */}
-            <div className="flex flex-col gap-4">
+                  {/* Lives Chip */}
+                  {spSettings.maxLives !== undefined && (
+                    <div className="tooltip-container tooltip-align-right" tabIndex={0}>
+                      <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#f43f5e]/30 rounded-sm">
+                        <HeartIcon size={10} style={{ fill: '#f43f5e' }} className="text-[#f43f5e]" />
+                        <span className="text-[#f43f5e]">{spSettings.maxLives} {spSettings.maxLives === 1 ? (lang === 'es' ? 'Vida' : 'Life') : (lang === 'es' ? 'Vidas' : 'Lives')}</span>
+                      </div>
+                      <div className="tooltip-box tooltip-rose">
+                        {spSettings.maxLives === 1 ? t('lives1Desc') :
+                          spSettings.maxLives === 3 ? t('lives3Desc') :
+                            spSettings.maxLives === 5 ? t('lives5Desc') :
+                              (lang === 'es' ? `Inicias la partida con ${spSettings.maxLives} vidas.` : `You start the match with ${spSettings.maxLives} lives.`)
+                        }
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Blind Mode Chip */}
+                  {spSettings.isBlindMode && (
+                    <div className="tooltip-container tooltip-align-right" tabIndex={0}>
+                      <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-[#d946ef]/30 rounded-sm">
+                        <GlassesIcon size={10} className="text-[#d946ef]" />
+                        <span className="text-[#d946ef]">{t('blindModeLabel')}</span>
+                      </div>
+                      <div className="tooltip-box tooltip-purple">
+                        {t('blindModeDesc')}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sudden Death Mode Chip */}
+                  {spSettings.suddenDeathMode && spSettings.suddenDeathMode !== 'NORMAL' && (
+                    <div className="tooltip-container tooltip-align-right" tabIndex={0}>
+                      <div className="flex items-center gap-1.5 px-3 py-1 bg-[#291b27]/80 border border-red-500/30 rounded-sm">
+                        {spSettings.suddenDeathMode === 'CHAOS' ? (
+                          <>
+                            <SkullIcon size={10} className="text-[#f43f5e]" />
+                            <span className="text-[#f43f5e]">{t('sdChaos')}</span>
+                          </>
+                        ) : (
+                          <>
+                            <DoveIcon size={10} className="text-[#10b981]" />
+                            <span className="text-[#10b981]">{t('sdOff')}</span>
+                          </>
+                        )}
+                      </div>
+                      <div className={`tooltip-box tooltip-${spSettings.suddenDeathMode === 'CHAOS' ? 'rose' : 'green'}`}>
+                        {spSettings.suddenDeathMode === 'CHAOS' ? t('sdChaosDesc') : t('sdOffDesc')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Name Input */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between items-end">
@@ -601,7 +659,10 @@ export function SinglePlayerConfig() {
                   />
                 </div>
               </div>
+            </div>
 
+            {/* Right Column in Landscape (Difficulty, Speed, Play Button) */}
+            <div className="sp-config-col-right flex flex-col justify-between gap-3 grow">
               {/* Difficulty Selection */}
               <div className="flex flex-col gap-1.5">
                 <label className="font-mono text-[10px] text-[#00fbfb] uppercase tracking-widest font-bold block">
@@ -652,25 +713,25 @@ export function SinglePlayerConfig() {
                   ))}
                 </div>
               </div>
+
+              {/* Play Button */}
+              <button
+                className="game-btn game-btn-cyan font-mono mt-2"
+                onClick={() => {
+                  if (!validateName()) return;
+                  store.setPlayerName(name.trim());
+
+                  // Start single player with full RoomSettings
+                  window.dispatchEvent(new CustomEvent('sp:start', {
+                    detail: { settings: spSettings }
+                  }));
+                }}
+              >
+                <span>{t('playSolo')}</span>
+                <PlayArrowIcon size={24} className="drop-shadow-[0_0_5px_rgba(56,0,56,0.6)] animate-pulse" />
+              </button>
             </div>
           </div>
-
-          {/* Play Button */}
-          <button
-            className="game-btn game-btn-cyan font-mono mt-6"
-            onClick={() => {
-              if (!validateName()) return;
-              store.setPlayerName(name.trim());
-
-              // Start single player with full RoomSettings
-              window.dispatchEvent(new CustomEvent('sp:start', {
-                detail: { settings: spSettings }
-              }));
-            }}
-          >
-            <span>{t('playSolo')}</span>
-            <PlayArrowIcon size={24} className="drop-shadow-[0_0_5px_rgba(56,0,56,0.6)] animate-pulse" />
-          </button>
         </div>
       </div>
       <MenuFooter />
@@ -1097,14 +1158,20 @@ export function SinglePlayerConfig() {
               </div>
 
               {/* Score Multiplier Help Tooltip */}
-              <div className="relative group/tooltip">
+              <div ref={spTooltipRef} className="relative group/tooltip">
                 <button
                   type="button"
-                  className="w-5 h-5 rounded-full border border-[#ffabf3]/40 flex items-center justify-center text-[10px] text-[#ffabf3]/60 hover:text-[#ffabf3] hover:border-[#ffabf3] font-mono font-bold cursor-help transition-all"
+                  onClick={() => setShowSpHelpTooltip((prev) => !prev)}
+                  className="w-7 h-7 rounded-full bg-[#1b0a1a] border-2 border-[#ffabf3] flex items-center justify-center text-xs text-[#ffabf3] hover:text-white hover:border-cyan-400 hover:bg-[#ffabf3]/20 font-mono font-extrabold cursor-pointer transition-all shadow-[0_0_10px_rgba(255,171,243,0.3)] hover:scale-110"
+                  title={lang === 'es' ? 'Ver Multiplicadores' : 'View Multipliers'}
+                  aria-label={lang === 'es' ? 'Ver Multiplicadores' : 'View Multipliers'}
                 >
                   ?
                 </button>
-                <div className="absolute right-0 top-6 w-64 bg-[#120811] border border-[#ffabf3]/30 p-3 rounded shadow-2xl z-50 text-[10px] font-mono text-left text-white/90 hidden group-hover/tooltip:block pointer-events-none">
+                <div
+                  className={`absolute right-0 top-8 w-64 bg-[#120811] border-2 border-[#ffabf3]/60 p-3.5 rounded-lg shadow-[0_0_25px_rgba(255,171,243,0.3)] z-50 text-[10px] font-mono text-left text-white/90 ${showSpHelpTooltip ? 'block pointer-events-auto' : 'hidden group-hover/tooltip:block pointer-events-none'
+                    }`}
+                >
                   <p className="text-[#ffabf3] font-bold mb-1.5 uppercase tracking-wider">
                     {lang === 'es' ? 'MULTIPLICADORES DE PUNTOS' : 'SCORE MULTIPLIERS'}
                   </p>
