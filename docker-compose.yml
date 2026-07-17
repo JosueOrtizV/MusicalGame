@@ -13,8 +13,8 @@ services:
       # Caddy will proxy traffic to this instance.
       # The CLIENT_ORIGIN is the public URL of the frontend (e.g., https://voxelrave.com).
       - CLIENT_ORIGIN=${CLIENT_ORIGIN:-https://voxelrave.com}
-    ports:
-      - "3001:3001"
+    expose:
+      - "3001"
     # Ensure network matches if caddy runs here
     networks:
       - voxelrave_net
@@ -28,8 +28,8 @@ services:
       - NODE_ENV=production
       # Important: Inform the client where to connect to the backend over WSS
       - NEXT_PUBLIC_SOCKET_URL=wss://api.voxelrave.com
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     networks:
       - voxelrave_net
 

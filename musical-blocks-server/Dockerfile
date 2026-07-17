@@ -24,11 +24,11 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy built artifacts and dependencies
-COPY --from=builder /app/musical-blocks-server/node_modules ./musical-blocks-server/node_modules
+# Install production dependencies only
+COPY --from=builder /app/musical-blocks-server/package*.json ./musical-blocks-server/
+RUN cd musical-blocks-server && npm ci --omit=dev
+
 COPY --from=builder /app/musical-blocks-server/dist ./musical-blocks-server/dist
-COPY --from=builder /app/musical-blocks-server/package.json ./musical-blocks-server/
-COPY --from=builder /app/musical-blocks-server/tsconfig.json ./musical-blocks-server/
 COPY --from=builder /app/shared ./shared
 
 WORKDIR /app/musical-blocks-server

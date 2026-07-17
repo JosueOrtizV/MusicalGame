@@ -50,9 +50,30 @@ function validateSettings(s: unknown): s is RoomSettings {
   return true;
 }
 
+const ALLOWED_COSMETIC_KEYS = new Set([
+  'companionType',
+  'headphonesEnabled',
+  'backpackEnabled',
+  'skinMaterial',
+  'primaryColor',
+  'shoesColor',
+  'visorColor',
+  'heartColor',
+  'headphonesColor',
+  'backpackColor',
+  'companionColor',
+  'danceStyle',
+  'idleStyle',
+  'celebrateStyle',
+]);
+
 function validateCosmetics(c: unknown): c is PlayerCosmetics {
-  if (!c || typeof c !== 'object') return false;
+  if (!c || typeof c !== 'object' || Array.isArray(c)) return false;
   if (JSON.stringify(c).length > 2048) return false;
+
+  for (const key of Object.keys(c as object)) {
+    if (!ALLOWED_COSMETIC_KEYS.has(key)) return false;
+  }
   return true;
 }
 
@@ -77,6 +98,11 @@ export function registerHandlers(
   let moveCount = 0;
   const MAX_MOVE_PER_WINDOW = 100;
   const MOVE_WINDOW_MS = 1000;
+
+  let createRoomWindowStart = Date.now();
+  let createRoomCount = 0;
+  const MAX_CREATE_ROOM_PER_WINDOW = 3;
+  const CREATE_ROOM_WINDOW_MS = 60000;
 
   // HMAC Session Token Verification Interceptor
   socket.use((packet, next) => {
@@ -124,6 +150,18 @@ export function registerHandlers(
       { playerName, visibility }: { playerName: string; visibility: RoomVisibility },
       cb: (room: Room) => void,
     ) => {
+      const now = Date.now();
+      if (now - createRoomWindowStart > CREATE_ROOM_WINDOW_MS) {
+        createRoomWindowStart = now;
+        createRoomCount = 0;
+      }
+      createRoomCount++;
+      if (createRoomCount > MAX_CREATE_ROOM_PER_WINDOW) {
+        socket.emit('room:error', { message: 'Has creado demasiadas salas muy rápido. / You are creating rooms too quickly.' });
+        securityLogger.warn({ socketId: sid }, 'Room creation rate limit exceeded');
+        return;
+      }
+
       if (typeof visibility !== 'string' || (visibility !== 'public' && visibility !== 'private')) {
         socket.emit('room:error', { message: 'Invalid room visibility.' });
         return;

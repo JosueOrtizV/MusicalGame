@@ -41,6 +41,8 @@ function getRoundDurationMs(round: number, speed: string): number {
   return (danceS + announceS) * 1000 + PHASE_DURATIONS.ELIMINATING + PHASE_DURATIONS.ROUND_END;
 }
 
+import crypto from 'crypto';
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -55,11 +57,28 @@ export async function POST(req: NextRequest) {
       sudden_death,
       blind_mode,
       telemetry,
+      token,
     } = body;
 
     // 1. Basic validation
     if (!player_id || !name || typeof score !== 'number' || typeof rounds !== 'number') {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
+    }
+
+    // Verify HMAC Token
+    if (!token || !telemetry?.startTime) {
+      return NextResponse.json({ error: 'Security verification failed (Missing session token or start time)' }, { status: 400 });
+    }
+
+    const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'voxelrave-sp-secret-key';
+    const expectedToken = crypto
+      .createHmac('sha256', secret)
+      .update(`${player_id}:${telemetry.startTime}`)
+      .digest('hex');
+
+    if (token.length !== expectedToken.length || !crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expectedToken))) {
+      console.warn(`[Anti-Cheat] Session token signature mismatch for player ${player_id}`);
+      return NextResponse.json({ error: 'Security verification failed (Invalid session token)' }, { status: 400 });
     }
 
     // 2. Calculate expected maximum score
@@ -135,12 +154,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Submit to Supabase using Admin service role key (or fallback if key is missing in development)
+    // 4. Submit to Supabase using Admin service role key
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json({ error: 'Supabase URL or Key is not configured on the server' }, { status: 500 });
+      console.error('[Leaderboard API] SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL is missing on the server.');
+      return NextResponse.json({ error: 'Server misconfiguration: missing database credentials' }, { status: 500 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
