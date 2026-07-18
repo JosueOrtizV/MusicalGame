@@ -463,12 +463,6 @@ export function MultiplayerBrowser() {
           )}
         </div>
 
-        {/* Color Bar Decal */}
-        <div className="mt-10 w-full max-w-[200px] grid grid-cols-3 gap-0 h-[2px] opacity-35 z-20">
-          <div className="bg-[#ffabf3]"></div>
-          <div className="bg-[#f4dcec]"></div>
-          <div className="bg-[#cdcd00]"></div>
-        </div>
       </main>
       <MenuFooter />
     </>

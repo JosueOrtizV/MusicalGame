@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/src/stores/gameStore';
 import { useToastStore } from '@/src/stores/toastStore';
@@ -110,6 +111,12 @@ export function SinglePlayerConfig() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line
+    setPortalTarget(document.getElementById('settings-menu-extra-actions'));
+  }, []);
   const [showSpHelpTooltip, setShowSpHelpTooltip] = useState(false);
   const spTooltipRef = useRef<HTMLDivElement>(null);
 
@@ -294,7 +301,7 @@ export function SinglePlayerConfig() {
   return (
     <>
       {/* Leaderboard Toggle Button (Top Right, next to settings gear) */}
-      <div className="leaderboard-btn-container">
+      {portalTarget ? createPortal(
         <button
           className="leaderboard-toggle-btn"
           onClick={() => setIsLeaderboardOpen(true)}
@@ -302,8 +309,20 @@ export function SinglePlayerConfig() {
           aria-label={t('globalLeaderboard')}
         >
           <TrophyIcon size={18} />
-        </button>
-      </div>
+        </button>,
+        portalTarget
+      ) : (
+        <div className="leaderboard-btn-container">
+          <button
+            className="leaderboard-toggle-btn"
+            onClick={() => setIsLeaderboardOpen(true)}
+            title={t('globalLeaderboard')}
+            aria-label={t('globalLeaderboard')}
+          >
+            <TrophyIcon size={18} />
+          </button>
+        </div>
+      )}
 
       <FloatingMusicNotes />
 

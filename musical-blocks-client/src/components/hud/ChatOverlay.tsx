@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useGameStore, selectLocalPlayer } from '@/src/stores/gameStore';
 import { getSocket } from '@/src/lib/socketClient';
 import { useTranslation } from '@/src/hooks/useTranslation';
-import { SkullIcon, CrownIcon, AlertIcon, MusicIcon } from '../ui/Icons';
+import { SkullIcon, CrownIcon, AlertIcon, MusicIcon, ChatBubbleIcon, SendIcon } from '../ui/Icons';
 import { hexToRgba } from '@/src/lib/colorUtils';
 
 interface ChatOverlayProps {
@@ -247,6 +247,8 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
     }
   };
 
+  const gameMode = useGameStore((s) => s.gameMode);
+  
   // Calculate the floating messages that are younger than 3 seconds (3000ms)
   // On mobile screens (<= 768px), we show only the last 1 message to prevent covering controls.
   // On desktop, we show the last 2 messages.
@@ -255,7 +257,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
     ? chatMessages.filter(m => now - (m.localTimestamp || m.timestamp) < 3000).slice(isMobileScreen ? -1 : -2)
     : [];
 
-  const isSpectator = !inGame || (localPlayer && !localPlayer.isAlive);
+  const isSpectator = gameMode !== 'singleplayer' && (!inGame || (localPlayer && !localPlayer.isAlive));
 
   return (
     <>
@@ -342,7 +344,10 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
             e.currentTarget.style.boxShadow = '0 -4px 20px rgba(124, 58, 237, 0.25)';
           }}
         >
-          <span>💬 <span className={inGame ? "chat-btn-text-ingame" : ""}>CHAT</span></span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <ChatBubbleIcon size={16} /> 
+            <span className={inGame ? "chat-btn-text-ingame" : ""}>CHAT</span>
+          </span>
           {hasNewMessages && (
             <span style={{
               width: '8px',
@@ -398,7 +403,9 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
             zIndex: 6
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ animation: 'pulse 2s infinite' }}>💬</span>
+              <span style={{ animation: 'pulse 2s infinite', display: 'flex' }}>
+                <ChatBubbleIcon size={16} style={{ color: 'var(--c-accent-3)' }} />
+              </span>
               <span style={{
                 color: 'var(--c-accent-3)',
                 fontFamily: 'var(--font-display)',
@@ -500,7 +507,7 @@ export function ChatOverlay({ inGame = false }: ChatOverlayProps) {
                 justifyContent: 'center'
               }}
             >
-              📨
+              <SendIcon size={16} />
             </button>
           </form>
         </div>

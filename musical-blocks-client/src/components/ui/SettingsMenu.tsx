@@ -6,6 +6,25 @@ import { useTranslation } from '@/src/hooks/useTranslation';
 import { getSocket } from '@/src/lib/socketClient';
 import { GearIcon, VolumeUpIcon, VolumeMuteIcon, GlobeIcon, CameraMovableIcon, CameraStaticIcon, FullscreenIcon } from './Icons';
 
+// Custom interface to avoid 'any' types for browser-specific fullscreen APIs
+interface DocumentWithFullscreen extends Document {
+  mozFullScreenElement?: Element;
+  msFullscreenElement?: Element;
+  webkitFullscreenElement?: Element;
+  webkitExitFullscreen?: () => Promise<void>;
+  mozCancelFullScreen?: () => Promise<void>;
+  msExitFullscreen?: () => Promise<void>;
+  mozFullScreenEnabled?: boolean;
+  msFullscreenEnabled?: boolean;
+  webkitFullscreenEnabled?: boolean;
+}
+
+interface HTMLElementWithFullscreen extends HTMLElement {
+  mozRequestFullScreen?: () => Promise<void>;
+  msRequestFullscreen?: () => Promise<void>;
+  webkitRequestFullscreen?: () => Promise<void>;
+}
+
 export function SettingsMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const language = useGameStore((s) => s.language);
@@ -25,6 +44,8 @@ export function SettingsMenu() {
   const [isMobile, setIsMobile] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  const [isFullscreenSupported, setIsFullscreenSupported] = useState(true);
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.matchMedia("(pointer: coarse)").matches || window.innerWidth <= 1024);
@@ -32,6 +53,28 @@ export function SettingsMenu() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Check if fullscreen is actually supported (iOS Safari iPhone doesn't support it)
+  useEffect(() => {
+    const doc = document as DocumentWithFullscreen;
+    const supported = 
+      doc.fullscreenEnabled || 
+      doc.webkitFullscreenEnabled || 
+      doc.mozFullScreenEnabled || 
+      doc.msFullscreenEnabled;
+      
+    // If it's installed as a PWA, it's already full screen
+    const nav = window.navigator as unknown as { standalone?: boolean };
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || nav.standalone;
+
+    // Additionally check if it's iOS (iPad/iPhone) because iPhone Safari claims webkitFullscreenEnabled=false for normal elements
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+
+    if (!supported || isStandalone || isIOS) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsFullscreenSupported(false);
+    }
   }, []);
 
   // Close menu when clicking outside
@@ -50,17 +93,38 @@ export function SettingsMenu() {
   }, [isOpen]);
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => {
-        setIsFullscreen(true);
-      }).catch(err => {
-        console.warn(`Error attempting to enable fullscreen: ${err.message}`);
-      });
+    const docEl = document.documentElement as HTMLElementWithFullscreen;
+    const doc = document as DocumentWithFullscreen;
+    const requestFs = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+    const exitFs = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+    
+    const currentFs = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+
+    if (!currentFs) {
+      if (requestFs) {
+        try {
+          const promise = requestFs.call(docEl);
+          if (promise) {
+            promise.then(() => setIsFullscreen(true)).catch((err: Error) => {
+              console.warn(`Error attempting to enable fullscreen: ${err.message}`);
+            });
+          } else {
+            setIsFullscreen(true); // for older browsers that don't return a promise
+          }
+        } catch (e) {
+          console.warn('Fullscreen request failed', e);
+        }
+      }
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen().then(() => {
-          setIsFullscreen(false);
-        });
+      if (exitFs) {
+        try {
+          const promise = exitFs.call(document);
+          if (promise) {
+            promise.then(() => setIsFullscreen(false));
+          } else {
+            setIsFullscreen(false);
+          }
+        } catch (e) {}
       }
     }
   };
@@ -120,15 +184,20 @@ export function SettingsMenu() {
       </button>
 
       {/* Fullscreen Button */}
-      <button 
-        className="settings-menu-btn" 
-        onClick={toggleFullscreen}
-        title={isFullscreen ? t('exitFullscreen') : t('enterFullscreen')}
-        aria-label={isFullscreen ? t('exitFullscreen') : t('enterFullscreen')}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      >
-        <FullscreenIcon size={18} />
-      </button>
+      {isFullscreenSupported && (
+        <button 
+          className="settings-menu-btn" 
+          onClick={toggleFullscreen}
+          title={isFullscreen ? t('exitFullscreen') : t('enterFullscreen')}
+          aria-label={isFullscreen ? t('exitFullscreen') : t('enterFullscreen')}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <FullscreenIcon size={18} />
+        </button>
+      )}
+
+      {/* Portal target for page-specific buttons (like Leaderboard) to inherit flex layout */}
+      <div id="settings-menu-extra-actions" style={{ display: 'flex', gap: '8px' }}></div>
 
       {isOpen && (
         <div className="settings-dropdown" role="dialog" aria-label={t('settings')}>

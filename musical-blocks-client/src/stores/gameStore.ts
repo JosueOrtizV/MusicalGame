@@ -376,6 +376,7 @@ export const useGameStore = create<GameStore>()(
     })),
     {
       name: 'voxelrave-settings',
+      skipHydration: true,
       partialize: (state) => ({
         language: state.language,
         hasSetLanguage: state.hasSetLanguage,

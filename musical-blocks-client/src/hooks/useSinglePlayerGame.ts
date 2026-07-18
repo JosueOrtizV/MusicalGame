@@ -152,12 +152,32 @@ export function useSinglePlayerGame() {
     const callbacks = {
       onRoundStart: (round: number, duration: number, blocks: GameBlock[][], playerPos: GridPosition) => {
         updateGameState('DANCING', duration, blocks, playerPos);
+        useGameStore.getState().addChatMessage({
+          id: `sp-sys-round-${round}`,
+          senderId: 'system',
+          senderName: 'System',
+          text: `Round ${round} started!`,
+          timestamp: Date.now(),
+          isSystem: true
+        });
       },
       onAnnounce: () => {
         updateGameState('ANNOUNCING');
       },
       onEliminate: (eliminated: Array<{ row: number; col: number }>, lives: number, isAlive: boolean) => {
+        const wasAlive = useGameStore.getState().gameState?.players[0]?.isAlive ?? true;
         updateGameState('ELIMINATING', 0, gridManager.current.getSnapshot(), playerController.current.getPosition(), lives, isAlive);
+        if (wasAlive && !isAlive) {
+          const name = useGameStore.getState().localPlayerName || 'Josué';
+          useGameStore.getState().addChatMessage({
+            id: `sp-sys-fell-${Date.now()}`,
+            senderId: 'system',
+            senderName: 'System',
+            text: `${name} fell into the void!`,
+            timestamp: Date.now(),
+            isSystem: true
+          });
+        }
       },
       onGameOver: (finalScore: number, rounds: number) => {
         handleGameOver(finalScore, rounds);

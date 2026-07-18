@@ -864,4 +864,84 @@ export const PlayArrowIcon: React.FC<IconProps> = ({ size = 24, className, ...pr
   </svg>
 );
 
+// 38. RestartIcon - Blocky retro restart arrow
+export const RestartIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    className={className}
+    {...props}
+  >
+    <path d="M12 4V2L8 6L12 10V8C15.31 8 18 10.69 18 14C18 17.31 15.31 20 12 20C8.69 20 6 17.31 6 14H4C4 18.42 7.58 22 12 22C16.42 22 20 18.42 20 14C20 9.58 16.42 6 12 6V4Z" fill="currentColor" />
+  </svg>
+);
 
+// 39. ChevronDownIcon - Clean chevron
+export const ChevronDownIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M6 9L12 15L18 9" />
+  </svg>
+);
+
+// 40. ChatBubbleIcon - Sleek chat bubble
+export const ChatBubbleIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+  </svg>
+);
+
+// 41. StarIcon - Filled star for local player
+export const StarIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    className={className}
+    fill="currentColor"
+    {...props}
+  >
+    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+  </svg>
+);
+
+// 42. SendIcon - Paper plane / Send arrow
+export const SendIcon: React.FC<IconProps> = ({ size = 24, className, ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+  </svg>
+);

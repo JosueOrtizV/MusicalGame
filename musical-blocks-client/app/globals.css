@@ -1209,8 +1209,8 @@ select.lobby-input option {
   font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: 0.05em;
-  color: var(--c-accent);
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+  color: #00f0ff;
+  text-shadow: 0 0 12px rgba(0, 240, 255, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
   text-transform: uppercase;
 }
 
@@ -1845,23 +1845,23 @@ select.lobby-input option {
   font-size: 3rem;
   font-weight: 900;
   letter-spacing: 0.05em;
-  color: var(--c-dynamic-accent);
+  color: #ffffff;
   text-shadow:
-    0 0 10px var(--c-dynamic-accent),
-    0 0 30px rgba(0, 240, 255, 0.5),
-    0 2px 4px rgba(0, 0, 0, 0.8);
+    0 0 12px var(--c-dynamic-accent),
+    0 0 24px var(--c-dynamic-accent),
+    0 2px 6px rgba(0, 0, 0, 0.9);
   min-width: 80px;
   text-align: center;
   transition: color 0.3s ease, text-shadow 0.3s ease;
 }
 
 .hud-timer--urgent {
-  color: var(--c-dynamic-accent);
+  color: #ffffff;
   animation: timer-pulse-urgent 0.4s ease-in-out infinite;
   text-shadow:
-    0 0 10px var(--c-dynamic-accent),
-    0 0 30px rgba(255, 0, 255, 0.6),
-    0 0 60px rgba(255, 0, 255, 0.3);
+    0 0 14px #f43f5e,
+    0 0 28px #f43f5e,
+    0 2px 6px rgba(0, 0, 0, 0.95);
 }
 
 /* Kept for any legacy references */
@@ -5166,6 +5166,10 @@ body.game-starting .toast-container {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3), inset 0 0 6px rgba(124, 58, 237, 0.1);
   transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
 }
 
 .dpad-btn:active,

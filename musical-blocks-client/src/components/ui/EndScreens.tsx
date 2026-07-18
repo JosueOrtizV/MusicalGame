@@ -5,7 +5,7 @@ import { getSocket } from '@/src/lib/socketClient';
 import { spawnParticles } from '../canvas/ParticleSystem';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '@/src/hooks/useTranslation';
-import { GhostIcon, CrownIcon, FlagIcon } from './Icons';
+import { GhostIcon, CrownIcon, FlagIcon, RestartIcon } from './Icons';
 import { hexToRgba } from '@/src/lib/colorUtils';
 import { useRouter } from 'next/navigation';
 
@@ -173,7 +173,7 @@ export function SinglePlayerEndScreen() {
           <div className="overlay-actions" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', width: '100%', marginTop: '1.5rem' }}>
             <button
               className="lobby-btn lobby-btn--primary"
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
               onClick={() => {
                 const settings = store.spSettings;
                 window.dispatchEvent(new CustomEvent('sp:start', {
@@ -181,7 +181,7 @@ export function SinglePlayerEndScreen() {
                 }));
               }}
             >
-              ◀ {t('playAgain')}
+              <RestartIcon size={18} /> {t('playAgain')}
             </button>
             
             <button

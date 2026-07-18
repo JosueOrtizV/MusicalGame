@@ -3,6 +3,7 @@ import './globals.css';
 import { ToastContainer } from '@/src/components/ui/ToastContainer';
 import { HtmlLangSync } from '@/src/components/ui/HtmlLangSync';
 import { GlobalAudioPlayer } from '@/src/components/audio/GlobalAudioPlayer';
+import { StoreHydrator } from '@/src/components/ui/StoreHydrator';
 import { orbitron, outfit, pressStart, vt323 } from '@/src/lib/fonts';
 import { JsonLd } from '@/src/components/seo/JsonLd';
 import { getVideoGameSchema, getOrganizationSchema, getWebApplicationSchema } from '@/src/lib/seo/jsonld';
@@ -12,7 +13,8 @@ export const viewport: Viewport = {
   themeColor: '#0f0f23',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,
+  userScalable: false,
   colorScheme: 'dark',
 };
 
@@ -77,8 +79,12 @@ export const metadata: Metadata = {
       follow: true,
       'max-image-preview': 'large',
       'max-snippet': -1,
-      'max-video-preview': -1,
     },
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'VoxelRave',
   },
 };
 
@@ -94,9 +100,8 @@ export default function RootLayout({
         {/* Inject Structured Schemas */}
         <JsonLd data={[getVideoGameSchema(), getOrganizationSchema(), getWebApplicationSchema()]} />
       </head>
-      <body
-        className={`${orbitron.variable} ${outfit.variable} ${pressStart.variable} ${vt323.variable} antialiased`}
-      >
+      <body className={`${outfit.variable} ${orbitron.variable} ${vt323.variable} ${pressStart.variable} font-sans antialiased text-white overflow-hidden bg-black`}>
+        <StoreHydrator />
         <GlobalAudioPlayer />
         <HtmlLangSync />
         {children}

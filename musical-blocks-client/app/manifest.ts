@@ -6,7 +6,8 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'VoxelRave',
     description: 'Free 3D multiplayer rhythm party game. Dance, survive, and be the last standing!',
     start_url: '/',
-    display: 'standalone',
+    display: 'fullscreen',
+    orientation: 'landscape',
     background_color: '#0f0f23',
     theme_color: '#0f0f23',
     icons: [

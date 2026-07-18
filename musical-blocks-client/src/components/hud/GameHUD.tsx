@@ -6,7 +6,7 @@ import { COLOR_HEX, Direction } from '@/src/shared/types';
 import { getSocket, serverNow } from '@/src/lib/socketClient';
 import { useTranslation, DictKey } from '@/src/hooks/useTranslation';
 import { ChatOverlay } from './ChatOverlay';
-import { VolumeMuteIcon, VolumeUpIcon, HeartIcon, SkullIcon, EyeIcon, CameraMovableIcon, CameraStaticIcon, TrophyIcon } from '../ui/Icons';
+import { VolumeMuteIcon, VolumeUpIcon, HeartIcon, SkullIcon, EyeIcon, CameraMovableIcon, CameraStaticIcon, TrophyIcon, ChevronDownIcon, StarIcon } from '../ui/Icons';
 import { computeDirection } from '@/src/hooks/usePlayerInput';
 
 // ---------------------------------------------------------------------------
@@ -165,11 +165,15 @@ export function GameHUD() {
         </div>
 
         {/* ---- Player list -------------------------------------------------- */}
-        <div className={`hud-players ${isPlayersExpanded ? 'expanded' : ''}`}>
-          <div className="hud-players-title" onClick={() => setIsPlayersExpanded(!isPlayersExpanded)}>
-            <span>{t('alivePlayers', { alive: playersWithLives.length, total: players.length })}</span>
-            <span className="hud-players-toggle-icon">▼</span>
-          </div>
+        <div className={`hud-players ${gameMode === 'singleplayer' || isPlayersExpanded ? 'expanded' : ''}`}>
+          {gameMode !== 'singleplayer' && (
+            <div className="hud-players-title" onClick={() => setIsPlayersExpanded(!isPlayersExpanded)}>
+              <span>{t('alivePlayers', { alive: playersWithLives.length, total: players.length })}</span>
+              <span className="hud-players-toggle-icon">
+                <ChevronDownIcon size={14} style={{ opacity: 0.7 }} />
+              </span>
+            </div>
+          )}
           {players.map((p) => (
             <div
               key={p.id}
@@ -179,8 +183,8 @@ export function GameHUD() {
                 className="hud-player-dot"
                 style={{ backgroundColor: p.color }}
               />
-              <span className="hud-player-name">
-                {p.id === localPlayerId ? '★ ' : ''}{p.name}
+              <span className="hud-player-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {p.id === localPlayerId ? <StarIcon size={12} style={{ color: '#fbbf24' }} /> : ''}{p.name}
               </span>
               {p.lives > 0 ? (
                 <span className="hud-player-lives" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#f43f5e', fontWeight: 'bold' }}>
@@ -423,6 +427,7 @@ function DashButton({ onDash }: { onDash: () => void }) {
     <button
       className="mobile-dash-btn"
       onPointerDown={handlePress}
+      onContextMenu={(e) => e.preventDefault()}
       style={{
         pointerEvents: 'auto',
         position: 'relative',
@@ -439,6 +444,7 @@ function DashButton({ onDash }: { onDash: () => void }) {
         cursor: cooldownLeft > 0 ? 'not-allowed' : 'pointer',
         touchAction: 'none',
         WebkitTapHighlightColor: 'transparent',
+        WebkitTouchCallout: 'none',
         userSelect: 'none',
         overflow: 'hidden',
         transition: 'transform 0.1s ease',
@@ -748,7 +754,7 @@ function MobileWASD() {
   };
 
   return (
-    <div className="mobile-dpad-container" style={{ pointerEvents: 'auto' }}>
+    <div className="mobile-dpad-container" onContextMenu={(e) => e.preventDefault()} style={{ pointerEvents: 'auto' }}>
       <button 
         className={`dpad-btn dpad-btn-up ${pressed.UP ? 'active' : ''}`}
         onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); handlePress('UP', true); }}
