@@ -215,6 +215,9 @@ export const useGameStore = create<GameStore>()(
 
       setRoom: (room) =>
         set((s) => {
+          if (!s.room || s.room.id !== room.id) {
+            s.chatMessages = [];
+          }
           s.room = room;
           
           if (room.sessionToken) {
@@ -260,8 +263,7 @@ export const useGameStore = create<GameStore>()(
           s.screen = 'home';
           s.sessionToken = null;
           s.wasAliveThisRound = false;
-          
-
+          s.chatMessages = [];
         }),
 
       setGameState: (state) =>
@@ -339,7 +341,12 @@ export const useGameStore = create<GameStore>()(
       setCameraMode: (mode) => set((s) => { s.cameraMode = mode; }),
       setHasSelectedCameraMode: (selected) => set((s) => { s.hasSelectedCameraMode = selected; }),
       setMobileControlType: (type) => set((s) => { s.mobileControlType = type; }),
-      setGameMode: (mode) => set((s) => { s.gameMode = mode; }),
+      setGameMode: (mode) => set((s) => {
+        if (s.gameMode !== mode) {
+          s.chatMessages = [];
+        }
+        s.gameMode = mode;
+      }),
       setSpHighScore: (score) => set((s) => { s.spHighScore = score; }),
       setSpLastScore: (score) => set((s) => { s.spLastScore = score; }),
       setSpLastRounds: (rounds) => set((s) => { s.spLastRounds = rounds; }),
