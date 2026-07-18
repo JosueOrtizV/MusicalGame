@@ -90,6 +90,9 @@
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.5;
     text-shadow: 0 0 1px rgba(0, 0, 0, 0.01);
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 }
 
@@ -1766,6 +1769,9 @@ select.lobby-input option {
   inset: 0;
   pointer-events: none;
   z-index: 10;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* Mute Toggle */

@@ -427,6 +427,7 @@ function DashButton({ onDash }: { onDash: () => void }) {
     <button
       className="mobile-dash-btn"
       onPointerDown={handlePress}
+      onTouchStart={(e) => e.preventDefault()}
       onContextMenu={(e) => e.preventDefault()}
       style={{
         pointerEvents: 'auto',
@@ -761,6 +762,7 @@ function MobileWASD() {
         onPointerUp={(e) => { e.currentTarget.releasePointerCapture(e.pointerId); handlePress('UP', false); }}
         onPointerLeave={() => handlePress('UP', false)}
         onPointerCancel={() => handlePress('UP', false)}
+        onTouchStart={(e) => e.preventDefault()}
       >
         W
       </button>
@@ -770,6 +772,7 @@ function MobileWASD() {
         onPointerUp={(e) => { e.currentTarget.releasePointerCapture(e.pointerId); handlePress('LEFT', false); }}
         onPointerLeave={() => handlePress('LEFT', false)}
         onPointerCancel={() => handlePress('LEFT', false)}
+        onTouchStart={(e) => e.preventDefault()}
       >
         A
       </button>
@@ -779,6 +782,7 @@ function MobileWASD() {
         onPointerUp={(e) => { e.currentTarget.releasePointerCapture(e.pointerId); handlePress('DOWN', false); }}
         onPointerLeave={() => handlePress('DOWN', false)}
         onPointerCancel={() => handlePress('DOWN', false)}
+        onTouchStart={(e) => e.preventDefault()}
       >
         S
       </button>
@@ -788,6 +792,7 @@ function MobileWASD() {
         onPointerUp={(e) => { e.currentTarget.releasePointerCapture(e.pointerId); handlePress('RIGHT', false); }}
         onPointerLeave={() => handlePress('RIGHT', false)}
         onPointerCancel={() => handlePress('RIGHT', false)}
+        onTouchStart={(e) => e.preventDefault()}
       >
         D
       </button>
