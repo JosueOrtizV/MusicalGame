@@ -51,6 +51,7 @@ function validateSettings(s: unknown): s is RoomSettings {
 }
 
 const ALLOWED_COSMETIC_KEYS = new Set([
+  'modelType',
   'companionType',
   'headphonesEnabled',
   'backpackEnabled',
@@ -59,6 +60,8 @@ const ALLOWED_COSMETIC_KEYS = new Set([
   'shoesColor',
   'visorColor',
   'heartColor',
+  'wristbandColor',
+  'beltColor',
   'headphonesColor',
   'backpackColor',
   'companionColor',
