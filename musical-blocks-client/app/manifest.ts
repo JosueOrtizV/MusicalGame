@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Free 3D multiplayer rhythm party game. Dance, survive, and be the last standing!',
     start_url: '/',
     display: 'fullscreen',
-    orientation: 'landscape',
+    orientation: 'any',
     background_color: '#0f0f23',
     theme_color: '#0f0f23',
     icons: [

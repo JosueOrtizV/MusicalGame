@@ -178,6 +178,17 @@ export function PlayerMesh({ player, isLocal, isPreview = false, previewAnimType
     if (isPreview) return;
     if (groupRef.current && !positionInitialized.current) {
       groupRef.current.position.set(targetX, PLAYER_Y_OFFSET, targetZ);
+      if (meshRef.current) {
+        let initialAngle = 0;
+        if (Math.abs(targetX) > Math.abs(targetZ)) {
+          // Closer to left/right edges
+          initialAngle = targetX < 0 ? 1.5 * Math.PI : 0.5 * Math.PI;
+        } else {
+          // Closer to top/bottom edges
+          initialAngle = targetZ < 0 ? Math.PI : 0;
+        }
+        meshRef.current.rotation.y = initialAngle;
+      }
       positionInitialized.current = true;
     }
   }, [targetX, targetZ, isPreview]);
