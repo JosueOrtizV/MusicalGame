@@ -12,7 +12,7 @@ import rateLimit from '@fastify/rate-limit';
 //  Environment
 // ---------------------------------------------------------------------------
 const PORT   = parseInt(process.env.PORT ?? '3001', 10);
-const CLIENT = process.env.CLIENT_ORIGIN ?? 'http://localhost:3000';
+const CLIENT = process.env.CLIENT_ORIGIN ?? (process.env.NODE_ENV === 'production' ? 'https://voxelrave.com' : 'http://localhost:3000');
 const isProd = process.env.NODE_ENV === 'production';
 const ALLOWED_ORIGINS = isProd ? [CLIENT] : '*';
 

@@ -7,36 +7,89 @@ import { Player } from '@/src/shared/types';
 
 // Increase Howler's HTML5 Audio pool size to support our 13+ dynamic tracks concurrently without warnings!
 if (typeof window !== 'undefined') {
-  ((Howler as unknown) as { pool: number }).pool = 100;
+  (Howler as unknown as { html5PoolSize: number }).html5PoolSize = 100;
 }
 
 // ---------------------------------------------------------------------------
 //  Audio Assets Definition — Lobby, Game (Dance), and Victory (Winner) tracks
 // ---------------------------------------------------------------------------
-export const LOBBY_SONGS = [
-  new Howl({ src: ['/audio/music/lobby/Between_Save_Points.mp3'], loop: true, volume: 0.4, html5: true }),
-  new Howl({ src: ['/audio/music/lobby/Lobby2.m4a'], loop: true, volume: 0.4, html5: true }),
-  new Howl({ src: ['/audio/music/lobby/generated_task.m4a'], loop: true, volume: 0.4, html5: true }),
+const LOBBY_SOURCES = [
+  { src: '/audio/music/lobby/Between_Save_Points.mp3', loop: true, volume: 0.4 },
+  { src: '/audio/music/lobby/Lobby2.m4a', loop: true, volume: 0.4 },
+  { src: '/audio/music/lobby/generated_task.m4a', loop: true, volume: 0.4 },
 ];
 
-export const DANCE_SONGS = [
-  new Howl({ src: ['/audio/music/Apex_Ascent.mp3'], loop: false, volume: 0.45, html5: true }),
-  new Howl({ src: ['/audio/music/Fuego_en_los_pies.mp3'], loop: false, volume: 0.45, html5: true }),
-  new Howl({ src: ['/audio/music/The_Final_Jump.mp3'], loop: false, volume: 0.45, html5: true }),
-  new Howl({ src: ['/audio/music/Blackout Pulse.mp3'], loop: false, volume: 0.45, html5: true }),
-  new Howl({ src: ['/audio/music/Cyber Dancer.m4a'], loop: false, volume: 0.45, html5: true }),
-  new Howl({ src: ['/audio/music/Digital Ashes.m4a'], loop: false, volume: 0.45, html5: true }),
-  new Howl({ src: ['/audio/music/Overclocked Relay.m4a'], loop: false, volume: 0.45, html5: true }),
-  new Howl({ src: ['/audio/music/Overclocked.mp3'], loop: false, volume: 0.45, html5: true }),
-  new Howl({ src: ['/audio/music/Power on Right.m4a'], loop: false, volume: 0.45, html5: true }),
-  new Howl({ src: ['/audio/music/Voxel Drift.m4a'], loop: false, volume: 0.45, html5: true }),
+const DANCE_SOURCES = [
+  { src: '/audio/music/Apex_Ascent.mp3', loop: false, volume: 0.45 },
+  { src: '/audio/music/Fuego_en_los_pies.mp3', loop: false, volume: 0.45 },
+  { src: '/audio/music/The_Final_Jump.mp3', loop: false, volume: 0.45 },
+  { src: '/audio/music/Blackout Pulse.mp3', loop: false, volume: 0.45 },
+  { src: '/audio/music/Cyber Dancer.m4a', loop: false, volume: 0.45 },
+  { src: '/audio/music/Digital Ashes.m4a', loop: false, volume: 0.45 },
+  { src: '/audio/music/Overclocked Relay.m4a', loop: false, volume: 0.45 },
+  { src: '/audio/music/Overclocked.mp3', loop: false, volume: 0.45 },
+  { src: '/audio/music/Power on Right.m4a', loop: false, volume: 0.45 },
+  { src: '/audio/music/Voxel Drift.m4a', loop: false, volume: 0.45 },
 ];
 
-export const WINNER_SONGS = [
-  new Howl({ src: ['/audio/music/winner/Skyward_Ascent.mp3'], loop: true, volume: 0.35, html5: true }),
-  new Howl({ src: ['/audio/music/winner/Title_Screen_Winner.mp3'], loop: true, volume: 0.35, html5: true }),
-  new Howl({ src: ['/audio/music/winner/Victory_Bound.mp3'], loop: true, volume: 0.35, html5: true }),
+const WINNER_SOURCES = [
+  { src: '/audio/music/winner/Skyward_Ascent.mp3', loop: true, volume: 0.35 },
+  { src: '/audio/music/winner/Title_Screen_Winner.mp3', loop: true, volume: 0.35 },
+  { src: '/audio/music/winner/Victory_Bound.mp3', loop: true, volume: 0.35 },
 ];
+
+const lobbyHowlsCache = new Map<number, Howl>();
+const danceHowlsCache = new Map<number, Howl>();
+const winnerHowlsCache = new Map<number, Howl>();
+
+export const getLobbySong = (index: number): Howl => {
+  const safeIdx = index % LOBBY_SOURCES.length;
+  if (!lobbyHowlsCache.has(safeIdx)) {
+    const cfg = LOBBY_SOURCES[safeIdx];
+    lobbyHowlsCache.set(safeIdx, new Howl({ src: [cfg.src], loop: cfg.loop, volume: cfg.volume, html5: true }));
+  }
+  return lobbyHowlsCache.get(safeIdx)!;
+};
+
+export const getDanceSong = (index: number): Howl => {
+  const safeIdx = index % DANCE_SOURCES.length;
+  if (!danceHowlsCache.has(safeIdx)) {
+    const cfg = DANCE_SOURCES[safeIdx];
+    danceHowlsCache.set(safeIdx, new Howl({ src: [cfg.src], loop: cfg.loop, volume: cfg.volume, html5: true }));
+  }
+  return danceHowlsCache.get(safeIdx)!;
+};
+
+export const getWinnerSong = (index: number): Howl => {
+  const safeIdx = index % WINNER_SOURCES.length;
+  if (!winnerHowlsCache.has(safeIdx)) {
+    const cfg = WINNER_SOURCES[safeIdx];
+    winnerHowlsCache.set(safeIdx, new Howl({ src: [cfg.src], loop: cfg.loop, volume: cfg.volume, html5: true }));
+  }
+  return winnerHowlsCache.get(safeIdx)!;
+};
+
+export function isAnyLobbySongPlaying(): boolean {
+  for (const h of lobbyHowlsCache.values()) {
+    if (h.playing()) return true;
+  }
+  return false;
+}
+
+export function isAnyWinnerSongPlaying(): boolean {
+  for (const h of winnerHowlsCache.values()) {
+    if (h.playing()) return true;
+  }
+  return false;
+}
+
+export function getActiveDanceBpm(): number {
+  const DANCE_BPMS = [128, 135, 142, 130, 128, 135, 140, 142, 132, 128];
+  for (const [idx, h] of danceHowlsCache.entries()) {
+    if (h.playing()) return DANCE_BPMS[idx] ?? 128;
+  }
+  return 120;
+}
 
 const SFX = {
   join: new Howl({ src: ['/audio/Effects/Jugador se une.mp3'], volume: 0.6 }),
@@ -49,17 +102,17 @@ const SFX = {
 
 // Helpers to prevent track overlaps
 const stopWinnerSongs = () => {
-  WINNER_SONGS.forEach(t => t.stop());
+  winnerHowlsCache.forEach(t => t.stop());
 };
 
 const stopAllLobbySongsExcept = (exceptTrack?: Howl) => {
-  LOBBY_SONGS.forEach(t => {
+  lobbyHowlsCache.forEach(t => {
     if (t !== exceptTrack) t.stop();
   });
 };
 
 const stopAllDanceSongs = () => {
-  DANCE_SONGS.forEach(t => t.stop());
+  danceHowlsCache.forEach(t => t.stop());
 };
 
 // ---------------------------------------------------------------------------
@@ -106,7 +159,7 @@ export function useGameAudio() {
       playlistIndexRef.current++;
       const playlist = room?.gameSongIndices || [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
       const nextIdx = playlist[playlistIndexRef.current % playlist.length];
-      const nextTrack = DANCE_SONGS[nextIdx] || DANCE_SONGS[0];
+      const nextTrack = getDanceSong(nextIdx);
       
       activeDanceTrack.current = nextTrack;
       bindOnEndRef.current(nextTrack);
@@ -125,7 +178,7 @@ export function useGameAudio() {
 
     // ---- GLOBAL MENUS (Home, Lobby Browser, SinglePlayer Config) ----
     if (screen === 'home') {
-      const homeLobbyTrack = LOBBY_SONGS[0];
+      const homeLobbyTrack = getLobbySong(0);
       
       activeDanceTrack.current?.stop();
       activeDanceTrack.current = null;
@@ -145,7 +198,7 @@ export function useGameAudio() {
     // ---- LOBBY MUSIC (authoritative sync) ----
     if (screen === 'lobby') {
       const lobbyIdx = room?.lobbySongIndex ?? 0;
-      const activeLobbyTrack = LOBBY_SONGS[lobbyIdx] || LOBBY_SONGS[0];
+      const activeLobbyTrack = getLobbySong(lobbyIdx);
 
       activeDanceTrack.current?.stop();
       activeDanceTrack.current = null;
@@ -181,7 +234,7 @@ export function useGameAudio() {
             playlistIndexRef.current = 0;
             const playlist = room?.gameSongIndices || [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
             const activeIdx = playlist[0];
-            const track = DANCE_SONGS[activeIdx] || DANCE_SONGS[0];
+            const track = getDanceSong(activeIdx);
 
             activeDanceTrack.current = track;
             bindOnEndRef.current(track);
@@ -213,7 +266,7 @@ export function useGameAudio() {
             stopAllDanceSongs();
             
             const winIdx = room?.victorySongIndex ?? 0;
-            const winTrack = WINNER_SONGS[winIdx] || WINNER_SONGS[0];
+            const winTrack = getWinnerSong(winIdx);
 
             SFX.win.play();
 

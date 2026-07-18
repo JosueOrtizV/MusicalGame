@@ -16,7 +16,7 @@ export interface LeaderboardEntry {
 
 export async function fetchStartToken(playerId: string): Promise<{ token: string; startTime: number } | null> {
   try {
-    const res = await fetch(`/api/leaderboard/token?player_id=${encodeURIComponent(playerId)}`);
+    const res = await fetch(`/api/leaderboard/token?player_id=${encodeURIComponent(playerId)}`, { cache: 'no-store' });
     if (!res.ok) return null;
     const data = await res.json();
     return { token: data.token, startTime: data.startTime };

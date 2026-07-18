@@ -29,15 +29,21 @@ services:
     build:
       context: .
       dockerfile: musical-blocks-client/Dockerfile
+      args:
+        - NEXT_PUBLIC_SERVER_URL=https://api.voxelrave.com
     restart: unless-stopped
+    env_file:
+      - musical-blocks-client/.env.local
     environment:
       - NODE_ENV=production
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
       # Important: Inform the client where to connect to the backend over WSS
-      - NEXT_PUBLIC_SOCKET_URL=wss://api.voxelrave.com
+      - NEXT_PUBLIC_SERVER_URL=https://api.voxelrave.com
     expose:
       - "3000"
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/', (res) => process.exit(res.statusCode === 200 ? 0 : 1))\""]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3000/', (res) => process.exit(res.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))\""]
       interval: 15s
       timeout: 5s
       retries: 3

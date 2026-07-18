@@ -37,4 +37,4 @@ export const LERP_SPEED = 12;     // player interpolation per-frame factor
 
 // Server URL (Next.js env var)
 export const SERVER_URL =
-  process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3001';
+  process.env.NEXT_PUBLIC_SERVER_URL ?? (process.env.NODE_ENV === 'production' ? 'https://api.voxelrave.com' : 'http://localhost:3001');

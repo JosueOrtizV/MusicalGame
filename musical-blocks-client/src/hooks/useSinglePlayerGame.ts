@@ -125,7 +125,10 @@ export function useSinglePlayerGame() {
     state.initSpPlayerId();
     state.setGameMode('singleplayer');
 
-    fetchStartToken(state.spPlayerId || 'anonymous').then((res) => {
+    const updatedState = useGameStore.getState();
+    const currentPlayerId = updatedState.spPlayerId || 'anonymous';
+
+    fetchStartToken(currentPlayerId).then((res) => {
       if (res && gameLoop.current) {
         spTokenRef.current = res.token;
         gameLoop.current.overrideStartTime(res.startTime);

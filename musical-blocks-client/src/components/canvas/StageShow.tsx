@@ -4,7 +4,7 @@ import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '@/src/stores/gameStore';
-import { LOBBY_SONGS, DANCE_SONGS, WINNER_SONGS } from '@/src/hooks/useAudio';
+import { isAnyLobbySongPlaying, isAnyWinnerSongPlaying, getActiveDanceBpm } from '@/src/hooks/useAudio';
 import { BLOCK_SIZE } from '@/src/lib/constants';
 import { GRID_SIZE, BlockColor } from '@/src/shared/types';
 
@@ -519,21 +519,12 @@ export function StageShow() {
 
     // Detect BPM dynamically based on active audio track playing status
     if (typeof window !== 'undefined') {
-      const lobbyPlaying = LOBBY_SONGS.some(t => t.playing());
-      const winnerPlaying = WINNER_SONGS.some(t => t.playing());
-      
-      if (lobbyPlaying) {
+      if (isAnyLobbySongPlaying()) {
         activeBpm = 110;
-      } else if (winnerPlaying) {
+      } else if (isAnyWinnerSongPlaying()) {
         activeBpm = 115;
       } else {
-        const DANCE_BPMS = [128, 135, 142, 130, 128, 135, 140, 142, 132, 128];
-        for (let i = 0; i < DANCE_SONGS.length; i++) {
-          if (DANCE_SONGS[i].playing()) {
-            activeBpm = DANCE_BPMS[i];
-            break;
-          }
-        }
+        activeBpm = getActiveDanceBpm();
       }
     }
 

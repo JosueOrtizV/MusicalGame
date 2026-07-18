@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getSocket } from '@/src/lib/socketClient';
+import { SERVER_URL } from '@/src/lib/constants';
 import { useGameStore } from '@/src/stores/gameStore';
 import { useToastStore } from '@/src/stores/toastStore';
 import { Room, RoomSummary } from '@/src/shared/types';
@@ -172,7 +173,7 @@ export function LobbyScreen() {
   // ---- Fetch public rooms
   const fetchRooms = () => {
     if (!validateName()) return;
-    fetch(`${process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3001'}/rooms`)
+    fetch(`${SERVER_URL}/rooms`)
       .then((r) => r.json())
       .then((data: RoomSummary[]) => {
         setPublicRooms(data);
