@@ -39,6 +39,7 @@ export function TermsClient() {
             <ul className="list-disc pl-5 flex flex-col gap-1.5 mt-1">
               <li>Realizar ingeniería inversa, descompilar o extraer código del motor 3D y cliente sin autorización escrita.</li>
               <li>Utilizar bots, scripts automatizados o hacks para alterar la física de los bloques o ganar ventajas injustas en el modo multijugador.</li>
+              <li>Manipular, falsificar o inyectar puntajes artificiales hacia nuestra Tabla de Clasificación Global (Leaderboard). Los puntajes sospechosos serán eliminados sin previo aviso.</li>
             </ul>
           </section>
 
@@ -58,6 +59,9 @@ export function TermsClient() {
               </li>
               <li>
                 <strong className="text-[#ffabf3]">Moderación del anfitrión:</strong> El creador de una sala tiene plena facultad para expulsar (kick) a cualquier jugador que interrumpa el flujo del lobby o infrinja estas reglas.
+              </li>
+              <li>
+                <strong className="text-[#ffabf3]">Baneos de IP:</strong> Nos reservamos el derecho, a nuestra entera discreción, de restringir, suspender o bloquear permanentemente el acceso al juego (mediante bloqueo de IP) a cualquier usuario que infrinja este código, utilice lenguaje de odio o comprometa la integridad de los servidores.
               </li>
             </ul>
           </section>
@@ -106,6 +110,15 @@ export function TermsClient() {
               </a>
             </p>
           </section>
+
+          <section className="flex flex-col gap-2">
+            <h2 className="text-[#00fbfb] text-base font-bold tracking-wider uppercase border-b border-[#00fbfb]/10 pb-1">
+              8. MODIFICACIONES A LOS TÉRMINOS
+            </h2>
+            <p>
+              Nos reservamos el derecho de modificar estos términos en cualquier momento. El uso continuado del juego después de cualquier cambio constituirá tu aceptación de los nuevos términos.
+            </p>
+          </section>
         </div>
       ) : (
         <div className="flex flex-col gap-6 text-sm leading-relaxed text-[#dcbed4]/90 font-mono">
@@ -128,6 +141,7 @@ export function TermsClient() {
             <ul className="list-disc pl-5 flex flex-col gap-1.5 mt-1">
               <li>Reverse engineering, decompiling, or extracting code from the 3D engine and client without written authorization.</li>
               <li>Using bots, automated scripts, or hacks to alter block physics or gain unfair advantages in multiplayer mode.</li>
+              <li>Manipulating, falsifying, or injecting artificial scores into our Global Leaderboard. Suspicious scores will be deleted without prior notice.</li>
             </ul>
           </section>
 
@@ -147,6 +161,9 @@ export function TermsClient() {
               </li>
               <li>
                 <strong className="text-[#ffabf3]">Host moderation:</strong> The room host has the full right to kick any player who disrupts the lobby flow or violates these rules.
+              </li>
+              <li>
+                <strong className="text-[#ffabf3]">IP Bans:</strong> We reserve the right, at our sole discretion, to restrict, suspend, or permanently block access to the game (via IP blocking) to any user who violates this code, uses hate speech, or compromises server integrity.
               </li>
             </ul>
           </section>
@@ -193,6 +210,15 @@ export function TermsClient() {
               >
                 https://josueortiz.dev/
               </a>
+            </p>
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <h2 className="text-[#00fbfb] text-base font-bold tracking-wider uppercase border-b border-[#00fbfb]/10 pb-1">
+              8. MODIFICATIONS TO TERMS
+            </h2>
+            <p>
+              We reserve the right to modify these terms at any time. Continued use of the game after any changes shall constitute your consent to such changes.
             </p>
           </section>
         </div>

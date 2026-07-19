@@ -38,7 +38,7 @@ export function PrivacyClient() {
             </p>
             <ul className="list-disc pl-5 flex flex-col gap-1.5 mt-1">
               <li>
-                <strong className="text-[#ffabf3]">Datos Temporales de Sesión (Multijugador):</strong> Al ingresar a una sala en línea, tu apodo (alias) y la configuración de tus cosméticos se transmiten temporalmente a nuestros servidores a través de WebSockets para poder sincronizar tu avatar y acciones en tiempo real con otros jugadores. Esta información se elimina automáticamente de la memoria del servidor al desconectarte de la sala.
+                <strong className="text-[#ffabf3]">Datos Temporales de Sesión (Multijugador):</strong> Al ingresar a una sala en línea, tu apodo (alias) y la configuración de tus cosméticos se transmiten temporalmente a nuestros servidores a través de WebSockets para poder sincronizar tu avatar y acciones en tiempo real con otros jugadores. Además, los mensajes enviados a través del chat en el lobby se transmiten en tiempo real a los demás jugadores de la sala. Esta información (incluyendo el historial de chat) se elimina automáticamente de la memoria del servidor al cerrarse la sala.
               </li>
               <li>
                 <strong className="text-[#ffabf3]">Tabla de Clasificación Global (Leaderboard):</strong> Al finalizar una partida en el modo de un jugador, el juego transmite de manera permanente a nuestra base de datos tu alias, el puntaje total, las rondas sobrevividas, el modo de dificultad, la velocidad seleccionada y un identificador único aleatorio de jugador asignado localmente en tu dispositivo. Estos datos se recopilan con el único propósito de construir y mostrar el ranking mundial de puntuaciones del juego de forma pública.
@@ -71,7 +71,7 @@ export function PrivacyClient() {
               4. SERVICIOS DE TERCEROS Y COOKIES
             </h2>
             <p>
-              No utilizamos cookies de seguimiento, ni SDKs de publicidad invasiva, ni herramientas de análisis conductual de terceros. El juego corre de forma independiente y autónoma.
+              No utilizamos cookies de seguimiento, ni SDKs de publicidad invasiva, ni herramientas de análisis conductual de terceros. El juego corre de forma independiente y autónoma. Sin embargo, nuestros proveedores de infraestructura (hosting y base de datos) pueden conservar registros técnicos (logs) de acceso de forma temporal (incluyendo direcciones IP) estrictamente por motivos de seguridad, prevención de ataques (DDoS) y estabilidad del servidor, sin fines de perfilamiento.
             </p>
           </section>
 
@@ -86,7 +86,16 @@ export function PrivacyClient() {
 
           <section className="flex flex-col gap-2">
             <h2 className="text-[#00fbfb] text-base font-bold tracking-wider uppercase border-b border-[#00fbfb]/10 pb-1">
-              6. CONTACTO Y SOPORTE
+              6. PRIVACIDAD DE MENORES
+            </h2>
+            <p>
+              Este juego no está dirigido a niños menores de 13 años. No recopilamos a sabiendas información personal de menores. Si descubrimos que se ha recopilado información de un menor sin el consentimiento verificable de sus padres, la eliminaremos inmediatamente de nuestros registros.
+            </p>
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <h2 className="text-[#00fbfb] text-base font-bold tracking-wider uppercase border-b border-[#00fbfb]/10 pb-1">
+              7. CONTACTO Y SOPORTE
             </h2>
             <p>
               Si tienes preguntas sobre este protocolo de privacidad o deseas reportar alguna anomalía en el sistema, puedes contactar al desarrollador a través de su sitio web oficial:
@@ -122,7 +131,7 @@ export function PrivacyClient() {
             </p>
             <ul className="list-disc pl-5 flex flex-col gap-1.5 mt-1">
               <li>
-                <strong className="text-[#ffabf3]">Temporary Session Data (Multiplayer):</strong> When joining an online lobby, your alias (nickname) and cosmetic settings are temporarily transmitted to our servers via WebSockets to synchronize your avatar and actions in real-time with other players. This information is automatically deleted from the server memory when you disconnect from the room.
+                <strong className="text-[#ffabf3]">Temporary Session Data (Multiplayer):</strong> When joining an online lobby, your alias (nickname) and cosmetic settings are temporarily transmitted to our servers via WebSockets to synchronize your avatar and actions in real-time with other players. Additionally, messages sent through the lobby chat are transmitted in real-time to other players in the room. This information (including chat history) is automatically deleted from the server memory when the room is closed.
               </li>
               <li>
                 <strong className="text-[#ffabf3]">Global Leaderboard:</strong> When finishing a single-player match, the game permanently transmits your alias, total score, rounds survived, difficulty mode, selected speed, and a locally assigned unique random player ID to our database. This data is collected solely to construct and publicly display the game&apos;s global high score rankings.
@@ -155,7 +164,7 @@ export function PrivacyClient() {
               4. THIRD-PARTY SERVICES AND COOKIES
             </h2>
             <p>
-              We do not use tracking cookies, invasive advertising SDKs, or third-party behavioral analytics tools. The game runs independently and autonomously.
+              We do not use tracking cookies, invasive advertising SDKs, or third-party behavioral analytics tools. The game runs independently and autonomously. However, our infrastructure providers (hosting and database) may temporarily keep technical access logs (including IP addresses) strictly for security reasons, DDoS prevention, and server stability, without profiling purposes.
             </p>
           </section>
 
@@ -170,7 +179,16 @@ export function PrivacyClient() {
 
           <section className="flex flex-col gap-2">
             <h2 className="text-[#00fbfb] text-base font-bold tracking-wider uppercase border-b border-[#00fbfb]/10 pb-1">
-              6. CONTACT AND SUPPORT
+              6. CHILDREN'S PRIVACY
+            </h2>
+            <p>
+              This game is not directed at children under the age of 13. We do not knowingly collect personal information from children. If we discover that information from a child has been collected without verifiable parental consent, we will delete it immediately from our records.
+            </p>
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <h2 className="text-[#00fbfb] text-base font-bold tracking-wider uppercase border-b border-[#00fbfb]/10 pb-1">
+              7. CONTACT AND SUPPORT
             </h2>
             <p>
               If you have questions about this privacy protocol or wish to report any system anomalies, you can contact the developer through their official website:
