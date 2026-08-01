@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     url: 'https://voxelrave.com/terms',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'VoxelRave — Juego de Fiesta Voxel 3D',
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Términos de Servicio VoxelRave',
     description: 'Revisa los términos de uso y las reglas de conducta de nuestra comunidad.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 };
 

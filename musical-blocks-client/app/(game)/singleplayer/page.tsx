@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     url: 'https://voxelrave.com/singleplayer',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'VoxelRave — Juego de Fiesta Voxel 3D',
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'VoxelRave Modo Solitario — Práctica y Puntuaciones Máximas',
     description: 'Personaliza tu modo de práctica y baila en solitario para conquistar la tabla de clasificación.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 };
 

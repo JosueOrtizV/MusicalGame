@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     url: 'https://voxelrave.com/multiplayer',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'VoxelRave — Juego de Fiesta Voxel 3D',
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Lobby Multijugador VoxelRave — Juega en Línea',
     description: 'Encuentra salas públicas o crea una sala privada para jugar con amigos.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 };
 

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     url: 'https://voxelrave.com/privacy',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'VoxelRave — Juego de Fiesta Voxel 3D',
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Política de Privacidad VoxelRave — Protocolo de Seguridad',
     description: 'Aprende cómo protegemos tus datos. Recopilación mínima, sin registro de cuentas.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 };
 

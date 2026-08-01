@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     url: 'https://voxelrave.com/leaderboard',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'VoxelRave — Juego de Fiesta Voxel 3D',
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Tabla de Clasificación VoxelRave — Top 50 Mundial',
     description: '¿Quién domina la pista de baile? Consulta la tabla de clasificación global.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 };
 

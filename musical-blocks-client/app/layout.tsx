@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'VoxelRave — Juego de Fiesta Voxel 3D',
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     creator: '@ElEstofado',
     title: 'VoxelRave — Juego de Fiesta Voxel Multijugador 3D',
     description: 'Baila, sobrevive, gana. Juego 3D multijugador gratis en el navegador.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
   icons: {
     icon: [
