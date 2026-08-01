@@ -6,7 +6,7 @@ import { getBreadcrumbSchema, getFAQSchema } from '@/src/lib/seo/jsonld';
 export const metadata: Metadata = {
   title: 'VoxelRave — Juego de Fiesta Voxel Multijugador 3D | Juega Ahora',
   description:
-    'Juego de ritmo multijugador 3D gratuito. Baila sobre bloques de colores, sobrevive a la eliminación y sé el último en pie. ¡Juega con amigos al instante sin descargas!',
+    'Juego de ritmo multijugador 3D gratuito. Baila sobre bloques, sobrevive a la eliminación y sé el último en pie. ¡Juega gratis en tu navegador sin descargas!',
   alternates: {
     canonical: 'https://voxelrave.com',
   },
@@ -31,9 +31,9 @@ export default function Home() {
   return (
     <>
       {/* Contenido exclusivo para SEO: visible para crawlers, oculto en UI interactiva */}
-      <h1 className="sr-only">
+      <h2 className="sr-only">
         VoxelRave — Juego de Fiesta Voxel Multijugador 3D
-      </h1>
+      </h2>
       <p className="sr-only">
         Baila sobre bloques de colores, sobrevive a rondas de eliminación y sé el último jugador
         en pie. Juega solo o con amigos en multijugador: gratis, al instante y sin descargas.

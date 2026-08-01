@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     template: '%s | VoxelRave',
   },
   description:
-    'Juego de ritmo multijugador 3D gratuito. Baila sobre bloques de colores, sobrevive a la eliminación y sé el último en pie. ¡Juega con amigos al instante en tu navegador sin descargas!',
+    'Juego de ritmo multijugador 3D gratuito. Baila sobre bloques, sobrevive a la eliminación y sé el último en pie. ¡Juega gratis en tu navegador sin descargas!',
   keywords: [
     'voxelrave', 'voxel party game', 'juego multijugador de ritmo',
     'multiplayer browser game', 'block party game online',
@@ -58,11 +58,21 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
+    site: '@ElEstofado',
+    creator: '@ElEstofado',
     title: 'VoxelRave — Juego de Fiesta Voxel Multijugador 3D',
     description: 'Baila, sobrevive, gana. Juego 3D multijugador gratis en el navegador.',
     images: ['/og-image.png'],
   },
-  icons: { icon: '/icon.png', apple: '/apple-icon.png' },
+  icons: {
+    icon: [
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icon.png' },
+    ],
+    apple: '/apple-icon.png',
+  },
   alternates: {
     canonical: 'https://voxelrave.com',
     languages: {
