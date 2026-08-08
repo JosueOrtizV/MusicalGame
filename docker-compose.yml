@@ -12,6 +12,15 @@ services:
       - CLIENT_ORIGIN=${CLIENT_ORIGIN:-https://voxelrave.com}
     expose:
       - "3001"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:noexec,nosuid,nodev
+      - /var/tmp:noexec,nosuid,nodev
+      - /dev/shm:noexec,nosuid,nodev
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3001/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))\""]
       interval: 15s
@@ -39,6 +48,15 @@ services:
       - NEXT_PUBLIC_SERVER_URL=https://api.voxelrave.com
     expose:
       - "3000"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:noexec,nosuid,nodev
+      - /var/tmp:noexec,nosuid,nodev
+      - /dev/shm:noexec,nosuid,nodev
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3000/', (res) => process.exit(res.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))\""]
       interval: 15s
