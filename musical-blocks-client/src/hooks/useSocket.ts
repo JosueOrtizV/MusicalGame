@@ -85,7 +85,13 @@ export function useSocket() {
     };
 
     const onRoomError = ({ message }: { message: string }) => {
-      store.setConnectionError(message);
+      let finalMessage = message;
+      if (message.includes(' / ')) {
+        const parts = message.split(' / ');
+        const lang = useGameStore.getState().language;
+        finalMessage = lang === 'es' ? parts[0] : parts[1] || parts[0];
+      }
+      useToastStore.getState().addToast(finalMessage, 'error');
     };
 
     // ---- Game events -------------------------------------------------------
