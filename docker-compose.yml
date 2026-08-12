@@ -5,6 +5,7 @@ services:
       context: .
       dockerfile: musical-blocks-server/Dockerfile
     restart: unless-stopped
+    user: "1000:1000"
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -39,6 +40,7 @@ services:
       args:
         - NEXT_PUBLIC_SERVER_URL=https://api.voxelrave.com
     restart: unless-stopped
+    user: "1000:1000"
     env_file:
       - musical-blocks-client/.env.local
     environment:
