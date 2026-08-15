@@ -18,6 +18,14 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+          pids: 100
+        reservations:
+          memory: 256M
     tmpfs:
       - /tmp:noexec,nosuid,nodev
       - /var/tmp:noexec,nosuid,nodev
@@ -55,6 +63,14 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+          pids: 100
+        reservations:
+          memory: 256M
     tmpfs:
       - /tmp:noexec,nosuid,nodev
       - /var/tmp:noexec,nosuid,nodev
