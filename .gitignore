@@ -6,8 +6,12 @@ node_modules/
 # Testing
 coverage/
 
-# Agents
-.agents/*
+# Agents & AI Tooling
+.agent/
+.agents/
+skills-lock.json
+__pycache__/
+*.pyc
 
 # Next.js
 .next/
